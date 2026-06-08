@@ -106,7 +106,7 @@ export function LeadForm() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="schoolName">School name</Label>
+                <Label htmlFor="schoolName">Child's current school name</Label>
                 <Input id="schoolName" name="schoolName" placeholder="Optional" />
               </div>
             </div>

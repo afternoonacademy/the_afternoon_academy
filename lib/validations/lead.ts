@@ -25,7 +25,9 @@ export const leadFormSchema = z.object({
   supportNeeds: z.array(z.string()).min(1, "Select at least one support need"),
 
   preferredDays: z.array(z.string()).min(1, "Select at least one preferred day"),
-  preferredTimes: z.array(z.string()).min(1, "Select at least one preferred time"),
+  preferredTimes: z
+    .array(z.string())
+    .min(1, "Select at least one preferred time"),
 
   preferredFrequency: z.enum([
     "one_day",
@@ -45,9 +47,7 @@ export const leadFormSchema = z.object({
   notes: z.string().optional(),
 
   consentContact: z.literal(true, {
-    errorMap: () => ({
-      message: "You need to agree to be contacted about the launch",
-    }),
+    message: "You need to agree to be contacted about the launch",
   }),
 })
 

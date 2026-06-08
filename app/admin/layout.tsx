@@ -1,5 +1,8 @@
 import Link from "next/link"
 
+import { logout } from "@/actions/auth"
+import { requireAdmin } from "@/lib/auth/require-admin"
+
 const navItems = [
   {
     href: "/admin",
@@ -15,11 +18,13 @@ const navItems = [
   },
 ]
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { internalUser } = await requireAdmin()
+
   return (
     <main className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -31,6 +36,9 @@ export default function AdminLayout({
             <h1 className="text-2xl font-bold tracking-tight">
               Admin dashboard
             </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Signed in as {internalUser.email}
+            </p>
           </div>
 
           <nav className="flex flex-wrap gap-2">
@@ -43,18 +51,20 @@ export default function AdminLayout({
                 {item.label}
               </Link>
             ))}
+
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
+              >
+                Log out
+              </button>
+            </form>
           </nav>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Admin protection is not enabled yet. We will add Supabase Auth before
-          deployment.
-        </div>
-
-        {children}
-      </section>
+      <section className="mx-auto max-w-7xl px-6 py-8">{children}</section>
     </main>
   )
 }

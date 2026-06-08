@@ -1,4 +1,5 @@
 ﻿import { LeadForm } from "@/components/forms/lead-form"
+import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Card, CardContent } from "@/components/ui/card"
 
 const supportAreas = [
@@ -20,6 +21,8 @@ const parentBenefits = [
 export default function HomePage() {
   return (
     <main className="min-h-screen">
+      <PublicHeader />
+
       <section className="brand-shell flex flex-col gap-16 py-10 md:py-16">
         <div className="brand-hero grid gap-10 p-6 md:p-10 lg:grid-cols-[1fr_420px] lg:items-center">
           <div className="space-y-8">
@@ -27,13 +30,14 @@ export default function HomePage() {
 
             <div className="space-y-5">
               <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-                A calmer after-school routine for international families in Madrid.
+                A calmer after-school routine for international families in
+                Madrid.
               </h1>
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
-                Small-group British and international curriculum support for children
-                aged approximately 4-12, focused on homework, English, maths, study
-                skills and academic confidence.
+                Small-group British and international curriculum support for
+                children aged approximately 4-12, focused on homework, English,
+                maths, study skills and academic confidence.
               </p>
 
               <p className="max-w-2xl text-base brand-muted md:text-lg">
@@ -72,8 +76,9 @@ export default function HomePage() {
                 </h2>
 
                 <p className="brand-muted">
-                  The Afternoon Academy helps families turn after-school academic
-                  time into something calmer, clearer and more structured.
+                  The Afternoon Academy helps families turn after-school
+                  academic time into something calmer, clearer and more
+                  structured.
                 </p>
               </div>
 
@@ -108,15 +113,15 @@ export default function HomePage() {
           <Card className="brand-card md:col-span-2">
             <CardContent className="space-y-4 p-6">
               <p className="brand-muted">
-                The Afternoon Academy is being created to give children a focused
-                place to complete homework, ask questions, practise core skills and
-                build better learning habits before they get home.
+                The Afternoon Academy is being created to give children a
+                focused place to complete homework, ask questions, practise core
+                skills and build better learning habits before they get home.
               </p>
 
               <p className="brand-muted">
-                The aim is not just childcare, and not just private tutoring. It is
-                structured academic support for families who want a more reliable
-                after-school learning routine.
+                The aim is not just childcare, and not just private tutoring. It
+                is structured academic support for families who want a more
+                reliable after-school learning routine.
               </p>
             </CardContent>
           </Card>
@@ -173,9 +178,7 @@ export default function HomePage() {
                 <CardContent className="space-y-2 p-6">
                   <h3 className="font-semibold">{service.title}</h3>
 
-                  <p className="text-sm brand-muted">
-                    {service.description}
-                  </p>
+                  <p className="text-sm brand-muted">{service.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -199,10 +202,13 @@ export default function HomePage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  { label: "Early session", time: "17:00 – 17:50" },
-                  { label: "Later session", time: "18:00 – 18:50" },
+                  { label: "Early session", time: "17:00 - 17:50" },
+                  { label: "Later session", time: "18:00 - 18:50" },
                 ].map((session) => (
-                  <div key={session.label} className="rounded-2xl border bg-white/60 p-4">
+                  <div
+                    key={session.label}
+                    className="rounded-2xl border bg-white/60 p-4"
+                  >
                     <p className="text-sm brand-muted">{session.label}</p>
                     <p className="text-xl font-semibold">{session.time}</p>
                   </div>
@@ -256,13 +262,13 @@ export default function HomePage() {
                   </h2>
 
                   <p className="brand-muted">
-                    Tell us your child’s age, the type of support you may need,
-                    and which days and times would work best.
+                    Tell us your child&apos;s age, the type of support you may
+                    need, and which days and times would work best.
                   </p>
 
                   <p className="text-sm brand-muted">
-                    Your answers will help us build a timetable around real parent
-                    demand before launch.
+                    Your answers will help us build a timetable around real
+                    parent demand before launch.
                   </p>
                 </div>
               </div>
@@ -271,7 +277,28 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </section>
+
+        <section className="rounded-3xl border bg-white/60 p-6 text-center">
+          <h2 className="text-2xl font-semibold">Have a question first?</h2>
+          <p className="mx-auto mt-2 max-w-2xl brand-muted">
+            If you would like to ask about age groups, location, curriculum
+            support, siblings, private lessons or anything else, you can send us
+            a message before completing the timetable form.
+          </p>
+
+          <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+            <a href="/contact" className="brand-button-secondary">
+              Contact us
+            </a>
+
+            <a href="#timetable-form" className="brand-button">
+              Share timetable preferences
+            </a>
+          </div>
+        </section>
       </section>
+
+      <PublicFooter />
     </main>
   )
 }

@@ -32,7 +32,7 @@ export default function HomePage() {
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
                 Small-group British and international curriculum support for children
-                aged approximately 6–14, focused on homework, English, maths, study
+                aged approximately 4-12, focused on homework, English, maths, study
                 skills and academic confidence.
               </p>
 

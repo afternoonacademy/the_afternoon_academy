@@ -3,6 +3,13 @@
 import { redirect } from "next/navigation"
 
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { adminLeadEmail, resend, resendFromEmail } from "@/lib/email/resend"
+import {
+  adminLeadNotificationEmailHtml,
+  adminLeadNotificationEmailText,
+  parentConfirmationEmailHtml,
+  parentConfirmationEmailText,
+} from "@/lib/email/templates"
 import { leadFormSchema } from "@/lib/validations/lead"
 
 export type SubmitLeadState = {
@@ -14,8 +21,6 @@ export async function submitLead(
   _previousState: SubmitLeadState,
   formData: FormData
 ): Promise<SubmitLeadState> {
-
-
   const rawData = {
     parentName: formData.get("parentName"),
     email: formData.get("email"),
@@ -39,12 +44,9 @@ export async function submitLead(
     consentContact: formData.get("consentContact") === "on",
   }
 
-  
-
   const parsed = leadFormSchema.safeParse(rawData)
 
   if (!parsed.success) {
-  
     const firstError =
       parsed.error.issues[0]?.message || "Please check the form and try again."
 
@@ -54,11 +56,7 @@ export async function submitLead(
     }
   }
 
-  
-
   const data = parsed.data
-
-
 
   const { data: parentLead, error: parentError } = await supabaseAdmin
     .from("parent_leads")
@@ -80,16 +78,14 @@ export async function submitLead(
     .select("id")
     .single()
 
-  
-
   if (parentError || !parentLead) {
+    console.error("Parent lead insert error:", parentError)
+
     return {
       success: false,
       message: "Something went wrong while saving your details. Please try again.",
     }
   }
-
-  
 
   const { data: childLead, error: childError } = await supabaseAdmin
     .from("child_leads")
@@ -104,18 +100,16 @@ export async function submitLead(
     .select("id")
     .single()
 
-  
-
   if (childError || !childLead) {
+    console.error("Child lead insert error:", childError)
+
     return {
       success: false,
       message: "Something went wrong while saving the child details. Please try again.",
     }
   }
 
- 
-
-  const { data: timetablePreference, error: timetableError } = await supabaseAdmin
+  const { error: timetableError } = await supabaseAdmin
     .from("timetable_preferences")
     .insert({
       child_lead_id: childLead.id,
@@ -123,17 +117,67 @@ export async function submitLead(
       preferred_times: data.preferredTimes,
       preferred_frequency: data.preferredFrequency,
     })
-    .select("id")
-    .single()
 
-  
   if (timetableError) {
+    console.error("Timetable preference insert error:", timetableError)
+
     return {
       success: false,
-      message: "Something went wrong while saving timetable preferences. Please try again.",
+      message:
+        "Something went wrong while saving timetable preferences. Please try again.",
     }
   }
 
+  const emailData = {
+    parentName: data.parentName,
+    email: data.email,
+    phone: data.phone,
+    area: data.area,
+    schoolName: data.schoolName,
+
+    childAge: data.childAge,
+    schoolYear: data.schoolYear,
+    curriculum: data.curriculum,
+    supportNeeds: data.supportNeeds,
+
+    preferredDays: data.preferredDays,
+    preferredTimes: data.preferredTimes,
+    preferredFrequency: data.preferredFrequency,
+    interestLevel: data.interestLevel,
+
+    notes: data.notes,
+  }
+
+  if (resend) {
+    const parentEmail = await resend.emails.send({
+      from: resendFromEmail,
+      to: data.email,
+      subject: "We received your Afternoon Academy timetable preferences",
+      html: parentConfirmationEmailHtml(emailData),
+      text: parentConfirmationEmailText(emailData),
+    })
+
+    if (parentEmail.error) {
+      console.error("Parent confirmation email error:", parentEmail.error)
+    }
+
+    if (adminLeadEmail) {
+      const adminEmail = await resend.emails.send({
+        from: resendFromEmail,
+        to: adminLeadEmail,
+        replyTo: data.email,
+        subject: `New Afternoon Academy lead: ${data.parentName}`,
+        html: adminLeadNotificationEmailHtml(emailData),
+        text: adminLeadNotificationEmailText(emailData),
+      })
+
+      if (adminEmail.error) {
+        console.error("Admin lead notification email error:", adminEmail.error)
+      }
+    }
+  } else {
+    console.warn("Resend is not configured. Skipping lead emails.")
+  }
 
   redirect("/thank-you")
 }

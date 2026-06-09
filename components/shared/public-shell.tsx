@@ -39,19 +39,19 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
 
   return (
     <header className="border-b bg-background/95">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <Link href={t.homeHref} className="flex items-center">
           <Image
             src="/logo.png"
             alt="The Afternoon Academy"
-            width={180}
-            height={60}
+            width={600}
+            height={200}
             priority
-            className="h-12 w-auto"
+            className="h-10 w-auto sm:h-12"
           />
         </Link>
 
-        <nav className="flex items-center gap-3">
+        <nav className="flex flex-wrap items-center gap-3">
           <Link
             href={t.contactHref}
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -66,7 +66,7 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
             {t.switchLabel}
           </Link>
 
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="w-full sm:w-auto">
             <Link href={t.timetableHref}>{t.cta}</Link>
           </Button>
         </nav>

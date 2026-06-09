@@ -16,23 +16,52 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+
   title: {
     default: "The Afternoon Academy",
     template: "%s | The Afternoon Academy",
   },
+
   description:
     "British curriculum after-school support for children in Madrid. Help us shape our launch timetable in Conde Orgaz.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  ),
+
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+
   openGraph: {
     title: "The Afternoon Academy",
     description:
       "Structured after-school learning for children in Madrid, launching soon in Conde Orgaz.",
+    url: siteUrl,
     type: "website",
     locale: "en_GB",
     siteName: "The Afternoon Academy",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "The Afternoon Academy - after-school academic support in Madrid",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "The Afternoon Academy",
+    description:
+      "Structured after-school learning for children in Madrid, launching soon in Conde Orgaz.",
+    images: ["/og-image.png"],
   },
 }
 

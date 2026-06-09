@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -39,8 +40,15 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
   return (
     <header className="border-b bg-background/95">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href={t.homeHref} className="font-semibold tracking-tight">
-          {t.brand}
+        <Link href={t.homeHref} className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="The Afternoon Academy"
+            width={180}
+            height={60}
+            priority
+            className="h-12 w-auto"
+          />
         </Link>
 
         <nav className="flex items-center gap-3">
@@ -73,8 +81,17 @@ export function PublicFooter({ locale = "en" }: { locale?: Locale }) {
   return (
     <footer className="border-t bg-background">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="font-medium text-foreground">{t.brand}</p>
+        <div className="space-y-2">
+          <Link href={t.homeHref} className="inline-flex items-center">
+            <Image
+              src="/logo.png"
+              alt="The Afternoon Academy"
+              width={150}
+              height={50}
+              className="h-10 w-auto"
+            />
+          </Link>
+
           <p>{t.tagline}</p>
         </div>
 

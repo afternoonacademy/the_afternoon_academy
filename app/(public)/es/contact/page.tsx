@@ -5,54 +5,54 @@ import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
-  title: "Contact",
+  title: "Contacto",
   description:
-    "Contact The Afternoon Academy with questions about after-school academic support in Madrid.",
+    "Contacta con The Afternoon Academy para preguntas sobre apoyo académico extraescolar en Madrid.",
 }
 
-export default function ContactPage() {
+export default function SpanishContactPage() {
   return (
     <main className="min-h-screen bg-background">
-      <PublicHeader locale="en" />
+      <PublicHeader locale="es" />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 md:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <div className="space-y-6">
           <div className="inline-flex rounded-full border px-4 py-2 text-sm text-muted-foreground">
-            Contact The Afternoon Academy
+            Contacto
           </div>
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              Have a question before registering interest?
+              ¿Tienes alguna pregunta antes de registrar tu interés?
             </h1>
 
             <p className="text-lg text-muted-foreground">
-              Send us a message if you would like to ask about age groups,
-              curriculum support, location, private lessons, siblings or
-              anything else before completing the timetable form.
+              Escríbenos si quieres preguntar por edades, apoyo académico,
+              ubicación, clases privadas, hermanos o cualquier otra cuestión
+              antes de completar el formulario de horarios.
             </p>
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-5">
-            <h2 className="font-semibold">Looking for the timetable form?</h2>
+            <h2 className="font-semibold">¿Buscas el formulario de horarios?</h2>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              If you already know you are interested, the most useful thing is
-              to share your preferred days and times on the homepage.
+              Si ya estás interesado/a, lo más útil es que compartas tus días y
+              horarios preferidos en la página principal.
             </p>
 
             <Button asChild className="mt-4">
-              <Link href="/#timetable-form">
-                Share preferred days and times
+              <Link href="/es#timetable-form">
+                Compartir días y horarios preferidos
               </Link>
             </Button>
           </div>
         </div>
 
-        <ContactForm language="en" />
+        <ContactForm language="es" />
       </section>
 
-      <PublicFooter locale="en" />
+      <PublicFooter locale="es" />
     </main>
   )
 }

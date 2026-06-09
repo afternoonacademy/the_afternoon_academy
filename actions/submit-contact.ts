@@ -21,6 +21,8 @@ export async function submitContact(
   _previousState: SubmitContactState,
   formData: FormData
 ): Promise<SubmitContactState> {
+const language: "en" | "es" =
+  formData.get("language") === "es" ? "es" : "en"
   const rawData = {
     name: formData.get("name"),
     email: formData.get("email"),
@@ -49,7 +51,7 @@ export async function submitContact(
     phone: data.phone || null,
     message: data.message,
     consent_contact: data.consentContact,
-    source: "contact_page",
+    source: language === "es" ? "contact_page_es" : "contact_page_en",
     status: "new",
   })
 
@@ -58,7 +60,10 @@ export async function submitContact(
 
     return {
       success: false,
-      message: "Something went wrong while sending your message. Please try again.",
+      message:
+        language === "es"
+          ? "Ha ocurrido un error al enviar tu mensaje. Inténtalo de nuevo."
+          : "Something went wrong while sending your message. Please try again.",
     }
   }
 
@@ -67,13 +72,17 @@ export async function submitContact(
     email: data.email,
     phone: data.phone,
     message: data.message,
+    language,
   }
 
   if (resend) {
     const parentEmail = await resend.emails.send({
       from: resendFromEmail,
       to: data.email,
-      subject: "We received your message",
+      subject:
+        language === "es"
+          ? "Hemos recibido tu mensaje"
+          : "We received your message",
       html: parentContactConfirmationEmailHtml(emailData),
       text: parentContactConfirmationEmailText(emailData),
     })
@@ -100,5 +109,5 @@ export async function submitContact(
     console.warn("Resend is not configured. Skipping contact emails.")
   }
 
-  redirect("/contact/thanks")
+  redirect(language === "es" ? "/es/contact/thanks" : "/contact/thanks")
 }

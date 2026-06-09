@@ -1,3 +1,5 @@
+type EmailLanguage = "en" | "es"
+
 type LeadEmailData = {
   parentName: string
   email: string
@@ -16,6 +18,7 @@ type LeadEmailData = {
   interestLevel: string
 
   notes?: string
+  language?: EmailLanguage
 }
 
 type ContactEmailData = {
@@ -23,6 +26,7 @@ type ContactEmailData = {
   email: string
   phone?: string
   message: string
+  language?: EmailLanguage
 }
 
 function formatValue(value: string) {
@@ -48,7 +52,47 @@ function formatMessageHtml(value: string) {
   return escapeHtml(value).replaceAll("\n", "<br />")
 }
 
+function getLanguageLabel(language?: EmailLanguage) {
+  return language === "es" ? "Spanish page" : "English page"
+}
+
 export function parentConfirmationEmailHtml(data: LeadEmailData) {
+  if (data.language === "es") {
+    return `
+      <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
+        <h1 style="color: #111827; margin-bottom: 12px;">Gracias por ayudarnos a organizar el horario</h1>
+
+        <p>Hola ${escapeHtml(data.parentName)},</p>
+
+        <p>
+          Gracias por tu interés en <strong>The Afternoon Academy</strong>.
+          Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Conde Orgaz.
+        </p>
+
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
+          <h2 style="font-size: 18px; margin-top: 0;">Preferencias enviadas</h2>
+
+          <p><strong>Edad del niño/a:</strong> ${data.childAge}</p>
+          <p><strong>Curso:</strong> ${escapeHtml(data.schoolYear || "No indicado")}</p>
+          <p><strong>Currículo:</strong> ${escapeHtml(formatValue(data.curriculum))}</p>
+          <p><strong>Apoyo solicitado:</strong> ${escapeHtml(formatArray(data.supportNeeds))}</p>
+          <p><strong>Días preferidos:</strong> ${escapeHtml(formatArray(data.preferredDays))}</p>
+          <p><strong>Horarios preferidos:</strong> ${escapeHtml(formatArray(data.preferredTimes))}</p>
+          <p><strong>Frecuencia aproximada:</strong> ${escapeHtml(formatValue(data.preferredFrequency))}</p>
+        </div>
+
+        <p>
+          Esto no confirma una plaza todavía. Nos pondremos en contacto contigo cuando tengamos más información sobre horarios, disponibilidad y próximos pasos.
+        </p>
+
+        <p>
+          Un saludo,<br />
+          <strong>The Afternoon Academy</strong>
+        </p>
+      </div>
+    `
+  }
+
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
       <h1 style="color: #111827; margin-bottom: 12px;">Thank you for helping us shape the timetable</h1>
@@ -85,6 +129,31 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 }
 
 export function parentConfirmationEmailText(data: LeadEmailData) {
+  if (data.language === "es") {
+    return `
+Hola ${data.parentName},
+
+Gracias por tu interés en The Afternoon Academy.
+
+Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Conde Orgaz.
+
+Preferencias enviadas:
+
+Edad del niño/a: ${data.childAge}
+Curso: ${data.schoolYear || "No indicado"}
+Currículo: ${formatValue(data.curriculum)}
+Apoyo solicitado: ${formatArray(data.supportNeeds)}
+Días preferidos: ${formatArray(data.preferredDays)}
+Horarios preferidos: ${formatArray(data.preferredTimes)}
+Frecuencia aproximada: ${formatValue(data.preferredFrequency)}
+
+Esto no confirma una plaza todavía. Nos pondremos en contacto contigo cuando tengamos más información sobre horarios, disponibilidad y próximos pasos.
+
+Un saludo,
+The Afternoon Academy
+    `.trim()
+  }
+
   return `
 Hi ${data.parentName},
 
@@ -116,6 +185,7 @@ export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
         <h2 style="font-size: 18px; margin-top: 0;">Parent details</h2>
+        <p><strong>Source language:</strong> ${escapeHtml(getLanguageLabel(data.language))}</p>
         <p><strong>Name:</strong> ${escapeHtml(data.parentName)}</p>
         <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
         <p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>
@@ -142,6 +212,8 @@ export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
 export function adminLeadNotificationEmailText(data: LeadEmailData) {
   return `
 New Afternoon Academy lead
+
+Source language: ${getLanguageLabel(data.language)}
 
 Parent details:
 Name: ${data.parentName}
@@ -170,6 +242,7 @@ export function adminContactNotificationEmailHtml(data: ContactEmailData) {
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
         <h2 style="font-size: 18px; margin-top: 0;">Contact details</h2>
+        <p><strong>Source language:</strong> ${escapeHtml(getLanguageLabel(data.language))}</p>
         <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
         <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
         <p><strong>Phone:</strong> ${escapeHtml(data.phone || "Not provided")}</p>
@@ -187,6 +260,8 @@ export function adminContactNotificationEmailText(data: ContactEmailData) {
   return `
 New Afternoon Academy contact message
 
+Source language: ${getLanguageLabel(data.language)}
+
 Contact details:
 Name: ${data.name}
 Email: ${data.email}
@@ -198,6 +273,30 @@ ${data.message}
 }
 
 export function parentContactConfirmationEmailHtml(data: ContactEmailData) {
+  if (data.language === "es") {
+    return `
+      <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
+        <h1 style="color: #111827; margin-bottom: 12px;">Gracias por contactar con The Afternoon Academy</h1>
+
+        <p>Hola ${escapeHtml(data.name)},</p>
+
+        <p>
+          Gracias por escribirnos. Hemos recibido tu mensaje y te responderemos lo antes posible.
+        </p>
+
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
+          <h2 style="font-size: 18px; margin-top: 0;">Tu mensaje</h2>
+          <p>${formatMessageHtml(data.message)}</p>
+        </div>
+
+        <p>
+          Un saludo,<br />
+          <strong>The Afternoon Academy</strong>
+        </p>
+      </div>
+    `
+  }
+
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
       <h1 style="color: #111827; margin-bottom: 12px;">Thank you for contacting The Afternoon Academy</h1>
@@ -222,6 +321,22 @@ export function parentContactConfirmationEmailHtml(data: ContactEmailData) {
 }
 
 export function parentContactConfirmationEmailText(data: ContactEmailData) {
+  if (data.language === "es") {
+    return `
+Hola ${data.name},
+
+Gracias por contactar con The Afternoon Academy.
+
+Hemos recibido tu mensaje y te responderemos lo antes posible.
+
+Tu mensaje:
+${data.message}
+
+Un saludo,
+The Afternoon Academy
+    `.trim()
+  }
+
   return `
 Hi ${data.name},
 

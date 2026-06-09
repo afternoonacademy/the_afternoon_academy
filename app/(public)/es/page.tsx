@@ -1,59 +1,65 @@
-﻿import { LeadForm } from "@/components/forms/lead-form"
+import { LeadForm } from "@/components/forms/lead-form"
 import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Card, CardContent } from "@/components/ui/card"
 
+export const metadata = {
+  title: "Apoyo académico en inglés en Madrid",
+  description:
+    "The Afternoon Academy ofrece apoyo académico en grupos reducidos para familias en Madrid.",
+}
+
 const supportAreas = [
-  "Homework support",
-  "English and literacy",
-  "Maths confidence",
-  "Study skills",
+  "Apoyo con deberes",
+  "Inglés y lectoescritura",
+  "Confianza en matemáticas",
+  "Hábitos de estudio",
 ]
 
 const parentBenefits = [
-  "Small-group academic sessions",
-  "British and international curriculum support",
-  "A calm, structured after-school routine",
-  "Homework, English, maths and study skills",
-  "Simple parent communication",
-  "Located around Conde Orgaz / Calle Algabeño",
+  "Sesiones académicas en grupos reducidos",
+  "Apoyo para currículo británico e internacional",
+  "Una rutina extraescolar tranquila y estructurada",
+  "Deberes, inglés, matemáticas y técnicas de estudio",
+  "Comunicación sencilla con las familias",
+  "Zona Conde Orgaz / Calle Algabeño",
 ]
 
-export default function HomePage() {
+export default function SpanishHomePage() {
   return (
     <main className="min-h-screen">
-      <PublicHeader locale="en" />
+      <PublicHeader locale="es" />
 
       <section className="brand-shell flex flex-col gap-16 py-10 md:py-16">
         <div className="brand-hero grid gap-10 p-6 md:p-10 lg:grid-cols-[1fr_420px] lg:items-center">
           <div className="space-y-8">
-            <div className="brand-pill">Launching soon in Conde Orgaz</div>
+            <div className="brand-pill">Próxima apertura en Conde Orgaz</div>
 
             <div className="space-y-5">
               <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-                A calmer after-school routine for international families in
-                Madrid.
+                Una rutina extraescolar más tranquila para familias
+                internacionales en Madrid.
               </h1>
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
-                Small-group British and international curriculum support for
-                children aged approximately 4-12, focused on homework, English,
-                maths, study skills and academic confidence.
+                Apoyo académico en grupos reducidos para niños de
+                aproximadamente 4 a 12 años, con foco en deberes, inglés,
+                matemáticas, hábitos de estudio y confianza académica.
               </p>
 
               <p className="max-w-2xl text-base brand-muted md:text-lg">
-                We are currently shaping our first timetable and inviting local
-                parents to tell us which days, times and types of support would
-                work best.
+                Estamos preparando nuestro primer horario e invitamos a familias
+                locales a decirnos qué días, horas y tipos de apoyo les
+                resultarían más útiles.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <a href="#timetable-form" className="brand-button">
-                Help shape the timetable
+                Ayúdanos a organizar los horarios
               </a>
 
               <a href="#services" className="brand-button-secondary">
-                See what we offer
+                Ver qué ofrecemos
               </a>
             </div>
 
@@ -72,13 +78,13 @@ export default function HomePage() {
             <CardContent className="space-y-5 p-6">
               <div className="space-y-2">
                 <h2 className="text-2xl font-semibold">
-                  Designed for busy families
+                  Diseñado para familias ocupadas
                 </h2>
 
                 <p className="brand-muted">
-                  The Afternoon Academy helps families turn after-school
-                  academic time into something calmer, clearer and more
-                  structured.
+                  The Afternoon Academy ayuda a convertir el tiempo académico
+                  después del colegio en una rutina más tranquila, clara y
+                  estructurada.
                 </p>
               </div>
 
@@ -97,15 +103,15 @@ export default function HomePage() {
         <section className="grid gap-6 md:grid-cols-3">
           <Card className="brand-card md:col-span-1">
             <CardContent className="space-y-3 p-6">
-              <p className="brand-kicker">Why we exist</p>
+              <p className="brand-kicker">Por qué existimos</p>
 
               <h2 className="text-2xl font-semibold">
-                Less homework stress. More structure.
+                Menos estrés con los deberes. Más estructura.
               </h2>
 
               <p className="brand-muted">
-                After a long school day, homework can easily become rushed,
-                stressful or inconsistent.
+                Después de un largo día escolar, los deberes pueden acabar
+                siendo apresurados, estresantes o poco constantes.
               </p>
             </CardContent>
           </Card>
@@ -113,15 +119,16 @@ export default function HomePage() {
           <Card className="brand-card md:col-span-2">
             <CardContent className="space-y-4 p-6">
               <p className="brand-muted">
-                The Afternoon Academy is being created to give children a
-                focused place to complete homework, ask questions, practise core
-                skills and build better learning habits before they get home.
+                The Afternoon Academy nace para ofrecer a los niños un espacio
+                centrado donde completar deberes, hacer preguntas, practicar
+                habilidades clave y desarrollar mejores hábitos de aprendizaje
+                antes de llegar a casa.
               </p>
 
               <p className="brand-muted">
-                The aim is not just childcare, and not just private tutoring. It
-                is structured academic support for families who want a more
-                reliable after-school learning routine.
+                No es solo cuidado infantil ni solo clases particulares. Es
+                apoyo académico estructurado para familias que quieren una
+                rutina extraescolar más fiable.
               </p>
             </CardContent>
           </Card>
@@ -129,49 +136,49 @@ export default function HomePage() {
 
         <section id="services" className="scroll-mt-10 space-y-6">
           <div className="max-w-3xl space-y-3">
-            <p className="brand-kicker">What we offer</p>
+            <p className="brand-kicker">Qué ofrecemos</p>
 
             <h2 className="text-3xl font-bold tracking-tight">
-              Academic support after school
+              Apoyo académico después del colegio
             </h2>
 
             <p className="brand-muted">
-              Our first timetable will be shaped by parent demand, but the core
-              support areas are expected to include:
+              El primer horario se organizará según la demanda de las familias,
+              pero las áreas principales serán:
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: "Homework support",
+                title: "Apoyo con deberes",
                 description:
-                  "A structured setting where children can complete school homework with guidance when needed.",
+                  "Un entorno estructurado donde los niños pueden completar sus deberes con orientación cuando la necesiten.",
               },
               {
-                title: "English and literacy",
+                title: "Inglés y lectoescritura",
                 description:
-                  "Reading, writing, comprehension, vocabulary, spelling and confidence with written English.",
+                  "Lectura, escritura, comprensión, vocabulario, ortografía y confianza con el inglés escrito.",
               },
               {
-                title: "Maths support",
+                title: "Matemáticas",
                 description:
-                  "Help with key concepts, practice, problem-solving and building confidence.",
+                  "Ayuda con conceptos clave, práctica, resolución de problemas y confianza.",
               },
               {
-                title: "Study skills",
+                title: "Técnicas de estudio",
                 description:
-                  "Organisation, focus, planning, revision habits and independent learning routines.",
+                  "Organización, concentración, planificación, hábitos de repaso y autonomía.",
               },
               {
-                title: "Small-group sessions",
+                title: "Grupos reducidos",
                 description:
-                  "Supportive academic groups designed to offer attention and structure without the cost of constant one-to-one tutoring.",
+                  "Sesiones de apoyo con estructura y atención, sin el coste continuo de clases individuales.",
               },
               {
-                title: "Optional focused support",
+                title: "Apoyo específico opcional",
                 description:
-                  "Private or more targeted sessions may be added later depending on parent demand.",
+                  "Más adelante podremos añadir clases privadas o sesiones más enfocadas según la demanda.",
               },
             ].map((service) => (
               <Card key={service.title} className="brand-card">
@@ -191,21 +198,22 @@ export default function HomePage() {
           <Card className="brand-card">
             <CardContent className="space-y-5 p-6">
               <div className="space-y-2">
-                <p className="brand-kicker">Proposed timetable</p>
+                <p className="brand-kicker">Horario propuesto</p>
 
                 <h2 className="text-3xl font-bold tracking-tight">
-                  Session times
+                  Horarios de sesión
                 </h2>
 
                 <p className="brand-muted">
-                  We are currently planning two after-school session times:
+                  Actualmente estamos considerando dos horarios después del
+                  colegio:
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  { label: "Early session", time: "17:00 - 17:50" },
-                  { label: "Later session", time: "18:00 - 18:50" },
+                  { label: "Primera sesión", time: "17:00 - 17:50" },
+                  { label: "Segunda sesión", time: "18:00 - 18:50" },
                 ].map((session) => (
                   <div
                     key={session.label}
@@ -222,19 +230,19 @@ export default function HomePage() {
           <Card className="brand-card">
             <CardContent className="space-y-5 p-6">
               <div className="space-y-2">
-                <p className="brand-kicker">Launch days</p>
+                <p className="brand-kicker">Días de apertura</p>
 
                 <h3 className="text-2xl font-semibold">
-                  Initial days under consideration
+                  Días iniciales en estudio
                 </h3>
 
                 <p className="brand-muted">
-                  We are currently considering sessions on:
+                  Actualmente estamos valorando sesiones los siguientes días:
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                {["Monday", "Tuesday", "Thursday", "Friday"].map((day) => (
+                {["Lunes", "Martes", "Jueves", "Viernes"].map((day) => (
                   <div
                     key={day}
                     className="rounded-2xl border bg-white/60 px-4 py-3 text-sm font-medium"
@@ -245,8 +253,8 @@ export default function HomePage() {
               </div>
 
               <p className="text-sm brand-muted">
-                Parent responses will help us understand which days are most in
-                demand before launch.
+                Las respuestas de las familias nos ayudarán a entender qué días
+                tienen más demanda antes de abrir.
               </p>
             </CardContent>
           </Card>
@@ -256,32 +264,54 @@ export default function HomePage() {
           <Card className="brand-form-panel">
             <CardContent className="grid gap-8 p-6 md:p-8 lg:grid-cols-[360px_1fr]">
               <div className="space-y-4">
-                <div className="brand-pill-warm">No obligation</div>
+                <div className="brand-pill-warm">Sin compromiso</div>
 
                 <div className="space-y-3">
                   <h2 className="text-3xl font-bold tracking-tight">
-                    Help us shape the first timetable
+                    Ayúdanos a organizar el primer horario
                   </h2>
 
                   <p className="brand-muted">
-                    Tell us your child&apos;s age, the type of support you may
-                    need, and which days and times would work best.
+                    Indícanos la edad de tu hijo/a, el tipo de apoyo que podría
+                    necesitar y qué días y horarios os vendrían mejor.
                   </p>
 
                   <p className="text-sm brand-muted">
-                    Your answers will help us build a timetable around real
-                    parent demand before launch.
+                    Tus respuestas nos ayudarán a crear un horario basado en la
+                    demanda real de las familias antes de abrir.
                   </p>
                 </div>
               </div>
 
-              <LeadForm language="en" />
+              <LeadForm language="es" />
             </CardContent>
           </Card>
         </section>
+
+        <section className="rounded-3xl border bg-white/60 p-6 text-center">
+          <h2 className="text-2xl font-semibold">
+            ¿Tienes alguna pregunta antes?
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-2xl brand-muted">
+            Si quieres preguntar por edades, ubicación, currículo, hermanos,
+            clases privadas o cualquier otra cuestión, puedes escribirnos antes
+            de completar el formulario de horarios.
+          </p>
+
+          <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+            <a href="/es/contact" className="brand-button-secondary">
+              Contactar
+            </a>
+
+            <a href="#timetable-form" className="brand-button">
+              Compartir preferencias de horario
+            </a>
+          </div>
+        </section>
       </section>
 
-      <PublicFooter locale="en" />
+      <PublicFooter locale="es" />
     </main>
   )
 }

@@ -21,6 +21,8 @@ export async function submitLead(
   _previousState: SubmitLeadState,
   formData: FormData
 ): Promise<SubmitLeadState> {
+const language: "en" | "es" =
+  formData.get("language") === "es" ? "es" : "en"
   const rawData = {
     parentName: formData.get("parentName"),
     email: formData.get("email"),
@@ -48,7 +50,10 @@ export async function submitLead(
 
   if (!parsed.success) {
     const firstError =
-      parsed.error.issues[0]?.message || "Please check the form and try again."
+      parsed.error.issues[0]?.message ||
+      (language === "es"
+        ? "Revisa el formulario e inténtalo de nuevo."
+        : "Please check the form and try again.")
 
     return {
       success: false,
@@ -68,7 +73,7 @@ export async function submitLead(
       school_name: data.schoolName || null,
       interest_level: data.interestLevel,
       consent_contact: data.consentContact,
-      source: "landing_page",
+      source: language === "es" ? "landing_page_es" : "landing_page_en",
       status:
         data.interestLevel === "priority_launch" ||
         data.interestLevel === "very_interested"
@@ -83,7 +88,10 @@ export async function submitLead(
 
     return {
       success: false,
-      message: "Something went wrong while saving your details. Please try again.",
+      message:
+        language === "es"
+          ? "Ha ocurrido un error al guardar tus datos. Inténtalo de nuevo."
+          : "Something went wrong while saving your details. Please try again.",
     }
   }
 
@@ -105,7 +113,10 @@ export async function submitLead(
 
     return {
       success: false,
-      message: "Something went wrong while saving the child details. Please try again.",
+      message:
+        language === "es"
+          ? "Ha ocurrido un error al guardar los datos del niño/a. Inténtalo de nuevo."
+          : "Something went wrong while saving the child details. Please try again.",
     }
   }
 
@@ -124,7 +135,9 @@ export async function submitLead(
     return {
       success: false,
       message:
-        "Something went wrong while saving timetable preferences. Please try again.",
+        language === "es"
+          ? "Ha ocurrido un error al guardar las preferencias de horario. Inténtalo de nuevo."
+          : "Something went wrong while saving timetable preferences. Please try again.",
     }
   }
 
@@ -146,13 +159,17 @@ export async function submitLead(
     interestLevel: data.interestLevel,
 
     notes: data.notes,
+    language,
   }
 
   if (resend) {
     const parentEmail = await resend.emails.send({
       from: resendFromEmail,
       to: data.email,
-      subject: "We received your Afternoon Academy timetable preferences",
+      subject:
+        language === "es"
+          ? "Hemos recibido tus preferencias de horario"
+          : "We received your Afternoon Academy timetable preferences",
       html: parentConfirmationEmailHtml(emailData),
       text: parentConfirmationEmailText(emailData),
     })
@@ -179,5 +196,5 @@ export async function submitLead(
     console.warn("Resend is not configured. Skipping lead emails.")
   }
 
-  redirect("/thank-you")
+  redirect(language === "es" ? "/es/gracias" : "/thank-you")
 }

@@ -15,7 +15,7 @@ const parentBenefits = [
   "A calm, structured after-school routine",
   "Homework, English, maths and study skills",
   "Simple parent communication",
-  "Located around Conde Orgaz / Calle Algabeño",
+  "Located around Arturo Soria / Calle Asura",
 ]
 
 export default function HomePage() {
@@ -26,7 +26,7 @@ export default function HomePage() {
       <section className="brand-shell flex flex-col gap-16 py-10 md:py-16">
         <div className="brand-hero grid gap-10 p-6 md:p-10 lg:grid-cols-[1fr_420px] lg:items-center">
           <div className="space-y-8">
-            <div className="brand-pill">Launching soon in Conde Orgaz</div>
+            <div className="brand-pill">Launching soon in Arturo Soria</div>
 
             <div className="space-y-5">
               <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">

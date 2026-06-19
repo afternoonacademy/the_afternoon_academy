@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    "British curriculum after-school support for children in Madrid. Help us shape our launch timetable in Conde Orgaz.",
+    "British curriculum after-school support for children in Madrid. Help us shape our launch timetable in Arturo Soria.",
 
   icons: {
     icon: [
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "The Afternoon Academy",
     description:
-      "Structured after-school learning for children in Madrid, launching soon in Conde Orgaz.",
+      "Structured after-school learning for children in Madrid, launching soon in Arturo Soria.",
     url: siteUrl,
     type: "website",
     locale: "en_GB",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Afternoon Academy",
     description:
-      "Structured after-school learning for children in Madrid, launching soon in Conde Orgaz.",
+      "Structured after-school learning for children in Madrid, launching soon in Arturo Soria.",
     images: ["/og-image.png"],
   },
 }

@@ -66,7 +66,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 
         <p>
           Gracias por tu interés en <strong>The Afternoon Academy</strong>.
-          Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Conde Orgaz.
+          Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Arturo Soria.
         </p>
 
         <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
@@ -101,7 +101,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 
       <p>
         Thank you for registering your interest in <strong>The Afternoon Academy</strong>.
-        We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Conde Orgaz.
+        We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Arturo Soria.
       </p>
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
@@ -135,7 +135,7 @@ Hola ${data.parentName},
 
 Gracias por tu interés en The Afternoon Academy.
 
-Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Conde Orgaz.
+Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Arturo Soria.
 
 Preferencias enviadas:
 
@@ -159,7 +159,7 @@ Hi ${data.parentName},
 
 Thank you for registering your interest in The Afternoon Academy.
 
-We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Conde Orgaz.
+We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Arturo Soria.
 
 Your submitted preferences:
 

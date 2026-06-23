@@ -1,4 +1,13 @@
-﻿import { LeadForm } from "@/components/forms/lead-form"
+﻿import {
+  BookOpen,
+  Languages,
+  Calculator,
+  Brain,
+  Users,
+  Target,
+} from "lucide-react"
+
+import { LeadForm } from "@/components/forms/lead-form"
 import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -141,49 +150,65 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 title: "Homework support",
                 description:
                   "A structured setting where children can complete school homework with guidance when needed.",
+                icon: BookOpen,
               },
               {
                 title: "English and literacy",
                 description:
                   "Reading, writing, comprehension, vocabulary, spelling and confidence with written English.",
+                icon: Languages,
               },
               {
                 title: "Maths support",
                 description:
                   "Help with key concepts, practice, problem-solving and building confidence.",
+                icon: Calculator,
               },
               {
                 title: "Study skills",
                 description:
                   "Organisation, focus, planning, revision habits and independent learning routines.",
+                icon: Brain,
               },
               {
                 title: "Small-group sessions",
                 description:
                   "Supportive academic groups designed to offer attention and structure without the cost of constant one-to-one tutoring.",
+                icon: Users,
               },
               {
                 title: "Optional focused support",
                 description:
                   "Private or more targeted sessions may be added later depending on parent demand.",
+                icon: Target,
               },
-            ].map((service) => (
-              <Card key={service.title} className="brand-card">
-                <CardContent className="space-y-2 p-6">
-                  <h3 className="font-semibold">{service.title}</h3>
+            ].map((service) => {
+              const Icon = service.icon
 
-                  <p className="text-sm brand-muted">
-                    {service.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+              return (
+                <Card key={service.title} className="brand-card">
+                  <CardContent className="space-y-4 p-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border bg-[rgba(255,255,255,0.75)] shadow-sm">
+                      <Icon className="h-5 w-5" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">{service.title}</h3>
+
+                      <p className="text-sm brand-muted">
+                        {service.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </section>
 
@@ -248,6 +273,62 @@ export default function HomePage() {
                 Parent responses will help us understand which days are most in
                 demand before launch.
               </p>
+            </CardContent>
+          </Card>
+        </section>
+
+                <section className="scroll-mt-10">
+          <Card className="brand-card">
+            <CardContent className="grid gap-8 p-6 md:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div className="space-y-3">
+                <p className="brand-kicker">Founding launch pricing</p>
+
+                <h2 className="text-3xl font-bold tracking-tight">
+                  Clear pricing from the start
+                </h2>
+
+                <p className="brand-muted">
+                  Our planned launch price is{" "}
+                  <strong>€25 per child per session</strong>.
+                </p>
+
+                <p className="text-sm brand-muted">
+                  There is no payment or commitment when completing this form.
+                  Your response helps us understand which days, times and age
+                  groups have the strongest demand before we confirm the first
+                  timetable.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                {[
+                  {
+                    label: "1 session per week",
+                    price: "€100/month",
+                  },
+                  {
+                    label: "2 sessions per week",
+                    price: "€200/month",
+                  },
+                  {
+                    label: "4 sessions per week",
+                    price: "€400/month",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between gap-4 rounded-2xl border bg-white/60 px-4 py-4"
+                  >
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-xl font-semibold">{item.price}</p>
+                  </div>
+                ))}
+
+                <p className="pt-2 text-xs brand-muted">
+                  Monthly examples are based on four weeks. Final availability
+                  will depend on the confirmed timetable and available places.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </section>

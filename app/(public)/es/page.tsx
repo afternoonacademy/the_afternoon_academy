@@ -1,3 +1,12 @@
+import {
+  BookOpen,
+  Languages,
+  Calculator,
+  Brain,
+  Users,
+  Target,
+} from "lucide-react"
+
 import { LeadForm } from "@/components/forms/lead-form"
 import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Card, CardContent } from "@/components/ui/card"
@@ -42,13 +51,13 @@ export default function SpanishHomePage() {
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
                 Apoyo académico en grupos reducidos para niños de
-                aproximadamente 4 a 12 años, con foco en deberes, inglés,
+                aproximadamente 4 a 12 años, centrado en deberes, inglés,
                 matemáticas, hábitos de estudio y confianza académica.
               </p>
 
               <p className="max-w-2xl text-base brand-muted md:text-lg">
                 Estamos preparando nuestro primer horario e invitamos a familias
-                locales a decirnos qué días, horas y tipos de apoyo les
+                locales a decirnos qué días, horarios y tipos de apoyo les
                 resultarían más útiles.
               </p>
             </div>
@@ -148,49 +157,65 @@ export default function SpanishHomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 title: "Apoyo con deberes",
                 description:
                   "Un entorno estructurado donde los niños pueden completar sus deberes con orientación cuando la necesiten.",
+                icon: BookOpen,
               },
               {
                 title: "Inglés y lectoescritura",
                 description:
                   "Lectura, escritura, comprensión, vocabulario, ortografía y confianza con el inglés escrito.",
+                icon: Languages,
               },
               {
                 title: "Matemáticas",
                 description:
                   "Ayuda con conceptos clave, práctica, resolución de problemas y confianza.",
+                icon: Calculator,
               },
               {
                 title: "Técnicas de estudio",
                 description:
                   "Organización, concentración, planificación, hábitos de repaso y autonomía.",
+                icon: Brain,
               },
               {
                 title: "Grupos reducidos",
                 description:
                   "Sesiones de apoyo con estructura y atención, sin el coste continuo de clases individuales.",
+                icon: Users,
               },
               {
                 title: "Apoyo específico opcional",
                 description:
                   "Más adelante podremos añadir clases privadas o sesiones más enfocadas según la demanda.",
+                icon: Target,
               },
-            ].map((service) => (
-              <Card key={service.title} className="brand-card">
-                <CardContent className="space-y-2 p-6">
-                  <h3 className="font-semibold">{service.title}</h3>
+            ].map((service) => {
+              const Icon = service.icon
 
-                  <p className="text-sm brand-muted">
-                    {service.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+              return (
+                <Card key={service.title} className="brand-card">
+                  <CardContent className="space-y-4 p-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border bg-[rgba(255,255,255,0.75)] shadow-sm">
+                      <Icon className="h-5 w-5" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">{service.title}</h3>
+
+                      <p className="text-sm brand-muted">
+                        {service.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </section>
 
@@ -256,6 +281,63 @@ export default function SpanishHomePage() {
                 Las respuestas de las familias nos ayudarán a entender qué días
                 tienen más demanda antes de abrir.
               </p>
+            </CardContent>
+          </Card>
+        </section>
+
+                <section className="scroll-mt-10">
+          <Card className="brand-card">
+            <CardContent className="grid gap-8 p-6 md:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div className="space-y-3">
+                <p className="brand-kicker">Precio de lanzamiento</p>
+
+                <h2 className="text-3xl font-bold tracking-tight">
+                  Precio claro desde el principio
+                </h2>
+
+                <p className="brand-muted">
+                  El precio previsto de lanzamiento es de{" "}
+                  <strong>25 € por niño/a por sesión</strong>.
+                </p>
+
+                <p className="text-sm brand-muted">
+                  No hay pago ni compromiso al completar este formulario. Tus
+                  respuestas nos ayudan a entender qué días, horarios y grupos
+                  de edad tienen más demanda antes de confirmar el primer
+                  horario.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                {[
+                  {
+                    label: "1 sesión por semana",
+                    price: "100 €/mes",
+                  },
+                  {
+                    label: "2 sesiones por semana",
+                    price: "200 €/mes",
+                  },
+                  {
+                    label: "4 sesiones por semana",
+                    price: "400 €/mes",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between gap-4 rounded-2xl border bg-white/60 px-4 py-4"
+                  >
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-xl font-semibold">{item.price}</p>
+                  </div>
+                ))}
+
+                <p className="pt-2 text-xs brand-muted">
+                  Los importes mensuales son ejemplos orientativos basados en
+                  cuatro semanas. La disponibilidad final dependerá del horario
+                  confirmado y de las plazas disponibles.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </section>

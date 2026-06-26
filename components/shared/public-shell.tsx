@@ -10,32 +10,45 @@ const copy = {
     homeHref: "/",
     brand: "The Afternoon Academy",
     tagline: "British curriculum support for children in Madrid.",
+    home: "Home",
     contact: "Contact",
+    location: "Location",
     timetable: "Timetable form",
     cta: "Help shape the timetable",
     staffLogin: "Staff login",
     switchLabel: "Español",
-    switchHref: "/es",
+    defaultSwitchHref: "/es",
     contactHref: "/contact",
+    locationHref: "/location",
     timetableHref: "/#timetable-form",
   },
   es: {
     homeHref: "/es",
     brand: "The Afternoon Academy",
     tagline: "Apoyo académico en inglés para familias en Madrid.",
+    home: "Inicio",
     contact: "Contacto",
+    location: "Ubicación",
     timetable: "Formulario de horarios",
-    cta: "Ayúdanos a organizar los horarios",
+    cta: "Organizar horarios",
     staffLogin: "Acceso equipo",
     switchLabel: "English",
-    switchHref: "/",
+    defaultSwitchHref: "/",
     contactHref: "/es/contact",
+    locationHref: "/es/ubicacion",
     timetableHref: "/es#timetable-form",
   },
 }
 
-export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
+export function PublicHeader({
+  locale = "en",
+  switchHref,
+}: {
+  locale?: Locale
+  switchHref?: string
+}) {
   const t = copy[locale]
+  const languageHref = switchHref ?? t.defaultSwitchHref
 
   return (
     <header className="border-b bg-background/95">
@@ -53,6 +66,13 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
 
         <nav className="flex w-full flex-wrap items-center justify-center gap-3 md:w-auto md:justify-end">
           <Link
+            href={t.homeHref}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            {t.home}
+          </Link>
+
+          <Link
             href={t.contactHref}
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
@@ -60,7 +80,14 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
           </Link>
 
           <Link
-            href={t.switchHref}
+            href={t.locationHref}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            {t.location}
+          </Link>
+
+          <Link
+            href={languageHref}
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             {t.switchLabel}
@@ -75,8 +102,15 @@ export function PublicHeader({ locale = "en" }: { locale?: Locale }) {
   )
 }
 
-export function PublicFooter({ locale = "en" }: { locale?: Locale }) {
+export function PublicFooter({
+  locale = "en",
+  switchHref,
+}: {
+  locale?: Locale
+  switchHref?: string
+}) {
   const t = copy[locale]
+  const languageHref = switchHref ?? t.defaultSwitchHref
 
   return (
     <footer className="border-t bg-background">
@@ -96,12 +130,24 @@ export function PublicFooter({ locale = "en" }: { locale?: Locale }) {
         </div>
 
         <nav className="flex flex-wrap gap-4">
+          <Link href={t.homeHref} className="hover:text-foreground">
+            {t.home}
+          </Link>
+
           <Link href={t.contactHref} className="hover:text-foreground">
             {t.contact}
           </Link>
 
+          <Link href={t.locationHref} className="hover:text-foreground">
+            {t.location}
+          </Link>
+
           <Link href={t.timetableHref} className="hover:text-foreground">
             {t.timetable}
+          </Link>
+
+          <Link href={languageHref} className="hover:text-foreground">
+            {t.switchLabel}
           </Link>
 
           <Link href="/sign-in" className="hover:text-foreground">

@@ -13,7 +13,7 @@ export const metadata = {
 export default function SpanishContactPage() {
   return (
     <main className="min-h-screen bg-background">
-      <PublicHeader locale="es" />
+      <PublicHeader locale="es" switchHref="/contact" />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 md:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <div className="space-y-6">
@@ -52,7 +52,7 @@ export default function SpanishContactPage() {
         <ContactForm language="es" />
       </section>
 
-      <PublicFooter locale="es" />
+      <PublicFooter locale="es" switchHref="/contact" />
     </main>
   )
 }

@@ -5,6 +5,7 @@ import {
   Brain,
   Users,
   Target,
+  MapPin,
 } from "lucide-react"
 
 import { LeadForm } from "@/components/forms/lead-form"
@@ -36,7 +37,7 @@ const parentBenefits = [
 export default function SpanishHomePage() {
   return (
     <main className="min-h-screen">
-      <PublicHeader locale="es" />
+      <PublicHeader locale="es" switchHref="/" />
 
       <section className="brand-shell flex flex-col gap-16 py-10 md:py-16">
         <div className="brand-hero grid gap-10 p-6 md:p-10 lg:grid-cols-[1fr_420px] lg:items-center">
@@ -109,6 +110,39 @@ export default function SpanishHomePage() {
           </Card>
         </div>
 
+        <section className="scroll-mt-10">
+          <Card className="brand-card">
+            <CardContent className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-white/70">
+                  <MapPin className="h-5 w-5" />
+                </div>
+
+                <div className="space-y-2">
+                  <p className="brand-kicker">Ubicación confirmada</p>
+
+                  <h2 className="text-2xl font-semibold">
+                    La academia estará en Calle Asura 40
+                  </h2>
+
+                  <p className="max-w-2xl text-sm brand-muted">
+                    The Afternoon Academy abrirá en Calle Asura 40, en la zona
+                    de Arturo Soria, Madrid. Puedes ver la fachada, el mapa y el
+                    concepto del aula en nuestra página de ubicación.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href="/es/ubicacion"
+                className="brand-button-secondary shrink-0"
+              >
+                Ver ubicación
+              </a>
+            </CardContent>
+          </Card>
+        </section>
+
         <section className="grid gap-6 md:grid-cols-3">
           <Card className="brand-card md:col-span-1">
             <CardContent className="space-y-3 p-6">
@@ -157,7 +191,7 @@ export default function SpanishHomePage() {
             </p>
           </div>
 
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 title: "Apoyo con deberes",
@@ -285,7 +319,7 @@ export default function SpanishHomePage() {
           </Card>
         </section>
 
-                <section className="scroll-mt-10">
+        <section className="scroll-mt-10">
           <Card className="brand-card">
             <CardContent className="grid gap-8 p-6 md:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <div className="space-y-3">
@@ -393,7 +427,7 @@ export default function SpanishHomePage() {
         </section>
       </section>
 
-      <PublicFooter locale="es" />
+      <PublicFooter locale="es" switchHref="/" />
     </main>
   )
 }

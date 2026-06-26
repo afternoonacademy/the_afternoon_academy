@@ -11,7 +11,7 @@ export const metadata = {
 export default function SpanishContactThanksPage() {
   return (
     <main className="min-h-screen bg-background">
-      <PublicHeader locale="es" />
+      <PublicHeader locale="es" switchHref="/contact/thanks" />
 
       <section className="mx-auto flex max-w-3xl px-6 py-16 md:py-24">
         <Card className="brand-card w-full">
@@ -39,7 +39,7 @@ export default function SpanishContactThanksPage() {
         </Card>
       </section>
 
-      <PublicFooter locale="es" />
+      <PublicFooter locale="es" switchHref="/contact/thanks" />
     </main>
   )
 }

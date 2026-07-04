@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useRef } from "react"
 
 import {
   submitContact,
@@ -71,7 +71,16 @@ export function ContactForm({
     initialState
   )
 
+  const startedAtRef = useRef<HTMLInputElement>(null)
   const t = copy[language]
+
+  function markFormStarted() {
+    if (!startedAtRef.current) return
+
+    if (!startedAtRef.current.value) {
+      startedAtRef.current.value = Date.now().toString()
+    }
+  }
 
   return (
     <Card className="w-full">
@@ -81,8 +90,25 @@ export function ContactForm({
       </CardHeader>
 
       <CardContent>
-        <form action={formAction} className="space-y-6">
+        <form
+          action={formAction}
+          className="space-y-6"
+          onFocusCapture={markFormStarted}
+          onPointerDownCapture={markFormStarted}
+        >
           <input type="hidden" name="language" value={language} />
+          <input ref={startedAtRef} type="hidden" name="startedAt" />
+
+          <div aria-hidden="true" className="sr-only">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
 
           {state.message ? (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">

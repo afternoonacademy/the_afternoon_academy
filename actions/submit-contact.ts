@@ -17,12 +17,71 @@ export type SubmitContactState = {
   message: string
 }
 
+function getGenericErrorMessage(language: "en" | "es") {
+  return language === "es"
+    ? "Ha ocurrido un error al enviar tu mensaje. Inténtalo de nuevo."
+    : "Something went wrong while sending your message. Please try again."
+}
+
+function looksRandomSingleToken(value: string) {
+  const trimmed = value.trim()
+
+  if (trimmed.length < 14) return false
+  if (/\s/.test(trimmed)) return false
+  if (!/^[A-Za-z]+$/.test(trimmed)) return false
+
+  const hasUppercase = /[A-Z]/.test(trimmed)
+  const hasLowercase = /[a-z]/.test(trimmed)
+
+  return hasUppercase && hasLowercase
+}
+
+function looksLikeBotSubmission({
+  name,
+  message,
+}: {
+  name: string
+  message: string
+}) {
+  const cleanName = name.trim()
+  const cleanMessage = message.trim()
+
+  const nameLooksRandom = looksRandomSingleToken(cleanName)
+  const messageLooksRandom = looksRandomSingleToken(cleanMessage)
+
+  const messageHasNoSpaces = !/\s/.test(cleanMessage)
+  const messageIsOnlyLetters = /^[A-Za-z]+$/.test(cleanMessage)
+  const messageLooksLikeCode =
+    cleanMessage.length >= 14 && messageHasNoSpaces && messageIsOnlyLetters
+
+  return nameLooksRandom || messageLooksRandom || messageLooksLikeCode
+}
+
 export async function submitContact(
   _previousState: SubmitContactState,
   formData: FormData
 ): Promise<SubmitContactState> {
-const language: "en" | "es" =
-  formData.get("language") === "es" ? "es" : "en"
+  const language: "en" | "es" =
+    formData.get("language") === "es" ? "es" : "en"
+
+  const website = String(formData.get("website") || "")
+  const startedAt = Number(formData.get("startedAt") || 0)
+  const submittedAt = Date.now()
+
+  if (website.trim().length > 0) {
+    return {
+      success: false,
+      message: getGenericErrorMessage(language),
+    }
+  }
+
+  if (!startedAt || submittedAt - startedAt < 4000) {
+    return {
+      success: false,
+      message: getGenericErrorMessage(language),
+    }
+  }
+
   const rawData = {
     name: formData.get("name"),
     email: formData.get("email"),
@@ -45,6 +104,18 @@ const language: "en" | "es" =
 
   const data = parsed.data
 
+  if (
+    looksLikeBotSubmission({
+      name: data.name,
+      message: data.message,
+    })
+  ) {
+    return {
+      success: false,
+      message: getGenericErrorMessage(language),
+    }
+  }
+
   const { error } = await supabaseAdmin.from("contact_messages").insert({
     name: data.name,
     email: data.email,
@@ -60,10 +131,7 @@ const language: "en" | "es" =
 
     return {
       success: false,
-      message:
-        language === "es"
-          ? "Ha ocurrido un error al enviar tu mensaje. Inténtalo de nuevo."
-          : "Something went wrong while sending your message. Please try again.",
+      message: getGenericErrorMessage(language),
     }
   }
 

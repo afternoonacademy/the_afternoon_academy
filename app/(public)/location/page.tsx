@@ -97,7 +97,7 @@ export default function LocationPage() {
               </h2>
 
               <p className="mt-2 text-sm brand-muted">
-                First floor, Classroom 4. We will share practical arrival and
+                First floor, Classroom 3. We will share practical arrival and
                 collection details with every family before their first session.
               </p>
 

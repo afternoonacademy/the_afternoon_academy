@@ -98,7 +98,7 @@ export default function SpanishLocationPage() {
               </h2>
 
               <p className="mt-2 text-sm brand-muted">
-                Primera planta, Aula 4. Compartiremos con cada familia los
+                Primera planta, Aula 3. Compartiremos con cada familia los
                 detalles prácticos de llegada y recogida antes de la primera sesión.
               </p>
 

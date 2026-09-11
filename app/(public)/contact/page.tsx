@@ -29,12 +29,12 @@ export default function ContactPage() {
             <p className="text-lg text-muted-foreground">
               Send us a message if you would like to ask about age groups,
               curriculum support, location, private lessons, siblings or
-              anything else before completing the timetable form.
+              anything else before completing a place enquiry.
             </p>
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-5">
-            <h2 className="font-semibold">Looking for the timetable form?</h2>
+            <h2 className="font-semibold">Looking to apply for a place?</h2>
 
             <p className="mt-2 text-sm text-muted-foreground">
               If you already know you are interested, the most useful thing is
@@ -43,7 +43,7 @@ export default function ContactPage() {
 
             <Button asChild className="mt-4">
               <Link href="/#timetable-form">
-                Share preferred days and times
+                Apply for a place
               </Link>
             </Button>
           </div>

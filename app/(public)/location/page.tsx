@@ -102,7 +102,7 @@ export default function LocationPage() {
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild>
                   <Link href="/#timetable-form">
-                    Help shape the timetable
+                    Apply for a place
                   </Link>
                 </Button>
 
@@ -282,9 +282,7 @@ export default function LocationPage() {
         <section className="rounded-3xl border bg-white/60 p-6 text-center">
           <Sparkles className="mx-auto h-6 w-6" />
 
-          <h2 className="mt-3 text-2xl font-semibold">
-            Want to help shape the first timetable?
-          </h2>
+          <h2 className="mt-3 text-2xl font-semibold">Want to apply for a launch place?</h2>
 
           <p className="mx-auto mt-2 max-w-2xl brand-muted">
             Tell us which days, times and types of support would work best for
@@ -293,7 +291,7 @@ export default function LocationPage() {
 
           <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/#timetable-form" className="brand-button">
-              Share timetable preferences
+              Apply for a place
             </Link>
 
             <Link href="/contact" className="brand-button-secondary">

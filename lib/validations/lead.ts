@@ -24,9 +24,10 @@ export const leadFormSchema = z.object({
 
   supportNeeds: z.array(z.string()).min(1, "Select at least one support need"),
 
-  preferredDays: z.array(z.string()).min(1, "Select at least one preferred day"),
+  preferredDays: z.array(z.enum(["monday", "tuesday", "thursday", "friday"]))
+    .min(1, "Select at least one preferred day"),
   preferredTimes: z
-    .array(z.string())
+    .array(z.enum(["17:00-17:50", "18:00-18:50"]))
     .min(1, "Select at least one preferred time"),
 
   preferredFrequency: z.enum([

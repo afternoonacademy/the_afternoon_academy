@@ -25,9 +25,9 @@ const initialState: SubmitLeadState = {
 
 const copy = {
   en: {
-    cardTitle: "Help us shape the timetable",
+    cardTitle: "Apply for a launch place",
     cardDescription:
-      "Tell us your preferred days and times. There is no commitment at this stage.",
+      "Tell us about your child, the support you are looking for and the sessions that would suit your family. We will review your enquiry and contact you to confirm availability and next steps.",
 
     parentDetails: "Parent details",
     parentDescription:
@@ -55,10 +55,10 @@ const copy = {
     supportDescription: "Select everything that may be useful.",
 
     preferredDays: "Preferred days",
-    daysDescription: "Choose the days that could work for your family.",
+    daysDescription: "Choose the launch days that could work for your family.",
 
     preferredTimes: "Preferred times",
-    timesDescription: "Choose all times that may work.",
+    timesDescription: "Choose all session times that may work.",
 
     frequency: "How often might your child attend?",
     oneDay: "1 session per week",
@@ -70,7 +70,7 @@ const copy = {
     interestLevel: "Interest level",
     priorityLaunch: "I would like to join if the times work",
     veryInterested: "Very interested, but I need more information",
-    interestedTimetable: "Interested depending on timetable",
+    interestedTimetable: "Interested depending on availability",
     justCurious: "I am just exploring options",
 
     notes: "Anything else we should know?",
@@ -78,18 +78,18 @@ const copy = {
       "Optional - for example, siblings, ideal days, or specific support needed.",
 
     consent:
-      "I agree to be contacted about The Afternoon Academy launch, timetable and availability.",
+      "I agree to be contacted about The Afternoon Academy launch and availability.",
     privacy:
       "We will only use your details to contact you about The Afternoon Academy. We will not share your information with third parties.",
 
     submitting: "Submitting...",
-    submit: "Submit timetable preferences",
+    submit: "Submit place enquiry",
   },
 
   es: {
-    cardTitle: "Ayúdanos a organizar los horarios",
+    cardTitle: "Solicita una plaza para el lanzamiento",
     cardDescription:
-      "Indícanos tus días y horarios preferidos. No hay ningún compromiso en esta fase.",
+      "Cuéntanos sobre tu hijo/a, el apoyo que buscas y las sesiones que podrían encajar con tu familia. Revisaremos tu solicitud y te contactaremos para confirmar disponibilidad y próximos pasos.",
 
     parentDetails: "Datos del padre, madre o tutor/a",
     parentDescription:
@@ -117,10 +117,10 @@ const copy = {
     supportDescription: "Selecciona todo lo que podría ser útil.",
 
     preferredDays: "Días preferidos",
-    daysDescription: "Elige los días que podrían funcionar para tu familia.",
+    daysDescription: "Elige los días de lanzamiento que podrían funcionar para tu familia.",
 
     preferredTimes: "Horarios preferidos",
-    timesDescription: "Elige todos los horarios que podrían funcionar.",
+    timesDescription: "Elige todos los horarios de sesión que podrían funcionar.",
 
     frequency: "¿Con qué frecuencia podría asistir tu hijo/a?",
     oneDay: "1 sesión por semana",
@@ -132,7 +132,7 @@ const copy = {
     interestLevel: "Nivel de interés",
     priorityLaunch: "Me gustaría apuntarme si los horarios encajan",
     veryInterested: "Muy interesado/a, pero necesito más información",
-    interestedTimetable: "Interesado/a según el horario",
+    interestedTimetable: "Interesado/a según disponibilidad",
     justCurious: "Solo estoy explorando opciones",
 
     notes: "¿Hay algo más que debamos saber?",
@@ -140,12 +140,12 @@ const copy = {
       "Opcional - por ejemplo, hermanos, días ideales o apoyo específico necesario.",
 
     consent:
-      "Acepto que me contacten sobre la apertura, horarios y disponibilidad de The Afternoon Academy.",
+      "Acepto que me contacten sobre la apertura y disponibilidad de The Afternoon Academy.",
     privacy:
       "Solo usaremos tus datos para contactarte sobre The Afternoon Academy. No compartiremos tu información con terceros.",
 
     submitting: "Enviando...",
-    submit: "Enviar preferencias de horario",
+    submit: "Enviar solicitud de plaza",
   },
 }
 
@@ -195,16 +195,13 @@ const supportNeeds = [
 const days = [
   { value: "monday", en: "Monday", es: "Lunes" },
   { value: "tuesday", en: "Tuesday", es: "Martes" },
-  { value: "wednesday", en: "Wednesday", es: "Miércoles" },
   { value: "thursday", en: "Thursday", es: "Jueves" },
   { value: "friday", en: "Friday", es: "Viernes" },
 ]
 
 const times = [
-  { value: "16:30", label: "16:30-17:30" },
-  { value: "17:00", label: "17:00-18:00" },
-  { value: "17:30", label: "17:30-18:30" },
-  { value: "18:00", label: "18:00-19:00" },
+  { value: "17:00-17:50", label: "17:00–17:50" },
+  { value: "18:00-18:50", label: "18:00–18:50" },
 ]
 
 export function LeadForm({

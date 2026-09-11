@@ -136,8 +136,8 @@ const language: "en" | "es" =
       success: false,
       message:
         language === "es"
-          ? "Ha ocurrido un error al guardar las preferencias de horario. Inténtalo de nuevo."
-          : "Something went wrong while saving timetable preferences. Please try again.",
+          ? "Ha ocurrido un error al guardar tu solicitud de plaza. Inténtalo de nuevo."
+          : "Something went wrong while saving your place enquiry. Please try again.",
     }
   }
 
@@ -168,8 +168,8 @@ const language: "en" | "es" =
       to: data.email,
       subject:
         language === "es"
-          ? "Hemos recibido tus preferencias de horario"
-          : "We received your Afternoon Academy timetable preferences",
+          ? "Hemos recibido tu solicitud de plaza"
+          : "We received your Afternoon Academy place enquiry",
       html: parentConfirmationEmailHtml(emailData),
       text: parentConfirmationEmailText(emailData),
     })
@@ -183,7 +183,7 @@ const language: "en" | "es" =
         from: resendFromEmail,
         to: adminLeadEmail,
         replyTo: data.email,
-        subject: `New Afternoon Academy lead: ${data.parentName}`,
+        subject: `New Afternoon Academy place enquiry: ${data.parentName}`,
         html: adminLeadNotificationEmailHtml(emailData),
         text: adminLeadNotificationEmailText(emailData),
       })

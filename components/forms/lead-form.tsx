@@ -169,6 +169,11 @@ const supportNeeds = [
     en: "General academic support",
     es: "Apoyo académico general",
   },
+  {
+    value: "one_to_one",
+    en: "1-to-1 support (subject to availability)",
+    es: "Apoyo individual (según disponibilidad)",
+  },
 ]
 
 const days = [

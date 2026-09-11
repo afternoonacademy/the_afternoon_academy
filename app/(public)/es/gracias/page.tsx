@@ -26,8 +26,8 @@ export default function SpanishLeadThanksPage() {
             </h1>
 
             <p className="brand-muted">
-              Hemos recibido tu solicitud de plaza para las sesiones de
-              lanzamiento en Calle Asura 40, Arturo Soria.
+              Hemos recibido tu solicitud de plaza para The Afternoon Academy
+              en Calle Asura 40, Arturo Soria.
             </p>
 
             <p className="brand-muted">

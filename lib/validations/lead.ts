@@ -10,8 +10,8 @@ export const leadFormSchema = z.object({
   childAge: z.coerce
     .number()
     .int()
-    .min(3, "Child age must be at least 3")
-    .max(18, "Child age must be 18 or under"),
+    .min(4, "The Afternoon Academy currently welcomes children aged 4–12")
+    .max(12, "The Afternoon Academy currently welcomes children aged 4–12"),
 
   schoolYear: z.string().optional(),
 
@@ -48,7 +48,7 @@ export const leadFormSchema = z.object({
   notes: z.string().optional(),
 
   consentContact: z.literal(true, {
-    message: "You need to agree to be contacted about the launch",
+    message: "You need to agree to be contacted about your place enquiry",
   }),
 })
 

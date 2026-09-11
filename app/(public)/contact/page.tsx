@@ -23,12 +23,12 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              Have a question before registering interest?
+              Have a question before applying?
             </h1>
 
             <p className="text-lg text-muted-foreground">
               Send us a message if you would like to ask about age groups,
-              curriculum support, location, private lessons, siblings or
+              curriculum support, location, siblings or
               anything else before completing a place enquiry.
             </p>
           </div>
@@ -42,7 +42,7 @@ export default function ContactPage() {
             </p>
 
             <Button asChild className="mt-4">
-              <Link href="/#timetable-form">
+              <Link href="/#apply">
                 Apply for a place
               </Link>
             </Button>

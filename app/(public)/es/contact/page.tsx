@@ -23,12 +23,12 @@ export default function SpanishContactPage() {
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              ¿Tienes alguna pregunta antes de registrar tu interés?
+              ¿Tienes alguna pregunta antes de solicitar plaza?
             </h1>
 
             <p className="text-lg text-muted-foreground">
               Escríbenos si quieres preguntar por edades, apoyo académico,
-              ubicación, clases privadas, hermanos o cualquier otra cuestión
+              ubicación, hermanos o cualquier otra cuestión
               antes de completar una solicitud de plaza.
             </p>
           </div>
@@ -42,7 +42,7 @@ export default function SpanishContactPage() {
             </p>
 
             <Button asChild className="mt-4">
-              <Link href="/es#timetable-form">
+              <Link href="/es#apply">
                 Solicita una plaza
               </Link>
             </Button>

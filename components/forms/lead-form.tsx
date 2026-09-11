@@ -27,11 +27,11 @@ const copy = {
   en: {
     cardTitle: "Apply for a launch place",
     cardDescription:
-      "Tell us about your child, the support you are looking for and the sessions that would suit your family. We will review your enquiry and contact you to confirm availability and next steps.",
+      "Tell us about your child, the support you are looking for and the sessions that would suit your family. We will contact you to confirm availability and next steps.",
 
     parentDetails: "Parent details",
     parentDescription:
-      "We will only use this to contact you about launch information and availability.",
+      "We will only use this to contact you about your place enquiry and availability.",
     parentName: "Parent name",
     email: "Email address",
     phone: "WhatsApp / phone",
@@ -41,7 +41,7 @@ const copy = {
     optional: "Optional",
 
     childDetails: "Child details",
-    childDescription: "We only need basic details at this stage.",
+    childDescription: "The Afternoon Academy currently welcomes children aged 4–12.",
     childAge: "Child age",
     schoolYear: "School year",
     curriculum: "Curriculum",
@@ -52,33 +52,27 @@ const copy = {
     otherNotSure: "Other / not sure",
 
     supportNeeded: "Support needed",
-    supportDescription: "Select everything that may be useful.",
+    supportDescription: "Select everything that would be useful for your child.",
 
     preferredDays: "Preferred days",
-    daysDescription: "Choose the launch days that could work for your family.",
+    daysDescription: "Choose the days that could work for your family.",
 
     preferredTimes: "Preferred times",
     timesDescription: "Choose all session times that may work.",
 
-    frequency: "How often might your child attend?",
+    frequency: "How many sessions would you like each week?",
     oneDay: "1 session per week",
     twoDays: "2 sessions per week",
     threeDays: "3 sessions per week",
     fourPlusDays: "4+ sessions per week",
     notSure: "Not sure yet",
 
-    interestLevel: "Interest level",
-    priorityLaunch: "I would like to join if the times work",
-    veryInterested: "Very interested, but I need more information",
-    interestedTimetable: "Interested depending on availability",
-    justCurious: "I am just exploring options",
-
     notes: "Anything else we should know?",
     notesPlaceholder:
       "Optional - for example, siblings, ideal days, or specific support needed.",
 
     consent:
-      "I agree to be contacted about The Afternoon Academy launch and availability.",
+      "I agree to be contacted about The Afternoon Academy and this place enquiry.",
     privacy:
       "We will only use your details to contact you about The Afternoon Academy. We will not share your information with third parties.",
 
@@ -89,11 +83,11 @@ const copy = {
   es: {
     cardTitle: "Solicita una plaza para el lanzamiento",
     cardDescription:
-      "Cuéntanos sobre tu hijo/a, el apoyo que buscas y las sesiones que podrían encajar con tu familia. Revisaremos tu solicitud y te contactaremos para confirmar disponibilidad y próximos pasos.",
+      "Cuéntanos sobre tu hijo/a, el apoyo que buscas y las sesiones que podrían encajar con tu familia. Te contactaremos para confirmar disponibilidad y próximos pasos.",
 
     parentDetails: "Datos del padre, madre o tutor/a",
     parentDescription:
-      "Solo usaremos estos datos para contactarte sobre la apertura y disponibilidad.",
+      "Solo usaremos estos datos para contactarte sobre tu solicitud de plaza y disponibilidad.",
     parentName: "Nombre del padre, madre o tutor/a",
     email: "Correo electrónico",
     phone: "WhatsApp / teléfono",
@@ -103,7 +97,7 @@ const copy = {
     optional: "Opcional",
 
     childDetails: "Datos del niño/a",
-    childDescription: "En esta fase solo necesitamos información básica.",
+    childDescription: "The Afternoon Academy actualmente acoge a niños de 4 a 12 años.",
     childAge: "Edad del niño/a",
     schoolYear: "Curso escolar",
     curriculum: "Currículo",
@@ -114,33 +108,27 @@ const copy = {
     otherNotSure: "Otro / no estoy seguro/a",
 
     supportNeeded: "Tipo de apoyo necesario",
-    supportDescription: "Selecciona todo lo que podría ser útil.",
+    supportDescription: "Selecciona todo lo que sería útil para tu hijo/a.",
 
     preferredDays: "Días preferidos",
-    daysDescription: "Elige los días de lanzamiento que podrían funcionar para tu familia.",
+    daysDescription: "Elige los días que podrían funcionar para tu familia.",
 
     preferredTimes: "Horarios preferidos",
     timesDescription: "Elige todos los horarios de sesión que podrían funcionar.",
 
-    frequency: "¿Con qué frecuencia podría asistir tu hijo/a?",
+    frequency: "¿Cuántas sesiones te gustaría que asistiera cada semana?",
     oneDay: "1 sesión por semana",
     twoDays: "2 sesiones por semana",
     threeDays: "3 sesiones por semana",
     fourPlusDays: "4+ sesiones por semana",
     notSure: "No estoy seguro/a todavía",
 
-    interestLevel: "Nivel de interés",
-    priorityLaunch: "Me gustaría apuntarme si los horarios encajan",
-    veryInterested: "Muy interesado/a, pero necesito más información",
-    interestedTimetable: "Interesado/a según disponibilidad",
-    justCurious: "Solo estoy explorando opciones",
-
     notes: "¿Hay algo más que debamos saber?",
     notesPlaceholder:
       "Opcional - por ejemplo, hermanos, días ideales o apoyo específico necesario.",
 
     consent:
-      "Acepto que me contacten sobre la apertura y disponibilidad de The Afternoon Academy.",
+      "Acepto que me contacten sobre The Afternoon Academy y esta solicitud de plaza.",
     privacy:
       "Solo usaremos tus datos para contactarte sobre The Afternoon Academy. No compartiremos tu información con terceros.",
 
@@ -175,16 +163,7 @@ const supportNeeds = [
     en: "English confidence",
     es: "Confianza con el inglés",
   },
-  {
-    value: "study_routine",
-    en: "Study routine",
-    es: "Rutina de estudio",
-  },
-  {
-    value: "exam_prep",
-    en: "Exam preparation",
-    es: "Preparación de exámenes",
-  },
+  { value: "homework_routine", en: "Homework routine", es: "Rutina de deberes" },
   {
     value: "general_support",
     en: "General academic support",
@@ -294,8 +273,8 @@ export function LeadForm({
                   id="childAge"
                   name="childAge"
                   type="number"
-                  min="3"
-                  max="18"
+                  min="4"
+                  max="12"
                   required
                 />
               </div>
@@ -389,7 +368,9 @@ export function LeadForm({
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2">
+          <input type="hidden" name="interestLevel" value="priority_launch" />
+
+          <section>
             <div className="space-y-2">
               <Label htmlFor="preferredFrequency">{t.frequency}</Label>
               <select
@@ -410,26 +391,6 @@ export function LeadForm({
               </select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="interestLevel">{t.interestLevel}</Label>
-              <select
-                id="interestLevel"
-                name="interestLevel"
-                required
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  {t.selectOne}
-                </option>
-                <option value="priority_launch">{t.priorityLaunch}</option>
-                <option value="very_interested">{t.veryInterested}</option>
-                <option value="interested_timetable">
-                  {t.interestedTimetable}
-                </option>
-                <option value="just_curious">{t.justCurious}</option>
-              </select>
-            </div>
           </section>
 
           <section className="space-y-2">

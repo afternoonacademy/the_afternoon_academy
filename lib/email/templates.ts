@@ -66,7 +66,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 
         <p>
           Gracias por tu interés en <strong>The Afternoon Academy</strong>.
-          Hemos recibido tu solicitud de plaza para las sesiones de lanzamiento en Arturo Soria.
+          Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
         </p>
 
         <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
@@ -101,7 +101,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 
       <p>
         Thank you for your interest in <strong>The Afternoon Academy</strong>.
-        We have received your place enquiry for our launch sessions in Arturo Soria.
+        We have received your place enquiry for The Afternoon Academy in Arturo Soria.
       </p>
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
@@ -135,7 +135,7 @@ Hola ${data.parentName},
 
 Gracias por tu interés en The Afternoon Academy.
 
-Hemos recibido tu solicitud de plaza para las sesiones de lanzamiento en Arturo Soria.
+Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
 
 Solicitud enviada:
 
@@ -159,7 +159,7 @@ Hi ${data.parentName},
 
 Thank you for your interest in The Afternoon Academy.
 
-We have received your place enquiry for our launch sessions in Arturo Soria.
+We have received your place enquiry for The Afternoon Academy in Arturo Soria.
 
 Your submitted enquiry:
 

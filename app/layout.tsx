@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "The Afternoon Academy",
     description:
-      "Structured after-school learning for children in Madrid, launching soon in Arturo Soria.",
+      "Small-group British curriculum after-school support for children aged 4–12 in Arturo Soria, Madrid.",
     url: siteUrl,
     type: "website",
     locale: "en_GB",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Afternoon Academy",
     description:
-      "Structured after-school learning for children in Madrid, launching soon in Arturo Soria.",
+      "Small-group British curriculum after-school support for children aged 4–12 in Arturo Soria, Madrid.",
     images: ["/og-image.png"],
   },
 }

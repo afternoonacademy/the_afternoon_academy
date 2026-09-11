@@ -20,7 +20,7 @@ const copy = {
     defaultSwitchHref: "/es",
     contactHref: "/contact",
     locationHref: "/location",
-    timetableHref: "/#timetable-form",
+    timetableHref: "/#apply",
   },
   es: {
     homeHref: "/es",
@@ -36,7 +36,7 @@ const copy = {
     defaultSwitchHref: "/",
     contactHref: "/es/contact",
     locationHref: "/es/ubicacion",
-    timetableHref: "/es#timetable-form",
+    timetableHref: "/es#apply",
   },
 }
 

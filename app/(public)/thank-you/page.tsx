@@ -15,8 +15,8 @@ export default function ThankYouPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
-            We will review your enquiry for our launch sessions at Calle Asura 40,
-            Arturo Soria, and contact you to confirm availability and next steps.
+            We will review your enquiry for Calle Asura 40, Arturo Soria, and
+            contact you to confirm availability and next steps.
           </p>
 
           <Button asChild>

@@ -31,8 +31,8 @@ export default function SpanishContactThanksPage() {
                 Volver al inicio
               </Link>
 
-              <Link href="/es#timetable-form" className="brand-button-secondary">
-                Formulario de horarios
+              <Link href="/es#apply" className="brand-button-secondary">
+                Solicita una plaza
               </Link>
             </div>
           </CardContent>

@@ -60,17 +60,17 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
   if (data.language === "es") {
     return `
       <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
-        <h1 style="color: #111827; margin-bottom: 12px;">Gracias por ayudarnos a organizar el horario</h1>
+        <h1 style="color: #111827; margin-bottom: 12px;">Hemos recibido tu solicitud de plaza</h1>
 
         <p>Hola ${escapeHtml(data.parentName)},</p>
 
         <p>
           Gracias por tu interés en <strong>The Afternoon Academy</strong>.
-          Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Arturo Soria.
+          Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
         </p>
 
         <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-          <h2 style="font-size: 18px; margin-top: 0;">Preferencias enviadas</h2>
+          <h2 style="font-size: 18px; margin-top: 0;">Solicitud enviada</h2>
 
           <p><strong>Edad del niño/a:</strong> ${data.childAge}</p>
           <p><strong>Curso:</strong> ${escapeHtml(data.schoolYear || "No indicado")}</p>
@@ -82,7 +82,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
         </div>
 
         <p>
-          Esto no confirma una plaza todavía. Nos pondremos en contacto contigo cuando tengamos más información sobre horarios, disponibilidad y próximos pasos.
+          Esto no confirma una plaza todavía. Revisaremos tu solicitud y nos pondremos en contacto contigo para confirmar disponibilidad y próximos pasos.
         </p>
 
         <p>
@@ -95,17 +95,17 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
 
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
-      <h1 style="color: #111827; margin-bottom: 12px;">Thank you for helping us shape the timetable</h1>
+      <h1 style="color: #111827; margin-bottom: 12px;">We received your place enquiry</h1>
 
       <p>Hi ${escapeHtml(data.parentName)},</p>
 
       <p>
-        Thank you for registering your interest in <strong>The Afternoon Academy</strong>.
-        We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Arturo Soria.
+        Thank you for your interest in <strong>The Afternoon Academy</strong>.
+        We have received your place enquiry for The Afternoon Academy in Arturo Soria.
       </p>
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-        <h2 style="font-size: 18px; margin-top: 0;">Your submitted preferences</h2>
+        <h2 style="font-size: 18px; margin-top: 0;">Your submitted enquiry</h2>
 
         <p><strong>Child age:</strong> ${data.childAge}</p>
         <p><strong>School year:</strong> ${escapeHtml(data.schoolYear || "Not provided")}</p>
@@ -117,7 +117,7 @@ export function parentConfirmationEmailHtml(data: LeadEmailData) {
       </div>
 
       <p>
-        There is no commitment at this stage. We will be in touch once we can see which days, times and age groups have the strongest demand.
+        This does not confirm a place yet. We will review your enquiry and contact you to confirm availability and next steps.
       </p>
 
       <p>
@@ -135,9 +135,9 @@ Hola ${data.parentName},
 
 Gracias por tu interés en The Afternoon Academy.
 
-Hemos recibido tus preferencias de horario y las tendremos en cuenta mientras organizamos los primeros grupos en Arturo Soria.
+Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
 
-Preferencias enviadas:
+Solicitud enviada:
 
 Edad del niño/a: ${data.childAge}
 Curso: ${data.schoolYear || "No indicado"}
@@ -147,7 +147,7 @@ Días preferidos: ${formatArray(data.preferredDays)}
 Horarios preferidos: ${formatArray(data.preferredTimes)}
 Frecuencia aproximada: ${formatValue(data.preferredFrequency)}
 
-Esto no confirma una plaza todavía. Nos pondremos en contacto contigo cuando tengamos más información sobre horarios, disponibilidad y próximos pasos.
+Esto no confirma una plaza todavía. Revisaremos tu solicitud y nos pondremos en contacto contigo para confirmar disponibilidad y próximos pasos.
 
 Un saludo,
 The Afternoon Academy
@@ -157,11 +157,11 @@ The Afternoon Academy
   return `
 Hi ${data.parentName},
 
-Thank you for registering your interest in The Afternoon Academy.
+Thank you for your interest in The Afternoon Academy.
 
-We have received your timetable preferences and will use parent responses to help shape our first launch sessions in Arturo Soria.
+We have received your place enquiry for The Afternoon Academy in Arturo Soria.
 
-Your submitted preferences:
+Your submitted enquiry:
 
 Child age: ${data.childAge}
 School year: ${data.schoolYear || "Not provided"}
@@ -171,7 +171,7 @@ Preferred days: ${formatArray(data.preferredDays)}
 Preferred times: ${formatArray(data.preferredTimes)}
 Likely frequency: ${formatValue(data.preferredFrequency)}
 
-There is no commitment at this stage. We will be in touch once we can see which days, times and age groups have the strongest demand.
+This does not confirm a place yet. We will review your enquiry and contact you to confirm availability and next steps.
 
 Best wishes,
 The Afternoon Academy
@@ -181,7 +181,7 @@ The Afternoon Academy
 export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 720px; margin: 0 auto;">
-      <h1 style="color: #111827; margin-bottom: 12px;">New Afternoon Academy lead</h1>
+      <h1 style="color: #111827; margin-bottom: 12px;">New Afternoon Academy place enquiry</h1>
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
         <h2 style="font-size: 18px; margin-top: 0;">Parent details</h2>
@@ -194,7 +194,7 @@ export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
       </div>
 
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-        <h2 style="font-size: 18px; margin-top: 0;">Child and timetable</h2>
+        <h2 style="font-size: 18px; margin-top: 0;">Child and session preferences</h2>
         <p><strong>Child age:</strong> ${data.childAge}</p>
         <p><strong>School year:</strong> ${escapeHtml(data.schoolYear || "Not provided")}</p>
         <p><strong>Curriculum:</strong> ${escapeHtml(formatValue(data.curriculum))}</p>
@@ -211,7 +211,7 @@ export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
 
 export function adminLeadNotificationEmailText(data: LeadEmailData) {
   return `
-New Afternoon Academy lead
+New Afternoon Academy place enquiry
 
 Source language: ${getLanguageLabel(data.language)}
 
@@ -222,7 +222,7 @@ Phone: ${data.phone}
 Area: ${data.area || "Not provided"}
 School: ${data.schoolName || "Not provided"}
 
-Child and timetable:
+Child and session preferences:
 Child age: ${data.childAge}
 School year: ${data.schoolYear || "Not provided"}
 Curriculum: ${formatValue(data.curriculum)}

@@ -23,18 +23,18 @@ export default function SpanishContactPage() {
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              ¿Tienes alguna pregunta antes de registrar tu interés?
+              ¿Tienes alguna pregunta antes de solicitar plaza?
             </h1>
 
             <p className="text-lg text-muted-foreground">
               Escríbenos si quieres preguntar por edades, apoyo académico,
-              ubicación, clases privadas, hermanos o cualquier otra cuestión
-              antes de completar el formulario de horarios.
+              ubicación, hermanos o cualquier otra cuestión
+              antes de completar una solicitud de plaza.
             </p>
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-5">
-            <h2 className="font-semibold">¿Buscas el formulario de horarios?</h2>
+            <h2 className="font-semibold">¿Quieres solicitar una plaza?</h2>
 
             <p className="mt-2 text-sm text-muted-foreground">
               Si ya estás interesado/a, lo más útil es que compartas tus días y
@@ -42,8 +42,8 @@ export default function SpanishContactPage() {
             </p>
 
             <Button asChild className="mt-4">
-              <Link href="/es#timetable-form">
-                Compartir días y horarios preferidos
+              <Link href="/es#apply">
+                Solicita una plaza
               </Link>
             </Button>
           </div>

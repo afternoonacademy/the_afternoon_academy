@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 export const metadata = {
   title: "Gracias",
   description:
-    "Gracias por compartir tus preferencias de horario con The Afternoon Academy.",
+    "Gracias por enviar tu solicitud de plaza a The Afternoon Academy.",
 }
 
 export default function SpanishLeadThanksPage() {
@@ -18,22 +18,21 @@ export default function SpanishLeadThanksPage() {
         <Card className="brand-card w-full">
           <CardContent className="space-y-5 p-8 text-center">
             <div className="brand-pill mx-auto w-fit">
-              Preferencias recibidas
+              Solicitud recibida
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Gracias por ayudarnos a organizar el horario
+              Hemos recibido tu solicitud de plaza
             </h1>
 
             <p className="brand-muted">
-              Hemos recibido tus preferencias. Las usaremos para entender qué
-              días, horarios y tipos de apoyo tienen más demanda antes de la
-              apertura.
+              Hemos recibido tu solicitud de plaza para The Afternoon Academy
+              en Calle Asura 40, Arturo Soria.
             </p>
 
             <p className="brand-muted">
-              Esto no confirma una plaza todavía. Te contactaremos cuando
-              tengamos más información sobre disponibilidad y próximos pasos.
+              Esto no confirma una plaza todavía. Revisaremos tu solicitud y te
+              contactaremos para confirmar disponibilidad y próximos pasos.
             </p>
 
             <div className="flex flex-col justify-center gap-3 sm:flex-row">

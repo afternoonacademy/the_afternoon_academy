@@ -12,7 +12,7 @@ export const metadata = {
     "See the confirmed location for The Afternoon Academy in the Arturo Soria area of Madrid.",
 }
 
-const address = "Calle Asura 40, Arturo Soria, Madrid"
+const address = "Calle Asura 40, 28043 Madrid"
 
 const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   address
@@ -53,14 +53,17 @@ const gallery = [
   {
     src: "/main_frontage.png",
     title: "Location frontage",
-    description:
-      "The outside of the building so families can recognise where The Afternoon Academy will be based.",
+    description: "The outside of the building so families can recognise the academy.",
   },
   {
-    src: "/classroom_proposal.png",
-    title: "Classroom concept",
-    description:
-      "A visual direction for the calm, structured learning space we are preparing for launch.",
+    src: "/classroom-1.jpg",
+    title: "Our classroom",
+    description: "A real view of the bright classroom where small groups will work after school.",
+  },
+  {
+    src: "/classroom-2.jpg",
+    title: "Small-group workspace",
+    description: "Tables and whiteboard space for calm, focused academic support.",
   },
 ]
 
@@ -80,7 +83,7 @@ export default function LocationPage() {
               </h1>
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
-                The Afternoon Academy will be based at Calle Asura 40 in the
+                The Afternoon Academy is based at Calle Asura 40 in the
                 Arturo Soria area, with a setup designed for small-group
                 academic support after school.
               </p>
@@ -90,19 +93,18 @@ export default function LocationPage() {
               <p className="brand-kicker">Address</p>
 
               <h2 className="mt-2 text-2xl font-semibold">
-                Calle Asura 40, Arturo Soria, Madrid
+                Calle Asura 40, 28043 Madrid
               </h2>
 
               <p className="mt-2 text-sm brand-muted">
-                This will be our home for launch. Full arrival details will be
-                shared with families before opening so drop-off and collection
-                are clear and simple.
+                First floor, Classroom 3. We will share practical arrival and
+                collection details with every family before their first session.
               </p>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild>
-                  <Link href="/#timetable-form">
-                    Help shape the timetable
+                  <Link href="/#apply">
+                    Apply for a place
                   </Link>
                 </Button>
 
@@ -136,7 +138,7 @@ export default function LocationPage() {
 
               <p className="text-sm brand-muted">
                 A clear view of the outside of the building to help families
-                recognise where The Afternoon Academy will be based.
+                  recognise The Afternoon Academy.
               </p>
             </CardContent>
           </Card>
@@ -157,7 +159,7 @@ export default function LocationPage() {
                 </h2>
 
                 <p className="brand-muted">
-                  The Afternoon Academy will be based at Calle Asura 40 in the
+                  The Afternoon Academy is based at Calle Asura 40 in the
                   Arturo Soria area of Madrid. This page will help families
                   recognise the frontage and find the location before launch.
                 </p>
@@ -181,7 +183,7 @@ export default function LocationPage() {
                 <div>
                   <p className="text-sm font-semibold">Map location</p>
                   <p className="text-xs brand-muted">
-                    Calle Asura 40, Arturo Soria, Madrid
+                    Calle Asura 40, 28043 Madrid
                   </p>
                 </div>
               </div>
@@ -189,7 +191,7 @@ export default function LocationPage() {
 
             <div className="h-80 w-full md:h-95">
               <iframe
-                title="Google Map showing Calle Asura 40, Arturo Soria, Madrid"
+                title="Google Map showing Calle Asura 40, 28043 Madrid"
                 src={googleMapsEmbedUrl}
                 className="h-full w-full border-0"
                 loading="lazy"
@@ -249,10 +251,9 @@ export default function LocationPage() {
             </h2>
 
             <p className="brand-muted">
-              These images show the confirmed frontage and the visual direction
-              for the classroom space as we prepare for launch. Final classroom
-              details may change as the room is set up, but the aim is a calm,
-              organised environment where children can focus after school.
+              These are real images of the location and classroom. We are still
+              adding the finishing touches, but the room is already bright,
+              organised and ready for calm, focused after-school learning.
             </p>
           </div>
 
@@ -282,9 +283,7 @@ export default function LocationPage() {
         <section className="rounded-3xl border bg-white/60 p-6 text-center">
           <Sparkles className="mx-auto h-6 w-6" />
 
-          <h2 className="mt-3 text-2xl font-semibold">
-            Want to help shape the first timetable?
-          </h2>
+          <h2 className="mt-3 text-2xl font-semibold">Want to apply for a launch place?</h2>
 
           <p className="mx-auto mt-2 max-w-2xl brand-muted">
             Tell us which days, times and types of support would work best for
@@ -292,8 +291,8 @@ export default function LocationPage() {
           </p>
 
           <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/#timetable-form" className="brand-button">
-              Share timetable preferences
+            <Link href="/#apply" className="brand-button">
+              Apply for a place
             </Link>
 
             <Link href="/contact" className="brand-button-secondary">

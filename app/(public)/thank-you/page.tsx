@@ -10,14 +10,13 @@ export default function ThankYouPage() {
         <CardHeader>
           <CardTitle className="text-3xl">Thank you</CardTitle>
           <CardDescription>
-            Your timetable preferences have been received.
+            Your place enquiry has been received.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
-            We’re using parent responses to shape the first Afternoon Academy timetable. We’ll
-            be in touch with launch information and availability once the strongest days, times
-            and age groups are clear.
+            We will review your enquiry for Calle Asura 40, Arturo Soria, and
+            contact you to confirm availability and next steps.
           </p>
 
           <Button asChild>
@@ -28,4 +27,3 @@ export default function ThankYouPage() {
     </main>
   )
 }
-

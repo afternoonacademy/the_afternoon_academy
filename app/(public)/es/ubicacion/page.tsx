@@ -12,7 +12,7 @@ export const metadata = {
     "Consulta la ubicación confirmada de The Afternoon Academy en la zona de Arturo Soria, Madrid.",
 }
 
-const address = "Calle Asura 40, Arturo Soria, Madrid"
+const address = "Calle Asura 40, 28043 Madrid"
 
 const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   address
@@ -57,10 +57,14 @@ const gallery = [
       "El exterior del edificio para que las familias puedan reconocer dónde estará The Afternoon Academy.",
   },
   {
-    src: "/classroom_proposal.png",
-    title: "Concepto de aula",
-    description:
-      "Una dirección visual del espacio tranquilo y estructurado que estamos preparando para la apertura.",
+    src: "/classroom-1.jpg",
+    title: "Nuestra aula",
+    description: "Una vista real del aula luminosa donde los grupos reducidos trabajarán después del colegio.",
+  },
+  {
+    src: "/classroom-2.jpg",
+    title: "Espacio para grupos reducidos",
+    description: "Mesas y pizarra para un apoyo académico tranquilo y centrado.",
   },
 ]
 
@@ -80,7 +84,7 @@ export default function SpanishLocationPage() {
               </h1>
 
               <p className="max-w-2xl text-lg brand-muted md:text-xl">
-                The Afternoon Academy estará en Calle Asura 40, en la zona de
+                The Afternoon Academy está en Calle Asura 40, en la zona de
                 Arturo Soria, con un espacio diseñado para apoyo académico en
                 grupos reducidos después del colegio.
               </p>
@@ -90,19 +94,18 @@ export default function SpanishLocationPage() {
               <p className="brand-kicker">Dirección</p>
 
               <h2 className="mt-2 text-2xl font-semibold">
-                Calle Asura 40, Arturo Soria, Madrid
+                Calle Asura 40, 28043 Madrid
               </h2>
 
               <p className="mt-2 text-sm brand-muted">
-                Esta será nuestra ubicación para la apertura. Compartiremos los
-                detalles de llegada con las familias antes de abrir para que la
-                entrada, salida y recogida sean claras y sencillas.
+                Primera planta, Aula 3. Compartiremos con cada familia los
+                detalles prácticos de llegada y recogida antes de la primera sesión.
               </p>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild>
-                  <Link href="/es#timetable-form">
-                    Ayúdanos a organizar los horarios
+                  <Link href="/es#apply">
+                    Solicita una plaza
                   </Link>
                 </Button>
 
@@ -157,7 +160,7 @@ export default function SpanishLocationPage() {
                 </h2>
 
                 <p className="brand-muted">
-                  The Afternoon Academy estará en Calle Asura 40, en la zona de
+                  The Afternoon Academy está en Calle Asura 40, en la zona de
                   Arturo Soria, Madrid. Esta página ayudará a las familias a
                   reconocer la fachada y encontrar la ubicación antes de la
                   apertura.
@@ -182,7 +185,7 @@ export default function SpanishLocationPage() {
                 <div>
                   <p className="text-sm font-semibold">Ubicación en el mapa</p>
                   <p className="text-xs brand-muted">
-                    Calle Asura 40, Arturo Soria, Madrid
+                    Calle Asura 40, 28043 Madrid
                   </p>
                 </div>
               </div>
@@ -190,7 +193,7 @@ export default function SpanishLocationPage() {
 
             <div className="h-80 w-full md:h-95">
               <iframe
-                title="Mapa de Google mostrando Calle Asura 40, Arturo Soria, Madrid"
+                title="Mapa de Google mostrando Calle Asura 40, 28043 Madrid"
                 src={googleMapsEmbedUrl}
                 className="h-full w-full border-0"
                 loading="lazy"
@@ -250,12 +253,9 @@ export default function SpanishLocationPage() {
             </h2>
 
             <p className="brand-muted">
-              Estas imágenes muestran la fachada confirmada y la dirección
-              visual del aula mientras preparamos la apertura. Los detalles
-              finales del aula pueden cambiar a medida que se acondicione el
-              espacio, pero el objetivo es crear un entorno tranquilo,
-              organizado y adecuado para que los niños puedan concentrarse
-              después del colegio.
+              Son imágenes reales de la ubicación y el aula. Todavía estamos
+              añadiendo los últimos detalles, pero el espacio ya es luminoso,
+              organizado y preparado para un aprendizaje tranquilo y centrado.
             </p>
           </div>
 
@@ -286,17 +286,17 @@ export default function SpanishLocationPage() {
           <Sparkles className="mx-auto h-6 w-6" />
 
           <h2 className="mt-3 text-2xl font-semibold">
-            ¿Quieres ayudarnos a organizar el primer horario?
+            ¿Quieres solicitar una plaza?
           </h2>
 
           <p className="mx-auto mt-2 max-w-2xl brand-muted">
-            Indícanos qué días, horarios y tipos de apoyo funcionarían mejor
-            para tu familia. No hay pago ni compromiso en esta fase.
+            Cuéntanos qué días, horarios y tipo de apoyo encajarían mejor con
+            tu familia. No hay pago al solicitar plaza.
           </p>
 
           <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/es#timetable-form" className="brand-button">
-              Compartir preferencias de horario
+            <Link href="/es#apply" className="brand-button">
+              Solicita una plaza
             </Link>
 
             <Link href="/es/contact" className="brand-button-secondary">

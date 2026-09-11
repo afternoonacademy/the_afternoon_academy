@@ -28,8 +28,8 @@ export default function ContactThanksPage() {
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
             We have received your message and will reply as soon as we can. If
-            you are interested in joining the launch timetable, you can also
-            share your preferred days and times on the homepage.
+            you are interested in joining our launch sessions, you can also
+            submit a place enquiry on the homepage.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -38,7 +38,7 @@ export default function ContactThanksPage() {
             </Button>
 
             <Button asChild variant="outline">
-              <Link href="/#timetable-form">Share timetable preferences</Link>
+              <Link href="/#timetable-form">Apply for a place</Link>
             </Button>
           </div>
         </CardContent>

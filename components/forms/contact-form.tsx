@@ -30,7 +30,7 @@ const copy = {
   en: {
     title: "Send us a message",
     description:
-      "Use this for general questions about The Afternoon Academy. If you want to help us shape the timetable, please use the timetable form on the homepage.",
+      "Use this for general questions about The Afternoon Academy. If you would like to apply for a launch place, please use the place enquiry form on the homepage.",
     name: "Name",
     email: "Email address",
     phone: "Phone / WhatsApp",
@@ -46,7 +46,7 @@ const copy = {
   es: {
     title: "Envíanos un mensaje",
     description:
-      "Utiliza este formulario para preguntas generales sobre The Afternoon Academy. Si quieres ayudarnos a organizar los horarios, utiliza el formulario de horarios en la página principal.",
+      "Utiliza este formulario para preguntas generales sobre The Afternoon Academy. Si quieres solicitar una plaza de lanzamiento, utiliza el formulario de solicitud de plaza en la página principal.",
     name: "Nombre",
     email: "Correo electrónico",
     phone: "Teléfono / WhatsApp",

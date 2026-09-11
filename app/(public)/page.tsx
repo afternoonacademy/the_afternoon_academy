@@ -51,19 +51,19 @@ export default function HomePage() {
               </p>
 
               <p className="max-w-2xl text-base brand-muted md:text-lg">
-                We are currently shaping our first timetable and inviting local
-                parents to tell us which days, times and types of support would
-                work best.
+                We are now accepting place enquiries for our launch sessions at
+                Calle Asura 40, Arturo Soria. Places will be limited during the
+                first intake so that we can keep groups small and focused.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <a href="#timetable-form" className="brand-button">
-                Help shape the timetable
+                Apply for a place
               </a>
 
               <a href="#services" className="brand-button-secondary">
-                See what we offer
+                See sessions and pricing
               </a>
             </div>
 
@@ -176,8 +176,7 @@ export default function HomePage() {
             </h2>
 
             <p className="brand-muted">
-              Our first timetable will be shaped by parent demand, but the core
-              support areas are expected to include:
+              Our launch sessions offer support with:
             </p>
           </div>
 
@@ -247,21 +246,22 @@ export default function HomePage() {
           <Card className="brand-card">
             <CardContent className="space-y-5 p-6">
               <div className="space-y-2">
-                <p className="brand-kicker">Proposed timetable</p>
+                <p className="brand-kicker">Launch sessions</p>
 
                 <h2 className="text-3xl font-bold tracking-tight">
                   Session times
                 </h2>
 
                 <p className="brand-muted">
-                  We are currently planning two after-school session times:
+                  Our launch sessions are planned for Monday, Tuesday, Thursday
+                  and Friday, with two after-school session times:
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  { label: "Early session", time: "17:00 - 17:50" },
-                  { label: "Later session", time: "18:00 - 18:50" },
+                  { label: "Early session", time: "17:00–17:50" },
+                  { label: "Later session", time: "18:00–18:50" },
                 ].map((session) => (
                   <div
                     key={session.label}
@@ -281,11 +281,11 @@ export default function HomePage() {
                 <p className="brand-kicker">Launch days</p>
 
                 <h3 className="text-2xl font-semibold">
-                  Initial days under consideration
+                  Confirmed launch days
                 </h3>
 
                 <p className="brand-muted">
-                  We are currently considering sessions on:
+                  Sessions are planned on:
                 </p>
               </div>
 
@@ -301,8 +301,8 @@ export default function HomePage() {
               </div>
 
               <p className="text-sm brand-muted">
-                Parent responses will help us understand which days are most in
-                demand before launch.
+                Final availability depends on age group, demand and remaining
+                places.
               </p>
             </CardContent>
           </Card>
@@ -319,15 +319,14 @@ export default function HomePage() {
                 </h2>
 
                 <p className="brand-muted">
-                  Our planned launch price is{" "}
+                  Our launch price is{" "}
                   <strong>€25 per child per session</strong>.
                 </p>
 
                 <p className="text-sm brand-muted">
-                  There is no payment or commitment when completing this form.
-                  Your response helps us understand which days, times and age
-                  groups have the strongest demand before we confirm the first
-                  timetable.
+                  There is no payment when completing this form. We will review
+                  your place enquiry and contact you to confirm availability and
+                  next steps.
                 </p>
               </div>
 
@@ -357,7 +356,7 @@ export default function HomePage() {
 
                 <p className="pt-2 text-xs brand-muted">
                   Monthly examples are based on four weeks. Final availability
-                  will depend on the confirmed timetable and available places.
+                  depends on age group, demand and remaining places.
                 </p>
               </div>
             </CardContent>
@@ -372,17 +371,17 @@ export default function HomePage() {
 
                 <div className="space-y-3">
                   <h2 className="text-3xl font-bold tracking-tight">
-                    Help us shape the first timetable
+                    Apply for a launch place
                   </h2>
 
                   <p className="brand-muted">
-                    Tell us your child&apos;s age, the type of support you may
-                    need, and which days and times would work best.
+                    Tell us about your child, the support you are looking for
+                    and the sessions that would suit your family.
                   </p>
 
                   <p className="text-sm brand-muted">
-                    Your answers will help us build a timetable around real
-                    parent demand before launch.
+                    We will review your enquiry and contact you to confirm
+                    availability and next steps.
                   </p>
                 </div>
               </div>

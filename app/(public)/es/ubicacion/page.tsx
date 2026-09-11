@@ -102,7 +102,7 @@ export default function SpanishLocationPage() {
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild>
                   <Link href="/es#timetable-form">
-                    Ayúdanos a organizar los horarios
+                    Solicita una plaza
                   </Link>
                 </Button>
 
@@ -296,7 +296,7 @@ export default function SpanishLocationPage() {
 
           <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/es#timetable-form" className="brand-button">
-              Compartir preferencias de horario
+              Solicita una plaza
             </Link>
 
             <Link href="/es/contact" className="brand-button-secondary">

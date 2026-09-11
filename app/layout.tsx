@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    "British curriculum after-school support for children in Madrid. Help us shape our launch timetable in Arturo Soria.",
+    "British and international curriculum after-school support for children in Madrid. Apply for a launch place in Arturo Soria.",
 
   icons: {
     icon: [

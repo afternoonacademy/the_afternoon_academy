@@ -32,7 +32,7 @@ export default function SpanishContactThanksPage() {
               </Link>
 
               <Link href="/es#timetable-form" className="brand-button-secondary">
-                Formulario de horarios
+                Solicita una plaza
               </Link>
             </div>
           </CardContent>

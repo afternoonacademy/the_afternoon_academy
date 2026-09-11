@@ -57,19 +57,20 @@ export default function SpanishHomePage() {
               </p>
 
               <p className="max-w-2xl text-base brand-muted md:text-lg">
-                Estamos preparando nuestro primer horario e invitamos a familias
-                locales a decirnos qué días, horarios y tipos de apoyo les
-                resultarían más útiles.
+                Ya aceptamos solicitudes de plaza para las sesiones de
+                lanzamiento en Calle Asura 40, Arturo Soria. Las plazas serán
+                limitadas durante la primera incorporación para mantener los
+                grupos reducidos y centrados.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <a href="#timetable-form" className="brand-button">
-                Ayúdanos a organizar los horarios
+                Solicita una plaza
               </a>
 
               <a href="#services" className="brand-button-secondary">
-                Ver qué ofrecemos
+                Ver sesiones y precios
               </a>
             </div>
 
@@ -186,8 +187,7 @@ export default function SpanishHomePage() {
             </h2>
 
             <p className="brand-muted">
-              El primer horario se organizará según la demanda de las familias,
-              pero las áreas principales serán:
+              Las sesiones de lanzamiento ofrecen apoyo con:
             </p>
           </div>
 
@@ -257,22 +257,23 @@ export default function SpanishHomePage() {
           <Card className="brand-card">
             <CardContent className="space-y-5 p-6">
               <div className="space-y-2">
-                <p className="brand-kicker">Horario propuesto</p>
+                <p className="brand-kicker">Sesiones de lanzamiento</p>
 
                 <h2 className="text-3xl font-bold tracking-tight">
                   Horarios de sesión
                 </h2>
 
                 <p className="brand-muted">
-                  Actualmente estamos considerando dos horarios después del
+                  Las sesiones de lanzamiento están previstas los lunes,
+                  martes, jueves y viernes, con dos horarios después del
                   colegio:
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  { label: "Primera sesión", time: "17:00 - 17:50" },
-                  { label: "Segunda sesión", time: "18:00 - 18:50" },
+                  { label: "Primera sesión", time: "17:00–17:50" },
+                  { label: "Segunda sesión", time: "18:00–18:50" },
                 ].map((session) => (
                   <div
                     key={session.label}
@@ -292,11 +293,11 @@ export default function SpanishHomePage() {
                 <p className="brand-kicker">Días de apertura</p>
 
                 <h3 className="text-2xl font-semibold">
-                  Días iniciales en estudio
+                  Días confirmados de lanzamiento
                 </h3>
 
                 <p className="brand-muted">
-                  Actualmente estamos valorando sesiones los siguientes días:
+                  Las sesiones están previstas los siguientes días:
                 </p>
               </div>
 
@@ -312,8 +313,8 @@ export default function SpanishHomePage() {
               </div>
 
               <p className="text-sm brand-muted">
-                Las respuestas de las familias nos ayudarán a entender qué días
-                tienen más demanda antes de abrir.
+                La disponibilidad final depende del grupo de edad, la demanda y
+                las plazas restantes.
               </p>
             </CardContent>
           </Card>
@@ -330,15 +331,14 @@ export default function SpanishHomePage() {
                 </h2>
 
                 <p className="brand-muted">
-                  El precio previsto de lanzamiento es de{" "}
+                  El precio de lanzamiento es de{" "}
                   <strong>25 € por niño/a por sesión</strong>.
                 </p>
 
                 <p className="text-sm brand-muted">
-                  No hay pago ni compromiso al completar este formulario. Tus
-                  respuestas nos ayudan a entender qué días, horarios y grupos
-                  de edad tienen más demanda antes de confirmar el primer
-                  horario.
+                  No hay pago al completar este formulario. Revisaremos tu
+                  solicitud de plaza y te contactaremos para confirmar
+                  disponibilidad y próximos pasos.
                 </p>
               </div>
 
@@ -368,8 +368,8 @@ export default function SpanishHomePage() {
 
                 <p className="pt-2 text-xs brand-muted">
                   Los importes mensuales son ejemplos orientativos basados en
-                  cuatro semanas. La disponibilidad final dependerá del horario
-                  confirmado y de las plazas disponibles.
+                  cuatro semanas. La disponibilidad final depende del grupo de
+                  edad, la demanda y las plazas restantes.
                 </p>
               </div>
             </CardContent>
@@ -384,17 +384,17 @@ export default function SpanishHomePage() {
 
                 <div className="space-y-3">
                   <h2 className="text-3xl font-bold tracking-tight">
-                    Ayúdanos a organizar el primer horario
+                    Solicita una plaza para el lanzamiento
                   </h2>
 
                   <p className="brand-muted">
-                    Indícanos la edad de tu hijo/a, el tipo de apoyo que podría
-                    necesitar y qué días y horarios os vendrían mejor.
+                    Cuéntanos sobre tu hijo/a, el apoyo que buscas y las
+                    sesiones que podrían encajar con tu familia.
                   </p>
 
                   <p className="text-sm brand-muted">
-                    Tus respuestas nos ayudarán a crear un horario basado en la
-                    demanda real de las familias antes de abrir.
+                    Revisaremos tu solicitud y te contactaremos para confirmar
+                    disponibilidad y próximos pasos.
                   </p>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export default function SpanishHomePage() {
           <p className="mx-auto mt-2 max-w-2xl brand-muted">
             Si quieres preguntar por edades, ubicación, currículo, hermanos,
             clases privadas o cualquier otra cuestión, puedes escribirnos antes
-            de completar el formulario de horarios.
+            de completar la solicitud de plaza.
           </p>
 
           <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
@@ -421,7 +421,7 @@ export default function SpanishHomePage() {
             </a>
 
             <a href="#timetable-form" className="brand-button">
-              Compartir preferencias de horario
+              Solicita una plaza
             </a>
           </div>
         </section>

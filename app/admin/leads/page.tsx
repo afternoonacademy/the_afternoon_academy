@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
-import { updateLeadStatus } from "@/actions/update-lead-status"
+import { LeadActions } from "@/components/admin/lead-actions"
 import {
   Card,
   CardContent,
@@ -54,16 +54,6 @@ function formatDate(value: string) {
     timeStyle: "short",
   }).format(new Date(value))
 }
-
-const leadStatuses = [
-  "new",
-  "warm",
-  "priority",
-  "contacted",
-  "waitlist",
-  "converted",
-  "closed",
-] as const
 
 export default async function AdminLeadsPage() {
   const { data, error } = await supabaseAdmin
@@ -162,24 +152,11 @@ export default async function AdminLeadsPage() {
                         {formatValue(lead.interest_level)}
                       </TableCell>
                       <TableCell className="min-w-[170px]">
-                        <form action={updateLeadStatus} className="flex gap-2">
-                          <input type="hidden" name="leadId" value={lead.parent_lead_id} />
-                          <select
-                            name="status"
-                            defaultValue={lead.status}
-                            className="h-8 min-w-0 rounded-md border bg-background px-2 text-sm capitalize"
-                            aria-label={`Update follow-up status for ${lead.parent_name}`}
-                          >
-                            {leadStatuses.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                          <button type="submit" className="rounded-md border px-2 text-xs font-medium hover:bg-muted">
-                            Save
-                          </button>
-                        </form>
+                        <LeadActions
+                          leadId={lead.parent_lead_id}
+                          parentName={lead.parent_name}
+                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "waitlist" | "converted" | "closed"}
+                        />
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                         {formatDate(lead.created_at)}

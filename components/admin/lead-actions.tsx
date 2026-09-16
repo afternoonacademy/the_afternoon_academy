@@ -36,12 +36,14 @@ type LeadActionsProps = {
 export function LeadActions({ leadId, parentName, status }: LeadActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [selectedStatus, setSelectedStatus] = useState(status)
   const [message, setMessage] = useState("")
   const [confirmation, setConfirmation] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   function updateStatus(nextStatus: string) {
     setMessage("")
+    setSelectedStatus(nextStatus as (typeof leadStatuses)[number])
     const formData = new FormData()
     formData.set("leadId", leadId)
     formData.set("status", nextStatus)
@@ -52,6 +54,7 @@ export function LeadActions({ leadId, parentName, status }: LeadActionsProps) {
         setMessage("Updated")
         router.refresh()
       } catch {
+        setSelectedStatus(status)
         setMessage("Could not update")
       }
     })
@@ -76,7 +79,7 @@ export function LeadActions({ leadId, parentName, status }: LeadActionsProps) {
   return (
     <div className="flex min-w-[230px] items-center gap-2">
       <select
-        value={status}
+        value={selectedStatus}
         onChange={(event) => updateStatus(event.target.value)}
         disabled={isPending}
         className="h-8 min-w-0 rounded-md border bg-background px-2 text-sm capitalize disabled:opacity-60"

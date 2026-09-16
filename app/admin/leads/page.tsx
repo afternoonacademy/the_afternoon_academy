@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
-import { Badge } from "@/components/ui/badge"
+import { LeadActions } from "@/components/admin/lead-actions"
 import {
   Card,
   CardContent,
@@ -19,7 +19,6 @@ type LeadOverviewRow = {
   parent_lead_id: string
   child_lead_id: string
   timetable_preference_id: string
-
   parent_name: string
   email: string
   phone: string | null
@@ -28,29 +27,24 @@ type LeadOverviewRow = {
   interest_level: string
   status: string
   source: string
-
   child_age: number
   school_year: string | null
   curriculum: string | null
   support_needs: string[] | null
   notes: string | null
-
   preferred_days: string[] | null
   preferred_times: string[] | null
   preferred_frequency: string | null
-
   created_at: string
 }
 
 function formatArray(value: string[] | null) {
   if (!value || value.length === 0) return "Not provided"
-
   return value.join(", ")
 }
 
 function formatValue(value: string | null) {
   if (!value) return "Not provided"
-
   return value.replaceAll("_", " ")
 }
 
@@ -110,11 +104,10 @@ export default async function AdminLeadsPage() {
                     <TableHead>Times</TableHead>
                     <TableHead>Frequency</TableHead>
                     <TableHead>Interest</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Follow-up</TableHead>
                     <TableHead>Submitted</TableHead>
                   </TableRow>
                 </TableHeader>
-
                 <TableBody>
                   {leads.map((lead) => (
                     <TableRow key={lead.parent_lead_id}>
@@ -124,14 +117,12 @@ export default async function AdminLeadsPage() {
                           Source: {lead.source}
                         </div>
                       </TableCell>
-
                       <TableCell>
                         <div>{lead.email}</div>
                         <div className="text-xs text-muted-foreground">
                           {lead.phone || "No phone"}
                         </div>
                       </TableCell>
-
                       <TableCell>
                         <div>Age {lead.child_age}</div>
                         <div className="text-xs text-muted-foreground">
@@ -141,45 +132,32 @@ export default async function AdminLeadsPage() {
                           {formatValue(lead.curriculum)}
                         </div>
                       </TableCell>
-
                       <TableCell>
                         <div>{lead.school_name || "No school"}</div>
                         <div className="text-xs text-muted-foreground">
                           {lead.area || "No area"}
                         </div>
                       </TableCell>
-
                       <TableCell className="min-w-[180px] capitalize">
                         {formatArray(lead.support_needs)}
                       </TableCell>
-
                       <TableCell className="capitalize">
                         {formatArray(lead.preferred_days)}
                       </TableCell>
-
                       <TableCell>{formatArray(lead.preferred_times)}</TableCell>
-
                       <TableCell className="capitalize">
                         {formatValue(lead.preferred_frequency)}
                       </TableCell>
-
                       <TableCell className="capitalize">
                         {formatValue(lead.interest_level)}
                       </TableCell>
-
-                      <TableCell>
-                        <Badge
-                          variant={
-                            lead.status === "priority"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="capitalize"
-                        >
-                          {lead.status}
-                        </Badge>
+                      <TableCell className="min-w-[170px]">
+                        <LeadActions
+                          leadId={lead.parent_lead_id}
+                          parentName={lead.parent_name}
+                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "waitlist" | "converted" | "closed"}
+                        />
                       </TableCell>
-
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                         {formatDate(lead.created_at)}
                       </TableCell>

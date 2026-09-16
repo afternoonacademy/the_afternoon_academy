@@ -19,6 +19,11 @@ const leadStatusSchema = z.object({
   ]),
 })
 
+const deleteLeadSchema = z.object({
+  leadId: z.string().uuid(),
+  confirmation: z.literal("DELETE"),
+})
+
 export async function updateLeadStatus(formData: FormData) {
   await requireAdmin()
 
@@ -40,6 +45,34 @@ export async function updateLeadStatus(formData: FormData) {
   if (error) {
     console.error("Lead status update failed:", error)
     throw new Error("Could not update lead status")
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/trends")
+}
+
+export async function deleteLead(formData: FormData) {
+  await requireAdmin()
+
+  const parsed = deleteLeadSchema.safeParse({
+    leadId: formData.get("leadId"),
+    confirmation: formData.get("confirmation"),
+  })
+
+  if (!parsed.success) {
+    throw new Error("Deletion was not confirmed")
+  }
+
+  const supabase = supabaseService()
+  const { error } = await supabase
+    .from("parent_leads")
+    .delete()
+    .eq("id", parsed.data.leadId)
+
+  if (error) {
+    console.error("Lead deletion failed:", error)
+    throw new Error("Could not delete lead")
   }
 
   revalidatePath("/admin")

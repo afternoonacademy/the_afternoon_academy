@@ -64,6 +64,21 @@ const language: "en" | "es" =
 
   const data = parsed.data
 
+  const additionalFirstNames = formData.getAll("additionalChildFirstName").map((value) => String(value).trim())
+  const additionalAges = formData.getAll("additionalChildAge").map((value) => Number(value))
+  const additionalYears = formData.getAll("additionalChildSchoolYear").map((value) => String(value).trim())
+
+  if (additionalFirstNames.length !== additionalAges.length || additionalFirstNames.length !== additionalYears.length ||
+    additionalFirstNames.some((name, index) => !name || !Number.isInteger(additionalAges[index]) || additionalAges[index] < 4 || additionalAges[index] > 12)) {
+    return { success: false, message: language === "es" ? "Revisa los datos de cada niño/a." : "Please check each additional child’s details." }
+  }
+
+  const additionalChildren = additionalFirstNames.map((firstName, index) => ({
+    first_name: firstName,
+    child_age: additionalAges[index],
+    school_year: additionalYears[index] || null,
+  }))
+
   const { data: parentLead, error: parentError } = await supabaseAdmin
     .from("parent_leads")
     .insert({
@@ -92,9 +107,8 @@ const language: "en" | "es" =
     }
   }
 
-  const { data: childLead, error: childError } = await supabaseAdmin
-    .from("child_leads")
-    .insert({
+  const childRows = [
+    {
       parent_lead_id: parentLead.id,
       first_name: data.childFirstName,
       child_age: data.childAge,
@@ -102,40 +116,51 @@ const language: "en" | "es" =
       curriculum: data.curriculum,
       support_needs: data.supportNeeds,
       notes: data.notes || null,
-    })
+    },
+    ...additionalChildren.map((child) => ({
+      parent_lead_id: parentLead.id,
+      first_name: child.first_name,
+      child_age: child.child_age,
+      school_year: child.school_year,
+      curriculum: data.curriculum,
+      support_needs: data.supportNeeds,
+      notes: data.notes || null,
+    })),
+  ]
+
+  const { data: childLeads, error: childError } = await supabaseAdmin
+    .from("child_leads")
+    .insert(childRows)
     .select("id")
-    .single()
 
-  if (childError || !childLead) {
+  if (childError || !childLeads?.length) {
+    await supabaseAdmin.from("parent_leads").delete().eq("id", parentLead.id)
     console.error("Child lead insert error:", childError)
-
     return {
       success: false,
-      message:
-        language === "es"
-          ? "Ha ocurrido un error al guardar los datos del niño/a. Inténtalo de nuevo."
-          : "Something went wrong while saving the child details. Please try again.",
+      message: language === "es"
+        ? "Ha ocurrido un error al guardar los datos del niño/a. Inténtalo de nuevo."
+        : "Something went wrong while saving the child details. Please try again.",
     }
   }
 
   const { error: timetableError } = await supabaseAdmin
     .from("timetable_preferences")
-    .insert({
+    .insert(childLeads.map((childLead) => ({
       child_lead_id: childLead.id,
       preferred_days: data.preferredDays,
       preferred_times: data.preferredTimes,
       preferred_frequency: data.preferredFrequency,
-    })
+    })))
 
   if (timetableError) {
+    await supabaseAdmin.from("parent_leads").delete().eq("id", parentLead.id)
     console.error("Timetable preference insert error:", timetableError)
-
     return {
       success: false,
-      message:
-        language === "es"
-          ? "Ha ocurrido un error al guardar tu solicitud de plaza. Inténtalo de nuevo."
-          : "Something went wrong while saving your place enquiry. Please try again.",
+      message: language === "es"
+        ? "Ha ocurrido un error al guardar tu solicitud de plaza. Inténtalo de nuevo."
+        : "Something went wrong while saving your place enquiry. Please try again.",
     }
   }
 

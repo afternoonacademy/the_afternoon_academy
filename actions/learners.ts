@@ -709,16 +709,20 @@ export async function applyWeeklyDeliveryChange(formData: FormData) {
   }
 
   if (change.learnerAction === "add" && change.learnerId && change.seatNumber) {
-    for (const session of sessions) {
-      const { data: existing } = await supabase.from("delivery_seats").select("id")
-        .eq("delivery_session_id", session.id).eq("seat_number", change.seatNumber).eq("status", "scheduled").maybeSingle()
-      if (existing) throw new Error("That seat is already occupied on at least one day in the chosen week")
-      const { error } = await supabase.from("delivery_seats").insert({
-        delivery_session_id: session.id, learner_id: change.learnerId, seat_number: change.seatNumber,
-        status: "scheduled", updated_by: user.id,
-      })
-      if (error) throw new Error("Could not add the learner for this week")
+    const sessionIds = sessions.map((session) => session.id)
+    const { data: occupied, error: occupiedError } = await supabase.from("delivery_seats")
+      .select("delivery_session_id, learner_id, seat_number")
+      .in("delivery_session_id", sessionIds)
+      .eq("status", "scheduled")
+    if (occupiedError) throw new Error("Could not check the weekly seats")
+    if (occupied?.some((seat) => seat.seat_number === change.seatNumber || seat.learner_id === change.learnerId)) {
+      throw new Error("That learner or seat is already occupied on at least one day in the chosen week")
     }
+    const { error } = await supabase.from("delivery_seats").insert(sessionIds.map((deliverySessionId) => ({
+      delivery_session_id: deliverySessionId, learner_id: change.learnerId, seat_number: change.seatNumber,
+      status: "scheduled", updated_by: user.id,
+    })))
+    if (error) throw new Error("Could not add the learner for this week")
   }
   revalidatePath("/admin/sessions")
 }

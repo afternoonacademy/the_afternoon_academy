@@ -70,8 +70,12 @@ const sessionSchema = z.object({
 const placementSchema = z.object({
   sessionId: z.string().uuid(),
   learnerId: z.string().uuid(),
-  status: z.enum(["proposed", "offered", "confirmed", "waitlisted", "paused", "ended"]),
+  status: z.enum(["proposed", "waitlisted", "ended"]),
   fitNote: z.string().trim().max(1000).optional(),
+})
+
+const placementActionSchema = z.object({
+  placementId: z.string().uuid(),
 })
 
 function listFromForm(formData: FormData, field: string) {
@@ -101,6 +105,7 @@ export async function createLearner(formData: FormData) {
       first_name: parsed.data.firstName,
       year_group: parsed.data.yearGroup || null,
       parent_lead_id: parsed.data.parentLeadId || null,
+      status: parsed.data.parentLeadId ? "paused" : "active",
       parent_information_confirmed: true,
     })
     .select("id")
@@ -150,7 +155,29 @@ export async function updateLearnerDetails(formData: FormData) {
     throw new Error("Confirm permission before recording school contact details")
   }
 
-  const { error } = await supabaseService().from("learners").update({
+  const supabase = supabaseService()
+  const { data: learner, error: learnerError } = await supabase
+    .from("learners")
+    .select("parent_lead_id")
+    .eq("id", details.learnerId)
+    .single()
+
+  if (learnerError || !learner) throw new Error("Learner record not found")
+
+  if (details.status === "active" && learner.parent_lead_id) {
+    const { count, error: placementError } = await supabase
+      .from("session_placements")
+      .select("id", { count: "exact", head: true })
+      .eq("learner_id", details.learnerId)
+      .eq("status", "confirmed")
+
+    if (placementError) throw new Error("Could not verify the learner placement")
+    if (!count) {
+      throw new Error("A learner linked to an enquiry becomes active when a parent accepts a confirmed session offer")
+    }
+  }
+
+  const { error } = await supabase.from("learners").update({
     status: details.status,
     current_school_name: details.currentSchoolName || null,
     teacher_name: details.teacherName || null,
@@ -293,16 +320,50 @@ export async function saveSessionPlacement(formData: FormData) {
   const parsed = placementSchema.safeParse({ sessionId: formData.get("sessionId"), learnerId: formData.get("learnerId"), status: formData.get("status"), fitNote: formData.get("fitNote") || undefined })
   if (!parsed.success) throw new Error("Please check the placement details")
   const supabase = supabaseService()
-  const { data: session, error: sessionError } = await supabase.from("academy_sessions").select("capacity").eq("id", parsed.data.sessionId).single()
-  if (sessionError || !session) throw new Error("Session not found")
-  if (parsed.data.status === "confirmed") {
-    const { count, error: countError } = await supabase.from("session_placements").select("id", { count: "exact", head: true }).eq("session_id", parsed.data.sessionId).eq("status", "confirmed").neq("learner_id", parsed.data.learnerId)
-    if (countError) throw new Error("Could not check capacity")
-    if ((count || 0) >= session.capacity) throw new Error("This session is already at capacity. Use waitlisted or choose another session.")
+  const { data: existing, error: existingError } = await supabase
+    .from("session_placements")
+    .select("id, status")
+    .eq("session_id", parsed.data.sessionId)
+    .eq("learner_id", parsed.data.learnerId)
+    .maybeSingle()
+  if (existingError) throw new Error("Could not check the existing placement")
+  if (existing && ["offered", "confirmed"].includes(existing.status)) {
+    throw new Error("Use the placement action below; an offered or confirmed place cannot be overwritten")
   }
   const { error } = await supabase.from("session_placements").upsert({ session_id: parsed.data.sessionId, learner_id: parsed.data.learnerId, status: parsed.data.status, fit_note: parsed.data.fitNote || null, created_by: user.id }, { onConflict: "session_id,learner_id" })
   if (error) throw new Error("Could not save placement")
   revalidatePath("/admin/sessions")
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`)
+  revalidatePath("/admin/operations")
+}
+
+export async function sendSessionOffer(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = placementActionSchema.safeParse({ placementId: formData.get("placementId") })
+  if (!parsed.success) throw new Error("Invalid placement")
+
+  const { error } = await supabaseService().rpc("send_session_offer", {
+    p_placement_id: parsed.data.placementId,
+    p_actor_id: user.id,
+  })
+  if (error) throw new Error(error.message || "Could not send the session offer")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/sessions")
+  revalidatePath("/admin/operations")
+}
+
+export async function acceptSessionOffer(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = placementActionSchema.safeParse({ placementId: formData.get("placementId") })
+  if (!parsed.success) throw new Error("Invalid placement")
+
+  const { error } = await supabaseService().rpc("accept_session_offer", {
+    p_placement_id: parsed.data.placementId,
+    p_actor_id: user.id,
+  })
+  if (error) throw new Error(error.message || "Could not confirm the session offer")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/sessions")
+  revalidatePath("/admin/learners")
   revalidatePath("/admin/operations")
 }

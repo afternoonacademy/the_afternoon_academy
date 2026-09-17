@@ -238,6 +238,7 @@ export async function recordAttendance(formData: FormData) {
   if (error) throw new Error("Could not save attendance")
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`)
   revalidatePath("/admin/operations")
+  revalidatePath("/admin/sessions")
 }
 
 export async function createTeacherUpdate(formData: FormData) {

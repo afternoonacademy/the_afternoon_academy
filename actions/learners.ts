@@ -29,6 +29,7 @@ const attendanceSchema = z.object({
   attendanceDate: z.string().date(),
   status: z.enum(["present", "late", "absent", "authorised_absence"]),
   sessionId: z.string().uuid().optional(),
+  deliverySessionId: z.string().uuid().optional(),
   note: z.string().trim().max(500).optional(),
 })
 
@@ -258,6 +259,7 @@ export async function recordAttendance(formData: FormData) {
     attendanceDate: formData.get("attendanceDate"),
     status: formData.get("status"),
     sessionId: formData.get("sessionId") || undefined,
+    deliverySessionId: formData.get("deliverySessionId") || undefined,
     note: formData.get("note") || undefined,
   })
 
@@ -270,6 +272,7 @@ export async function recordAttendance(formData: FormData) {
       attendance_date: parsed.data.attendanceDate,
       status: parsed.data.status,
       session_id: parsed.data.sessionId || null,
+      delivery_session_id: parsed.data.deliverySessionId || null,
       note: parsed.data.note || null,
       recorded_by: user.id,
     },

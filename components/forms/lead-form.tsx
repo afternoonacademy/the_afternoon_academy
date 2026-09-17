@@ -43,6 +43,7 @@ const copy = {
     childDetails: "Child details",
     childDescription: "The Afternoon Academy currently welcomes children aged 4–12.",
     childAge: "Child age",
+    childFirstName: "Child’s first name",
     schoolYear: "School year",
     curriculum: "Curriculum",
     selectOne: "Select one",
@@ -99,6 +100,7 @@ const copy = {
     childDetails: "Datos del niño/a",
     childDescription: "The Afternoon Academy actualmente acoge a niños de 4 a 12 años.",
     childAge: "Edad del niño/a",
+    childFirstName: "Nombre del niño/a",
     schoolYear: "Curso escolar",
     curriculum: "Currículo",
     selectOne: "Selecciona una opción",
@@ -226,6 +228,10 @@ export function LeadForm({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="childFirstName">{t.childFirstName}</Label>
+                <Input id="childFirstName" name="childFirstName" required />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="parentName">{t.parentName}</Label>
                 <Input id="parentName" name="parentName" required />

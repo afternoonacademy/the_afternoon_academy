@@ -29,6 +29,7 @@ const language: "en" | "es" =
     phone: formData.get("phone"),
     area: formData.get("area") || undefined,
     schoolName: formData.get("schoolName") || undefined,
+    childFirstName: formData.get("childFirstName"),
 
     childAge: formData.get("childAge"),
     schoolYear: formData.get("schoolYear") || undefined,
@@ -74,11 +75,7 @@ const language: "en" | "es" =
       interest_level: data.interestLevel,
       consent_contact: data.consentContact,
       source: language === "es" ? "landing_page_es" : "landing_page_en",
-      status:
-        data.interestLevel === "priority_launch" ||
-        data.interestLevel === "very_interested"
-          ? "priority"
-          : "new",
+      status: "new",
     })
     .select("id")
     .single()
@@ -99,6 +96,7 @@ const language: "en" | "es" =
     .from("child_leads")
     .insert({
       parent_lead_id: parentLead.id,
+      first_name: data.childFirstName,
       child_age: data.childAge,
       school_year: data.schoolYear || null,
       curriculum: data.curriculum,

@@ -93,3 +93,12 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - A session offer is created from a selected parent lead and then one of that parent's recorded children; staff do not retype child details.
 - The public lead form can record additional siblings. Each child gets a separate protected child-lead and timetable-preference record under the same parent enquiry.
 - Tutor Room labels explain that Start and End mean the beginning and end of the one-to-one appointment.
+
+
+## Monthly delivery-plan correction
+
+- Staff create a month plan for one weekday/table, including teacher, general support type, time, duration and up to six enrolled learners.
+- The system creates a dated Table 1/2 session and dated seats for every matching day in that month.
+- Any date can be created directly, edited, cancelled or restored without changing the monthly plan or other dates.
+- A learner can be marked “not attending today” without changing their standing enrolment. A cancelled table has no expected attendance.
+- Attendance is mobile-first and records delivery evidence only; it does not create or amend a charge, credit or payment.

@@ -13,6 +13,7 @@ export function LeadChildPicker({
   children: ChildLead[]
 }) {
   const [parentId, setParentId] = useState("")
+  const [childId, setChildId] = useState("")
   const availableChildren = useMemo(
     () => children.filter((child) => child.parent_lead_id === parentId),
     [children, parentId]
@@ -23,7 +24,7 @@ export function LeadChildPicker({
       <select
         className="h-10 rounded-md border bg-background px-3"
         name="parentLeadId"
-        onChange={(event) => setParentId(event.target.value)}
+        onChange={(event) => { setParentId(event.target.value); setChildId("") }}
         required
         value={parentId}
       >
@@ -34,7 +35,9 @@ export function LeadChildPicker({
         className="h-10 rounded-md border bg-background px-3"
         disabled={!parentId}
         name="childLeadId"
+        onChange={(event) => setChildId(event.target.value)}
         required
+        value={childId}
       >
         <option value="">{parentId ? "Choose this parent’s child" : "Choose parent first"}</option>
         {availableChildren.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"}{child.school_year ? ` · ${child.school_year}` : ""}</option>)}

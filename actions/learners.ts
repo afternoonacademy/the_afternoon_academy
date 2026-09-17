@@ -647,3 +647,13 @@ export async function updateDailyDeliverySession(formData: FormData) {
   if (error) throw new Error("Could not save this date's table plan")
   revalidatePath("/admin/sessions")
 }
+
+
+export async function restoreDeliverySession(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = deliverySessionActionSchema.safeParse({ deliverySessionId: formData.get("deliverySessionId") })
+  if (!parsed.success) throw new Error("Invalid table")
+  const { error } = await supabaseService().from("delivery_sessions").update({ status: "scheduled", cancellation_note: null, updated_by: user.id }).eq("id", parsed.data.deliverySessionId)
+  if (error) throw new Error("Could not restore this table")
+  revalidatePath("/admin/sessions")
+}

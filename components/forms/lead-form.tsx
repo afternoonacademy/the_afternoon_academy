@@ -3,6 +3,7 @@
 import { useActionState } from "react"
 
 import { submitLead, type SubmitLeadState } from "@/actions/submit-lead"
+import { LeadAdditionalChildren } from "@/components/forms/lead-additional-children"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -314,6 +315,7 @@ export function LeadForm({
                 </select>
               </div>
             </div>
+            <LeadAdditionalChildren language={language} />
           </section>
 
           <section className="space-y-4">

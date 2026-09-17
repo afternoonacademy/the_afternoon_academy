@@ -1,6 +1,6 @@
 # Lead-to-Placement Flow v1
 
-_Status: approved for development — 17 September 2026._
+_Status: revised for the current correction cycle — 17 September 2026._
 
 ## Problem
 
@@ -8,19 +8,20 @@ The lead and placement statuses currently operate independently. That makes it p
 
 ## Goal
 
-Create one clear, human-led route from enquiry to a confirmed place while preserving the history of leads, learner records and placements.
+Create one clear, human-led route from enquiry to a confirmed place while preserving the history of leads, learner records and placements. Give TAA an operationally simple room timetable rather than a premature themed-group matching system.
 
 ## Non-goals
 
 - Taking payments, sending automated email, public booking or a parent portal.
 - Automatic matching or AI placement decisions.
 - Deleting historical records when a family declines, waits or leaves.
+- A full teacher/staff profile system.
 
 ## Workflow
 
 | Stage | Lead status | Placement status | Staff meaning / next action |
 | --- | --- | --- | --- |
-| Enquiry | New, warm, priority or contacted | None | Qualify the enquiry and consider fit. |
+| Enquiry | New or contacted | None | Qualify the enquiry and consider fit. |
 | Considered match | Contacted | Proposed | Staff have identified a possible session; no parent offer exists yet. |
 | Session offer sent | Offer sent — awaiting reply | Offered to parent | A specific session has been offered. Await the parent response. |
 | Parent accepts | Enrolled | Confirmed | Staff have recorded acceptance of the offered session. |
@@ -31,8 +32,10 @@ Create one clear, human-led route from enquiry to a confirmed place while preser
 
 - A session proposal or offer must never enrol a lead.
 - A lead becomes **Enrolled** only through staff confirmation that a parent accepted a specified offered session.
+- A website enquiry starts as **New**. A phone, referral, walk-in or email enquiry can be entered by staff and also starts as **New**. **Contacted** means staff have made the first meaningful call, email or WhatsApp contact.
+- “Warm” and “priority” are retired from the working lifecycle; historical records retain their existing value until staff update them.
 - An offered placement does not consume confirmed session capacity.
-- Acceptance is one protected server-side operation: it verifies the offer, checks capacity and updates the placement and linked lead together.
+- Acceptance is one protected server-side operation: it verifies the offer, checks capacity, creates the learner from the approved enquiry details when needed, and updates the linked lead together.
 - Only an authenticated TAA admin may create proposals, send offers or record acceptance.
 - Audit data records the staff member and time for offers and acceptance. No identifiable learner or parent data is sent to an AI provider.
 
@@ -44,6 +47,14 @@ Create one clear, human-led route from enquiry to a confirmed place while preser
 4. Confirming acceptance only succeeds for an offered place with capacity; it updates the placement to confirmed, the linked lead to Enrolled and the learner to active in one operation.
 5. Waitlisted, ended and left records remain visible historically and are not used as active matching choices.
 6. The sessions page makes the next action explicit at every stage.
+7. A parent acceptance creates a linked learner record automatically; staff can then enrich its profile.
+8. The weekly timetable shows TAA1 capacity and filled seats. Tutor Room bookings can be created for any date/time and cannot overlap.
+
+## Revised operations scope
+
+- **TAA1 (main room):** a simple weekly timetable across Monday–Sunday. Staff can add recurring general homework-support slots, assign a teacher, and see six visible seats with learner names for each confirmed place. Wednesday, Saturday and Sunday remain available for future sessions.
+- **Tutor Room:** a separate dated one-to-one booking calendar. It has no pre-set opening hours; a staff member can book any chosen date/time, duration, learner and teacher. A protected overlap check prevents two bookings in the same room at the same time.
+- A full teacher profile is deliberately deferred. Teacher assignment remains a simple named field until the Academy has multiple staff and needs availability, cover, qualifications and safeguarding records.
 
 ## Test and recovery
 

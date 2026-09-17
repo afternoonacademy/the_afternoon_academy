@@ -61,3 +61,26 @@ Create one clear, human-led route from enquiry to a confirmed place while preser
 - Test invalid direct enrolment, offer without a linked lead, acceptance without an offer and acceptance at capacity.
 - Verify RLS remains enabled and browser roles have no direct access to the operational tables or privileged functions.
 - The migration is additive apart from widening the existing lead-status check. Recovery is to stop using the new controls; historical audit fields remain safe to retain.
+
+
+## Room-board correction cycle
+
+### Goal
+
+Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seats are configured through recurring weekly sessions. Staff select a date to see the relevant day’s two table plans, learner information and attendance state.
+
+### Rules
+
+- TAA1 has exactly two configured table positions, each with six seats.
+- A confirmed placement may reserve one seat per session; an offer only reserves a seat once accepted.
+- Learner information must be available by tap/click, never hover only.
+- Attendance is stored with both the learner and the session/date. It is an operational record, not a billing trigger.
+- Tutor Room remains a separate dated one-to-one booking flow.
+
+### Acceptance criteria
+
+1. On a phone, staff can select today or another date and see both TAA1 tables without horizontal scrolling.
+2. A table shows its scheduled time, teacher, session type, six seats and clear available/occupied states.
+3. A filled seat opens a concise learner detail panel and lets staff mark the learner present for that dated session.
+4. Duplicate confirmed seat assignments are rejected by the database.
+5. The recurring setup is not recreated each day; it is configured by weekday and fixed table number.

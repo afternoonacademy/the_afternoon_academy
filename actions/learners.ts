@@ -123,6 +123,8 @@ const dailyDeliverySchema = z.object({
   focus: z.string().trim().min(1).max(500),
 })
 
+const updateDeliverySessionSchema = dailyDeliverySchema.extend({ deliverySessionId: z.string().uuid() })
+
 const deliverySeatSchema = z.object({
   deliverySessionId: z.string().uuid(),
   learnerId: z.string().uuid(),
@@ -626,5 +628,22 @@ export async function cancelDeliverySession(formData: FormData) {
   if (!parsed.success) throw new Error("Invalid table")
   const { error } = await supabaseService().from("delivery_sessions").update({ status: "cancelled", updated_by: user.id }).eq("id", parsed.data.deliverySessionId)
   if (error) throw new Error("Could not cancel this table")
+  revalidatePath("/admin/sessions")
+}
+
+
+export async function updateDailyDeliverySession(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = updateDeliverySessionSchema.safeParse({
+    deliverySessionId: formData.get("deliverySessionId"), serviceDate: formData.get("serviceDate"),
+    tableNumber: formData.get("tableNumber"), startsAt: formData.get("startsAt"),
+    durationMinutes: formData.get("durationMinutes"), teacherName: formData.get("teacherName"), focus: formData.get("focus"),
+  })
+  if (!parsed.success) throw new Error("Please check the daily table plan")
+  const { error } = await supabaseService().from("delivery_sessions").update({
+    starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
+    teacher_name: parsed.data.teacherName, focus: parsed.data.focus, updated_by: user.id,
+  }).eq("id", parsed.data.deliverySessionId)
+  if (error) throw new Error("Could not save this date's table plan")
   revalidatePath("/admin/sessions")
 }

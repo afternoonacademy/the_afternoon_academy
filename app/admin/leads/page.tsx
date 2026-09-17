@@ -155,7 +155,7 @@ export default async function AdminLeadsPage() {
                         <LeadActions
                           leadId={lead.parent_lead_id}
                           parentName={lead.parent_name}
-                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "waitlist" | "converted" | "closed"}
+                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "offer_sent" | "waitlist" | "converted" | "closed"}
                         />
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">

@@ -90,6 +90,20 @@ const leadOfferSchema = z.object({
 })
 
 const offerActionSchema = z.object({ offerId: z.string().uuid() })
+const sessionOverrideSchema = z.object({
+  sessionId: z.string().uuid(),
+  serviceDate: z.string().date(),
+  teacherName: z.string().trim().max(160).optional(),
+  focus: z.string().trim().max(500).optional(),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+  durationMinutes: z.coerce.number().int().min(15).max(360).optional(),
+})
+
+const removeSessionOverrideSchema = z.object({
+  sessionId: z.string().uuid(),
+  serviceDate: z.string().date(),
+})
+
 const tutorBookingSchema = z.object({
   learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
   teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
@@ -430,5 +444,47 @@ export async function createTutorRoomBooking(formData: FormData) {
   if (!parsed.success) throw new Error("Please check the Tutor Room booking")
   const { error } = await supabaseService().from("tutor_room_bookings").insert({ learner_id: parsed.data.learnerId || null, parent_lead_id: parsed.data.parentLeadId || null, teacher_name: parsed.data.teacherName, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt, note: parsed.data.note || null, created_by: user.id })
   if (error) throw new Error(error.code === "23P01" ? "The Tutor Room is already booked at that time" : "Could not save Tutor Room booking")
+  revalidatePath("/admin/sessions")
+}
+
+
+export async function saveSessionDateOverride(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = sessionOverrideSchema.safeParse({
+    sessionId: formData.get("sessionId"),
+    serviceDate: formData.get("serviceDate"),
+    teacherName: formData.get("teacherName") || undefined,
+    focus: formData.get("focus") || undefined,
+    startsAt: formData.get("startsAt") || undefined,
+    durationMinutes: formData.get("durationMinutes") || undefined,
+  })
+  if (!parsed.success) throw new Error("Please check the daily table details")
+
+  const { error } = await supabaseService().from("session_date_overrides").upsert({
+    session_id: parsed.data.sessionId,
+    service_date: parsed.data.serviceDate,
+    teacher_name: parsed.data.teacherName || null,
+    focus: parsed.data.focus || null,
+    starts_at: parsed.data.startsAt || null,
+    duration_minutes: parsed.data.durationMinutes || null,
+    updated_by: user.id,
+  }, { onConflict: "session_id,service_date" })
+  if (error) throw new Error("Could not save the daily timetable change")
+  revalidatePath("/admin/sessions")
+}
+
+export async function restoreSessionWeeklyDefault(formData: FormData) {
+  await requireAdmin()
+  const parsed = removeSessionOverrideSchema.safeParse({
+    sessionId: formData.get("sessionId"),
+    serviceDate: formData.get("serviceDate"),
+  })
+  if (!parsed.success) throw new Error("Invalid timetable change")
+
+  const { error } = await supabaseService().from("session_date_overrides")
+    .delete()
+    .eq("session_id", parsed.data.sessionId)
+    .eq("service_date", parsed.data.serviceDate)
+  if (error) throw new Error("Could not restore the weekly timetable")
   revalidatePath("/admin/sessions")
 }

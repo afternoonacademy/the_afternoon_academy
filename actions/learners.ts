@@ -78,6 +78,20 @@ const placementActionSchema = z.object({
   placementId: z.string().uuid(),
 })
 
+const leadOfferSchema = z.object({
+  sessionId: z.string().uuid(),
+  parentLeadId: z.string().uuid(),
+  learnerFirstName: z.string().trim().min(1).max(80),
+  learnerYearGroup: z.string().trim().max(80).optional(),
+  fitNote: z.string().trim().max(1000).optional(),
+})
+
+const offerActionSchema = z.object({ offerId: z.string().uuid() })
+const tutorBookingSchema = z.object({
+  learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
+  teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
+}).refine((value) => value.learnerId || value.parentLeadId, { message: "Choose a learner or a parent lead" })
+
 function listFromForm(formData: FormData, field: string) {
   return String(formData.get(field) || "")
     .split(",")
@@ -366,4 +380,48 @@ export async function acceptSessionOffer(formData: FormData) {
   revalidatePath("/admin/sessions")
   revalidatePath("/admin/learners")
   revalidatePath("/admin/operations")
+}
+
+export async function saveLeadSessionOffer(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = leadOfferSchema.safeParse({
+    sessionId: formData.get("sessionId"), parentLeadId: formData.get("parentLeadId"),
+    learnerFirstName: formData.get("learnerFirstName"), learnerYearGroup: formData.get("learnerYearGroup") || undefined,
+    fitNote: formData.get("fitNote") || undefined,
+  })
+  if (!parsed.success) throw new Error("Please check the offer details")
+  const { error } = await supabaseService().from("session_offers").upsert({
+    session_id: parsed.data.sessionId, parent_lead_id: parsed.data.parentLeadId,
+    learner_first_name: parsed.data.learnerFirstName, learner_year_group: parsed.data.learnerYearGroup || null,
+    fit_note: parsed.data.fitNote || null, created_by: user.id,
+  }, { onConflict: "session_id,parent_lead_id" })
+  if (error) throw new Error("Could not save the session offer")
+  revalidatePath("/admin/sessions"); revalidatePath("/admin/leads")
+}
+
+export async function sendLeadSessionOffer(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = offerActionSchema.safeParse({ offerId: formData.get("offerId") })
+  if (!parsed.success) throw new Error("Invalid offer")
+  const { error } = await supabaseService().rpc("send_lead_session_offer", { p_offer_id: parsed.data.offerId, p_actor_id: user.id })
+  if (error) throw new Error(error.message || "Could not send the offer")
+  revalidatePath("/admin/sessions"); revalidatePath("/admin/leads")
+}
+
+export async function acceptLeadSessionOffer(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = offerActionSchema.safeParse({ offerId: formData.get("offerId") })
+  if (!parsed.success) throw new Error("Invalid offer")
+  const { error } = await supabaseService().rpc("accept_lead_session_offer", { p_offer_id: parsed.data.offerId, p_actor_id: user.id })
+  if (error) throw new Error(error.message || "Could not confirm acceptance")
+  revalidatePath("/admin/sessions"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/operations")
+}
+
+export async function createTutorRoomBooking(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = tutorBookingSchema.safeParse({ learnerId: formData.get("learnerId") || undefined, parentLeadId: formData.get("parentLeadId") || undefined, teacherName: formData.get("teacherName"), startsAt: formData.get("startsAt"), endsAt: formData.get("endsAt"), note: formData.get("note") || undefined })
+  if (!parsed.success) throw new Error("Please check the Tutor Room booking")
+  const { error } = await supabaseService().from("tutor_room_bookings").insert({ learner_id: parsed.data.learnerId || null, parent_lead_id: parsed.data.parentLeadId || null, teacher_name: parsed.data.teacherName, starts_at: parsed.data.startsAt, ends_at: parsed.data.endsAt, note: parsed.data.note || null, created_by: user.id })
+  if (error) throw new Error(error.code === "23P01" ? "The Tutor Room is already booked at that time" : "Could not save Tutor Room booking")
+  revalidatePath("/admin/sessions")
 }

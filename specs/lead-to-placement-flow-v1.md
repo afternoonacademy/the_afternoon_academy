@@ -84,3 +84,12 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 3. A filled seat opens a concise learner detail panel and lets staff mark the learner present for that dated session.
 4. Duplicate confirmed seat assignments are rejected by the database.
 5. The recurring setup is not recreated each day; it is configured by weekday and fixed table number.
+
+
+## Daily-override and family-enquiry correction
+
+- The weekly timetable is a default, not a lock. A table can be changed for one selected date without changing future weeks; staff can restore its weekly default.
+- Each daily table card exposes teacher, session type, time and duration with plain-language labels. Teacher is a free-text/datalist field until a teacher-profile slice is approved.
+- A session offer is created from a selected parent lead and then one of that parent's recorded children; staff do not retype child details.
+- The public lead form can record additional siblings. Each child gets a separate protected child-lead and timetable-preference record under the same parent enquiry.
+- Tutor Room labels explain that Start and End mean the beginning and end of the one-to-one appointment.

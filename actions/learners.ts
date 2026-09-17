@@ -83,9 +83,8 @@ const placementActionSchema = z.object({
 const leadOfferSchema = z.object({
   sessionId: z.string().uuid(),
   parentLeadId: z.string().uuid(),
-  learnerFirstName: z.string().trim().min(1).max(80),
-  learnerYearGroup: z.string().trim().max(80).optional(),
-  seatNumber: z.coerce.number().int().min(1).max(6).optional(),
+  childLeadId: z.string().uuid(),
+  seatNumber: z.coerce.number().int().min(1).max(6),
   fitNote: z.string().trim().max(1000).optional(),
 })
 
@@ -407,14 +406,23 @@ export async function saveLeadSessionOffer(formData: FormData) {
   const { user } = await requireAdmin()
   const parsed = leadOfferSchema.safeParse({
     sessionId: formData.get("sessionId"), parentLeadId: formData.get("parentLeadId"),
-    learnerFirstName: formData.get("learnerFirstName"), learnerYearGroup: formData.get("learnerYearGroup") || undefined,
-    seatNumber: formData.get("seatNumber") || undefined, fitNote: formData.get("fitNote") || undefined,
+    childLeadId: formData.get("childLeadId"), seatNumber: formData.get("seatNumber"), fitNote: formData.get("fitNote") || undefined,
   })
-  if (!parsed.success) throw new Error("Please check the offer details")
-  const { error } = await supabaseService().from("session_offers").upsert({
+  if (!parsed.success) throw new Error("Please choose the parent, child and intended seat")
+  const supabase = supabaseService()
+  const { data: child, error: childError } = await supabase
+    .from("child_leads")
+    .select("parent_lead_id, first_name, school_year")
+    .eq("id", parsed.data.childLeadId)
+    .single()
+  if (childError || !child || child.parent_lead_id !== parsed.data.parentLeadId) {
+    throw new Error("That child does not belong to the selected parent lead")
+  }
+
+  const { error } = await supabase.from("session_offers").upsert({
     session_id: parsed.data.sessionId, parent_lead_id: parsed.data.parentLeadId,
-    learner_first_name: parsed.data.learnerFirstName, learner_year_group: parsed.data.learnerYearGroup || null,
-    seat_number: parsed.data.seatNumber || null, fit_note: parsed.data.fitNote || null, created_by: user.id,
+    learner_first_name: child.first_name, learner_year_group: child.school_year || null,
+    seat_number: parsed.data.seatNumber, fit_note: parsed.data.fitNote || null, created_by: user.id,
   }, { onConflict: "session_id,parent_lead_id" })
   if (error) throw new Error("Could not save the session offer")
   revalidatePath("/admin/sessions"); revalidatePath("/admin/leads")

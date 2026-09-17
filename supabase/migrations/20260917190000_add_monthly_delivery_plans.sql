@@ -56,8 +56,6 @@ create unique index delivery_seats_active_learner_unique
 create index delivery_sessions_date_idx on public.delivery_sessions (service_date);
 create index delivery_seats_session_idx on public.delivery_seats (delivery_session_id, status);
 
-create trigger monthly_delivery_plans_set_updated_at before update on public.monthly_delivery_plans
-for each row execute function public.set_updated_at();
 create trigger delivery_sessions_set_updated_at before update on public.delivery_sessions
 for each row execute function public.set_updated_at();
 create trigger delivery_seats_set_updated_at before update on public.delivery_seats

@@ -28,6 +28,7 @@ const attendanceSchema = z.object({
   learnerId: z.string().uuid(),
   attendanceDate: z.string().date(),
   status: z.enum(["present", "late", "absent", "authorised_absence"]),
+  sessionId: z.string().uuid().optional(),
   note: z.string().trim().max(500).optional(),
 })
 
@@ -64,6 +65,7 @@ const sessionSchema = z.object({
   teacherName: z.string().trim().max(160).optional(),
   roomName: z.string().trim().max(100).optional(),
   capacity: z.coerce.number().int().min(1).max(40),
+  tableNumber: z.coerce.number().int().min(1).max(2).optional(),
   status: z.enum(["planning", "open", "paused", "closed"]),
 })
 
@@ -83,6 +85,7 @@ const leadOfferSchema = z.object({
   parentLeadId: z.string().uuid(),
   learnerFirstName: z.string().trim().min(1).max(80),
   learnerYearGroup: z.string().trim().max(80).optional(),
+  seatNumber: z.coerce.number().int().min(1).max(6).optional(),
   fitNote: z.string().trim().max(1000).optional(),
 })
 
@@ -204,6 +207,7 @@ export async function updateLearnerDetails(formData: FormData) {
   revalidatePath("/admin/learners")
   revalidatePath(`/admin/learners/${details.learnerId}`)
   revalidatePath("/admin/operations")
+  revalidatePath("/admin/sessions")
 }
 
 export async function recordAttendance(formData: FormData) {
@@ -212,6 +216,7 @@ export async function recordAttendance(formData: FormData) {
     learnerId: formData.get("learnerId"),
     attendanceDate: formData.get("attendanceDate"),
     status: formData.get("status"),
+    sessionId: formData.get("sessionId") || undefined,
     note: formData.get("note") || undefined,
   })
 
@@ -223,6 +228,7 @@ export async function recordAttendance(formData: FormData) {
       learner_id: parsed.data.learnerId,
       attendance_date: parsed.data.attendanceDate,
       status: parsed.data.status,
+      session_id: parsed.data.sessionId || null,
       note: parsed.data.note || null,
       recorded_by: user.id,
     },
@@ -315,14 +321,14 @@ export async function createAcademySession(formData: FormData) {
     name: formData.get("name"), focus: formData.get("focus") || undefined, ageRange: formData.get("ageRange") || undefined,
     weekday: formData.get("weekday"), startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
     teacherName: formData.get("teacherName") || undefined, roomName: formData.get("roomName") || undefined,
-    capacity: formData.get("capacity"), status: formData.get("status"),
+    capacity: formData.get("capacity"), tableNumber: formData.get("tableNumber") || undefined, status: formData.get("status"),
   })
   if (!parsed.success) throw new Error("Please check the session details")
   const { error } = await supabaseService().from("academy_sessions").insert({
     name: parsed.data.name, focus: parsed.data.focus || null, age_range: parsed.data.ageRange || null,
     weekday: parsed.data.weekday, starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
     teacher_name: parsed.data.teacherName || null, room_name: parsed.data.roomName || null, capacity: parsed.data.capacity,
-    status: parsed.data.status, created_by: user.id,
+    table_number: parsed.data.tableNumber || null, status: parsed.data.status, created_by: user.id,
   })
   if (error) throw new Error("Could not create session")
   revalidatePath("/admin/sessions")
@@ -387,13 +393,13 @@ export async function saveLeadSessionOffer(formData: FormData) {
   const parsed = leadOfferSchema.safeParse({
     sessionId: formData.get("sessionId"), parentLeadId: formData.get("parentLeadId"),
     learnerFirstName: formData.get("learnerFirstName"), learnerYearGroup: formData.get("learnerYearGroup") || undefined,
-    fitNote: formData.get("fitNote") || undefined,
+    seatNumber: formData.get("seatNumber") || undefined, fitNote: formData.get("fitNote") || undefined,
   })
   if (!parsed.success) throw new Error("Please check the offer details")
   const { error } = await supabaseService().from("session_offers").upsert({
     session_id: parsed.data.sessionId, parent_lead_id: parsed.data.parentLeadId,
     learner_first_name: parsed.data.learnerFirstName, learner_year_group: parsed.data.learnerYearGroup || null,
-    fit_note: parsed.data.fitNote || null, created_by: user.id,
+    seat_number: parsed.data.seatNumber || null, fit_note: parsed.data.fitNote || null, created_by: user.id,
   }, { onConflict: "session_id,parent_lead_id" })
   if (error) throw new Error("Could not save the session offer")
   revalidatePath("/admin/sessions"); revalidatePath("/admin/leads")

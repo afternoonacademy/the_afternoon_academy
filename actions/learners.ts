@@ -103,6 +103,34 @@ const removeSessionOverrideSchema = z.object({
   serviceDate: z.string().date(),
 })
 
+const monthlyPlanSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  weekday: z.coerce.number().int().min(0).max(6),
+  tableNumber: z.coerce.number().int().min(1).max(2),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  durationMinutes: z.coerce.number().int().min(15).max(360),
+  teacherName: z.string().trim().min(1).max(160),
+  focus: z.string().trim().min(1).max(500),
+})
+
+const dailyDeliverySchema = z.object({
+  serviceDate: z.string().date(),
+  tableNumber: z.coerce.number().int().min(1).max(2),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  durationMinutes: z.coerce.number().int().min(15).max(360),
+  teacherName: z.string().trim().min(1).max(160),
+  focus: z.string().trim().min(1).max(500),
+})
+
+const deliverySeatSchema = z.object({
+  deliverySessionId: z.string().uuid(),
+  learnerId: z.string().uuid(),
+  seatNumber: z.coerce.number().int().min(1).max(6),
+})
+
+const deliverySeatActionSchema = z.object({ deliverySeatId: z.string().uuid() })
+const deliverySessionActionSchema = z.object({ deliverySessionId: z.string().uuid() })
+
 const tutorBookingSchema = z.object({
   learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
   teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
@@ -494,5 +522,106 @@ export async function restoreSessionWeeklyDefault(formData: FormData) {
     .eq("session_id", parsed.data.sessionId)
     .eq("service_date", parsed.data.serviceDate)
   if (error) throw new Error("Could not restore the weekly timetable")
+  revalidatePath("/admin/sessions")
+}
+
+
+function datesInMonthForWeekday(month: string, weekday: number) {
+  const [year, monthNumber] = month.split("-").map(Number)
+  const cursor = new Date(Date.UTC(year, monthNumber - 1, 1))
+  const result: string[] = []
+  while (cursor.getUTCMonth() === monthNumber - 1) {
+    if (cursor.getUTCDay() === weekday) result.push(cursor.toISOString().slice(0, 10))
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return result
+}
+
+export async function createMonthlyDeliveryPlan(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = monthlyPlanSchema.safeParse({
+    month: formData.get("month"), weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName"), focus: formData.get("focus"),
+  })
+  if (!parsed.success) throw new Error("Please complete the monthly table plan")
+  const plan = parsed.data
+  const supabase = supabaseService()
+  const { data: planRow, error: planError } = await supabase.from("monthly_delivery_plans").insert({
+    month_start: `${plan.month}-01`, weekday: plan.weekday, table_number: plan.tableNumber,
+    starts_at: plan.startsAt, duration_minutes: plan.durationMinutes, teacher_name: plan.teacherName,
+    focus: plan.focus, created_by: user.id,
+  }).select("id").single()
+  if (planError || !planRow) throw new Error("That monthly table plan already exists. Edit the dated plan instead.")
+
+  const dates = datesInMonthForWeekday(plan.month, plan.weekday)
+  const sessions = dates.map((serviceDate) => ({
+    monthly_plan_id: planRow.id, service_date: serviceDate, table_number: plan.tableNumber,
+    starts_at: plan.startsAt, duration_minutes: plan.durationMinutes, teacher_name: plan.teacherName,
+    focus: plan.focus, created_by: user.id, updated_by: user.id,
+  }))
+  const { data: deliverySessions, error: sessionError } = await supabase.from("delivery_sessions").insert(sessions).select("id")
+  if (sessionError || !deliverySessions) {
+    await supabase.from("monthly_delivery_plans").delete().eq("id", planRow.id)
+    throw new Error("Could not create the dated table plans")
+  }
+
+  const learnerIds = formData.getAll("learnerId").map((value) => String(value)).filter(Boolean)
+  if (learnerIds.length) {
+    const seats = deliverySessions.flatMap((deliverySession) => learnerIds.map((learnerId, index) => ({
+      delivery_session_id: deliverySession.id, learner_id: learnerId, seat_number: index + 1, status: "scheduled", updated_by: user.id,
+    })))
+    const { error: seatError } = await supabase.from("delivery_seats").insert(seats)
+    if (seatError) throw new Error("The monthly plan was created, but its learner seats could not be added")
+  }
+  revalidatePath("/admin/sessions")
+}
+
+export async function createDailyDeliverySession(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = dailyDeliverySchema.safeParse({
+    serviceDate: formData.get("serviceDate"), tableNumber: formData.get("tableNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName"), focus: formData.get("focus"),
+  })
+  if (!parsed.success) throw new Error("Please complete this table's daily plan")
+  const { error } = await supabaseService().from("delivery_sessions").insert({
+    service_date: parsed.data.serviceDate, table_number: parsed.data.tableNumber,
+    starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
+    teacher_name: parsed.data.teacherName, focus: parsed.data.focus, created_by: user.id, updated_by: user.id,
+  })
+  if (error) throw new Error("This table is already planned for the selected date")
+  revalidatePath("/admin/sessions")
+}
+
+export async function addDeliverySeat(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = deliverySeatSchema.safeParse({
+    deliverySessionId: formData.get("deliverySessionId"), learnerId: formData.get("learnerId"), seatNumber: formData.get("seatNumber"),
+  })
+  if (!parsed.success) throw new Error("Choose a learner and an available seat")
+  const { error } = await supabaseService().from("delivery_seats").insert({
+    delivery_session_id: parsed.data.deliverySessionId, learner_id: parsed.data.learnerId,
+    seat_number: parsed.data.seatNumber, status: "scheduled", updated_by: user.id,
+  })
+  if (error) throw new Error("That learner or seat is already on this table")
+  revalidatePath("/admin/sessions")
+}
+
+export async function removeDeliverySeat(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = deliverySeatActionSchema.safeParse({ deliverySeatId: formData.get("deliverySeatId") })
+  if (!parsed.success) throw new Error("Invalid seat")
+  const { error } = await supabaseService().from("delivery_seats").update({ status: "not_attending", updated_by: user.id }).eq("id", parsed.data.deliverySeatId)
+  if (error) throw new Error("Could not remove the learner from this date")
+  revalidatePath("/admin/sessions")
+}
+
+export async function cancelDeliverySession(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = deliverySessionActionSchema.safeParse({ deliverySessionId: formData.get("deliverySessionId") })
+  if (!parsed.success) throw new Error("Invalid table")
+  const { error } = await supabaseService().from("delivery_sessions").update({ status: "cancelled", updated_by: user.id }).eq("id", parsed.data.deliverySessionId)
+  if (error) throw new Error("Could not cancel this table")
   revalidatePath("/admin/sessions")
 }

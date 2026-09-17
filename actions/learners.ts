@@ -134,6 +134,19 @@ const deliverySeatSchema = z.object({
 const deliverySeatActionSchema = z.object({ deliverySeatId: z.string().uuid() })
 const deliverySessionActionSchema = z.object({ deliverySessionId: z.string().uuid() })
 
+const weeklyDeliveryChangeSchema = z.object({
+  weekStart: z.string().date(),
+  tableNumber: z.coerce.number().int().min(1).max(2),
+  teacherName: z.string().trim().max(160).optional(),
+  focus: z.string().trim().max(500).optional(),
+  learnerId: z.string().uuid().optional(),
+  learnerAction: z.enum(["none", "add", "remove"]),
+  seatNumber: z.coerce.number().int().min(1).max(6).optional(),
+}).superRefine((value, ctx) => {
+  if (value.learnerAction === "add" && !value.seatNumber) ctx.addIssue({ code: "custom", message: "Choose a seat for the new learner" })
+  if (value.learnerAction !== "none" && !value.learnerId) ctx.addIssue({ code: "custom", message: "Choose a learner" })
+})
+
 const tutorBookingSchema = z.object({
   learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
   teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
@@ -655,5 +668,57 @@ export async function restoreDeliverySession(formData: FormData) {
   if (!parsed.success) throw new Error("Invalid table")
   const { error } = await supabaseService().from("delivery_sessions").update({ status: "scheduled", cancellation_note: null, updated_by: user.id }).eq("id", parsed.data.deliverySessionId)
   if (error) throw new Error("Could not restore this table")
+  revalidatePath("/admin/sessions")
+}
+
+
+export async function applyWeeklyDeliveryChange(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = weeklyDeliveryChangeSchema.safeParse({
+    weekStart: formData.get("weekStart"), tableNumber: formData.get("tableNumber"),
+    teacherName: formData.get("teacherName") || undefined, focus: formData.get("focus") || undefined,
+    learnerId: formData.get("learnerId") || undefined, learnerAction: formData.get("learnerAction") || "none",
+    seatNumber: formData.get("seatNumber") || undefined,
+  })
+  if (!parsed.success) throw new Error("Please check the weekly change")
+  const change = parsed.data
+  if (!change.teacherName && !change.focus && change.learnerAction === "none") throw new Error("Choose a teacher, session type or learner change")
+
+  const endDate = new Date(`${change.weekStart}T12:00:00`)
+  endDate.setDate(endDate.getDate() + 6)
+  const end = endDate.toISOString().slice(0, 10)
+  const supabase = supabaseService()
+  const { data: sessions, error: sessionError } = await supabase.from("delivery_sessions")
+    .select("id").eq("table_number", change.tableNumber).eq("status", "scheduled")
+    .gte("service_date", change.weekStart).lte("service_date", end)
+  if (sessionError) throw new Error("Could not find that week's table plans")
+  if (!sessions?.length) throw new Error("There are no planned sessions for that table in this week")
+
+  if (change.teacherName || change.focus) {
+    const updates: { teacher_name?: string; focus?: string; updated_by: string } = { updated_by: user.id }
+    if (change.teacherName) updates.teacher_name = change.teacherName
+    if (change.focus) updates.focus = change.focus
+    const { error } = await supabase.from("delivery_sessions").update(updates).in("id", sessions.map((session) => session.id))
+    if (error) throw new Error("Could not apply the weekly table change")
+  }
+
+  if (change.learnerAction === "remove" && change.learnerId) {
+    const { error } = await supabase.from("delivery_seats").update({ status: "not_attending", updated_by: user.id })
+      .in("delivery_session_id", sessions.map((session) => session.id)).eq("learner_id", change.learnerId).eq("status", "scheduled")
+    if (error) throw new Error("Could not remove the learner for this week")
+  }
+
+  if (change.learnerAction === "add" && change.learnerId && change.seatNumber) {
+    for (const session of sessions) {
+      const { data: existing } = await supabase.from("delivery_seats").select("id")
+        .eq("delivery_session_id", session.id).eq("seat_number", change.seatNumber).eq("status", "scheduled").maybeSingle()
+      if (existing) throw new Error("That seat is already occupied on at least one day in the chosen week")
+      const { error } = await supabase.from("delivery_seats").insert({
+        delivery_session_id: session.id, learner_id: change.learnerId, seat_number: change.seatNumber,
+        status: "scheduled", updated_by: user.id,
+      })
+      if (error) throw new Error("Could not add the learner for this week")
+    }
+  }
   revalidatePath("/admin/sessions")
 }

@@ -13,8 +13,8 @@ const leadStatusSchema = z.object({
     "warm",
     "priority",
     "contacted",
+    "offer_sent",
     "waitlist",
-    "converted",
     "closed",
   ]),
 })

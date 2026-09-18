@@ -23,6 +23,7 @@ const leadStatuses = [
   "priority",
   "contacted",
   "offer_sent",
+  "accepted_awaiting_payment",
   "waitlist",
   "converted",
   "closed",
@@ -44,7 +45,8 @@ export function LeadActions({ leadId, parentName, status }: LeadActionsProps) {
 
   function labelFor(statusValue: (typeof leadStatuses)[number]) {
     if (statusValue === "offer_sent") return "Offer sent — awaiting reply"
-    if (statusValue === "converted") return "Enrolled (accepted)"
+    if (statusValue === "accepted_awaiting_payment") return "Accepted — awaiting payment"
+    if (statusValue === "converted") return "Enrolled / paid"
     return statusValue.replaceAll("_", " ")
   }
 
@@ -88,12 +90,12 @@ export function LeadActions({ leadId, parentName, status }: LeadActionsProps) {
       <select
         value={selectedStatus}
         onChange={(event) => updateStatus(event.target.value)}
-        disabled={isPending}
+        disabled={isPending || status === "accepted_awaiting_payment" || status === "converted"}
         className="h-8 min-w-0 rounded-md border bg-background px-2 text-sm capitalize disabled:opacity-60"
         aria-label={`Update follow-up status for ${parentName}`}
       >
         {leadStatuses.map((leadStatus) => (
-          <option key={leadStatus} value={leadStatus} disabled={leadStatus === "converted" && status !== "converted"}>
+          <option key={leadStatus} value={leadStatus} disabled={(leadStatus === "converted" || leadStatus === "accepted_awaiting_payment") && status !== leadStatus}>
             {labelFor(leadStatus)}
           </option>
         ))}

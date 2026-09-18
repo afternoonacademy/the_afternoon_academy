@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
 import { AcceptedPlaceForm } from "@/components/admin/accepted-place-form"
-import { activateAcceptedBookingsPayment, createManualLead } from "@/actions/update-lead-status"
+import { PaymentActivationForm } from "@/components/admin/payment-activation-form"
+import { createManualLead } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -88,7 +89,7 @@ export default async function AdminLeadsPage() {
     .order("created_at")
   const { data: acceptedBookings } = await supabaseAdmin
     .from("accepted_bookings")
-    .select("parent_lead_id, child_lead_id, status")
+    .select("parent_lead_id, child_lead_id, status, weekday, starts_at, table_number, seat_number")
     .in("status", ["accepted_awaiting_payment", "paid_active"])
   const { data: bookableSlots } = await supabaseAdmin
     .from("weekly_table_templates")
@@ -129,13 +130,13 @@ export default async function AdminLeadsPage() {
             const children = childrenByParent.get(lead.id) || []
             const bookedIds = bookedChildIdsByParent.get(lead.id) || new Set<string>()
             const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
+            const acceptedChildBookings = (acceptedBookings || []).filter((booking) => booking.parent_lead_id === lead.id).map((booking) => ({
+              childName: children.find((child) => child.id === booking.child_lead_id)?.first_name || "Child",
+              weekday: booking.weekday, startsAt: booking.starts_at, tableNumber: booking.table_number, seatNumber: booking.seat_number,
+            }))
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
-              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept} slots={bookableSlots || []}/> : <form action={activateAcceptedBookingsPayment}>
-                <input name="parentLeadId" type="hidden" value={lead.id}/>
-                <p className="mb-2 text-sm text-muted-foreground">All children have accepted places. Record payment to activate their booked sessions.</p>
-                <div className="grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div><Button className="sm:col-span-3">Record payment — activate bookings</Button></div>
-              </form>}
+              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept} slots={bookableSlots || []}/> : <PaymentActivationForm parentLeadId={lead.id} bookings={acceptedChildBookings}/>}
             </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>

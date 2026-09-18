@@ -77,6 +77,12 @@ This is deliberately deferred from the launch correction: TAA currently has one 
 - Weekly TAA founder product review: convert live signals from the previous week into one highest-leverage product, operations or growth decision.
 - Quarterly AI-resilience review: assess changes in AI, education, child safety, parent expectations and TAA results; recommend any roadmap adjustment.
 
+## Experience design standard
+
+- TAA interfaces use the brand palette: coral `#ff5757`, blue `#5170ff`, yellow `#ffde59` and green `#9ddd8d` with a calm light base.
+- Mobile-first admin flows use clear field labels, generous tap targets, light purposeful cards and visible loading/confirmation states.
+- The intended character is young, modern and fun without compromising readability, safeguarding or operational clarity.
+
 ## Current build principle
 
 Do not build a full parent portal at launch. First build/configure the invisible operating foundation: learner profile, group matching, staff notes, consent, attendance and follow-up. The portal should later be a genuine window into a quality service, not a polished but empty interface.

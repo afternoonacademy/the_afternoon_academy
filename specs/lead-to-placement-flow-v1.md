@@ -102,3 +102,11 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Any date can be created directly, edited, cancelled or restored without changing the monthly plan or other dates.
 - A learner can be marked “not attending today” without changing their standing enrolment. A cancelled table has no expected attendance.
 - Attendance is mobile-first and records delivery evidence only; it does not create or amend a charge, credit or payment.
+
+
+## Paid-family enrolment correction
+
+- A family lead is converted to Enrolled only through a protected staff action after staff has manually confirmed payment.
+- Staff select one or more recorded children; the action creates one active learner per child, each linked to its own child enquiry and the common parent lead.
+- The action records who confirmed payment and when. It does not collect payment, create a charge, or automate billing.
+- Direct editing of a lead status remains disabled for enrolment.

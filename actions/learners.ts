@@ -862,7 +862,7 @@ export async function saveWeeklyTableTemplate(formData: FormData) {
   const supabase = supabaseService()
   const { error: closeError } = await supabase.from("weekly_table_templates")
     .update({ status: "paused", updated_by: user.id })
-    .eq("weekday", parsed.data.weekday).eq("table_number", parsed.data.tableNumber).eq("status", "active")
+    .eq("weekday", parsed.data.weekday).eq("table_number", parsed.data.tableNumber).eq("starts_at", parsed.data.startsAt).eq("status", "active")
   if (closeError) throw new Error("Could not update the weekly table plan")
   const { error } = await supabase.from("weekly_table_templates").insert({
     weekday: parsed.data.weekday, table_number: parsed.data.tableNumber,

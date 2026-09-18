@@ -6,6 +6,7 @@ export const leadFormSchema = z.object({
   phone: z.string().min(6, "Please enter a contact number"),
   area: z.string().optional(),
   schoolName: z.string().optional(),
+  childFirstName: z.string().trim().min(1, "Please enter your child’s first name").max(80),
 
   childAge: z.coerce
     .number()

@@ -1,5 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
+import { AcceptedPlaceForm } from "@/components/admin/accepted-place-form"
+import { PaymentActivationForm } from "@/components/admin/payment-activation-form"
+import { createManualLead } from "@/actions/update-lead-status"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -72,6 +78,41 @@ export default async function AdminLeadsPage() {
 
   const leads = (data || []) as LeadOverviewRow[]
 
+  const { data: familyLeads } = await supabaseAdmin
+    .from("parent_leads")
+    .select("id, parent_name, email, status")
+    .not("status", "in", '("converted","closed")')
+    .order("created_at", { ascending: false })
+  const { data: familyChildren } = await supabaseAdmin
+    .from("child_leads")
+    .select("id, parent_lead_id, first_name, child_age, school_year")
+    .order("created_at")
+  const { data: acceptedBookings } = await supabaseAdmin
+    .from("accepted_bookings")
+    .select("parent_lead_id, child_lead_id, status, weekday, starts_at, table_number, seat_number")
+    .in("status", ["accepted_awaiting_payment", "paid_active"])
+  const { data: bookableSlots } = await supabaseAdmin
+    .from("weekly_table_templates")
+    .select("id, weekday, table_number, starts_at, duration_minutes")
+    .eq("status", "active")
+    .order("weekday")
+    .order("starts_at")
+    .order("table_number")
+
+  const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
+  for (const child of familyChildren || []) {
+    const current = childrenByParent.get(child.parent_lead_id) || []
+    current.push(child)
+    childrenByParent.set(child.parent_lead_id, current)
+  }
+
+  const bookedChildIdsByParent = new Map<string, Set<string>>()
+  for (const booking of acceptedBookings || []) {
+    const ids = bookedChildIdsByParent.get(booking.parent_lead_id) || new Set<string>()
+    ids.add(booking.child_lead_id)
+    bookedChildIdsByParent.set(booking.parent_lead_id, ids)
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -81,6 +122,29 @@ export default async function AdminLeadsPage() {
         </p>
       </div>
 
+      <Card>
+        <CardHeader><CardTitle>Accepted place and payment activation</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">First record the place the parent accepted. When payment is later confirmed, the children become active and their agreed paid dates are prepared automatically.</p>
+          {familyLeads?.length ? familyLeads.map((lead) => {
+            const children = childrenByParent.get(lead.id) || []
+            const bookedIds = bookedChildIdsByParent.get(lead.id) || new Set<string>()
+            const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
+            const acceptedChildBookings = (acceptedBookings || []).filter((booking) => booking.parent_lead_id === lead.id).map((booking) => ({
+              childName: children.find((child) => child.id === booking.child_lead_id)?.first_name || "Child",
+              weekday: booking.weekday, startsAt: booking.starts_at, tableNumber: booking.table_number, seatNumber: booking.seat_number,
+            }))
+            return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
+              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
+              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept} slots={bookableSlots || []}/> : <PaymentActivationForm parentLeadId={lead.id} bookings={acceptedChildBookings}/>}
+            </div>
+          }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle>Add a lead received outside the website</CardTitle></CardHeader>
+        <CardContent><form action={createManualLead} className="grid gap-3 md:grid-cols-3"><div><Label>Parent name</Label><Input name="parentName" required/></div><div><Label>Email</Label><Input name="email" type="email" required/></div><div><Label>Phone</Label><Input name="phone"/></div><div><Label>Child first name</Label><Input name="childFirstName" required/></div><div><Label>Child age</Label><Input name="childAge" type="number" min="4" max="18" required/></div><div><Label>School year</Label><Input name="schoolYear"/></div><div><Label>Source</Label><select name="source" className="h-10 w-full rounded-md border bg-background px-3" defaultValue="phone"><option value="phone">Phone</option><option value="email">Email</option><option value="referral">Referral</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></div><Button className="w-fit self-end">Add as new lead</Button></form></CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>{leads.length} submitted leads</CardTitle>
@@ -155,7 +219,7 @@ export default async function AdminLeadsPage() {
                         <LeadActions
                           leadId={lead.parent_lead_id}
                           parentName={lead.parent_name}
-                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "waitlist" | "converted" | "closed"}
+                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "offer_sent" | "accepted_awaiting_payment" | "waitlist" | "converted" | "closed"}
                         />
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">

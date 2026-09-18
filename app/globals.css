@@ -86,33 +86,33 @@
     "Trebuchet MS",
     cursive;
 
-  --background: oklch(0.985 0.022 92);
-  --foreground: oklch(0.225 0.045 250);
+  --background: #fffdf5;
+  --foreground: #26345f;
 
-  --card: oklch(0.995 0.012 92);
-  --card-foreground: oklch(0.225 0.045 250);
+  --card: #ffffff;
+  --card-foreground: #26345f;
 
-  --popover: oklch(0.995 0.012 92);
-  --popover-foreground: oklch(0.225 0.045 250);
+  --popover: #ffffff;
+  --popover-foreground: #26345f;
 
-  --primary: oklch(0.48 0.11 225);
-  --primary-foreground: oklch(0.985 0.012 92);
+  --primary: #5170ff;
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.91 0.055 205);
-  --secondary-foreground: oklch(0.225 0.045 250);
+  --secondary: #ffde59;
+  --secondary-foreground: #26345f;
 
-  --muted: oklch(0.94 0.025 88);
-  --muted-foreground: oklch(0.47 0.035 250);
+  --muted: #fff7d4;
+  --muted-foreground: #59617a;
 
-  --accent: oklch(0.86 0.13 82);
-  --accent-foreground: oklch(0.225 0.045 250);
+  --accent: #9ddd8d;
+  --accent-foreground: #26345f;
 
-  --destructive: oklch(0.58 0.2 25);
-  --destructive-foreground: oklch(0.985 0.012 92);
+  --destructive: #ff5757;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.88 0.025 88);
-  --input: oklch(0.9 0.025 88);
-  --ring: oklch(0.56 0.12 225);
+  --border: #e5e8f5;
+  --input: #eef0f8;
+  --ring: #5170ff;
 
   --chart-1: oklch(0.55 0.13 225);
   --chart-2: oklch(0.72 0.12 165);
@@ -123,7 +123,11 @@
   /*
     Logo / leaflet aligned helper colours.
   */
-  --brand-navy: #1e3150;
+  --brand-navy: #26345f;
+  --brand-coral-bright: #ff5757;
+  --brand-blue-bright: #5170ff;
+  --brand-yellow-bright: #ffde59;
+  --brand-green-bright: #9ddd8d;
   --brand-blue: #2f78a6;
   --brand-sky: #d9edf3;
   --brand-cream: #fbf5e7;
@@ -179,7 +183,7 @@
       radial-gradient(circle at top left, rgba(217, 237, 243, 0.9), transparent 34rem),
       radial-gradient(circle at top right, rgba(242, 197, 92, 0.32), transparent 28rem),
       radial-gradient(circle at 80% 65%, rgba(238, 143, 122, 0.14), transparent 24rem),
-      linear-gradient(180deg, var(--brand-cream) 0%, #fffaf0 44%, #f7efe0 100%);
+      linear-gradient(180deg, #fffdf5 0%, #f6f8ff 50%, #fff9dc 100%);
   }
 
   ::selection {
@@ -332,3 +336,8 @@
     background: rgba(217, 237, 243, 0.42);
   }
 }
+@layer components {
+  .brand-loading { position: relative; }
+  .brand-loading::before { content: ""; width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 999px; animation: taa-spin .7s linear infinite; }
+}
+@keyframes taa-spin { to { transform: rotate(360deg); } }

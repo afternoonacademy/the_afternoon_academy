@@ -24,6 +24,11 @@ const deleteLeadSchema = z.object({
   confirmation: z.literal("DELETE"),
 })
 
+const paidFamilyEnrolmentSchema = z.object({
+  parentLeadId: z.string().uuid(),
+  childLeadIds: z.array(z.string().uuid()).min(1),
+})
+
 const manualLeadSchema = z.object({
   parentName: z.string().trim().min(2).max(160), email: z.string().trim().email().max(254), phone: z.string().trim().max(50).optional(),
   childFirstName: z.string().trim().min(1).max(80), childAge: z.coerce.number().int().min(4).max(18), schoolYear: z.string().trim().max(80).optional(),
@@ -98,4 +103,27 @@ export async function createManualLead(formData: FormData) {
   const { error: timetableError } = await supabase.from("timetable_preferences").insert({ child_lead_id: child.id, preferred_days: [], preferred_times: [] })
   if (timetableError) throw new Error("Could not create timetable preference")
   revalidatePath("/admin/leads"); revalidatePath("/admin"); revalidatePath("/admin/sessions")
+}
+
+
+export async function enrolPaidChildren(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = paidFamilyEnrolmentSchema.safeParse({
+    parentLeadId: formData.get("parentLeadId"),
+    childLeadIds: formData.getAll("childLeadId"),
+  })
+  if (!parsed.success) throw new Error("Select at least one child to enrol")
+
+  const { error } = await supabaseService().rpc("enrol_paid_children", {
+    p_parent_lead_id: parsed.data.parentLeadId,
+    p_child_lead_ids: parsed.data.childLeadIds,
+    p_actor_id: user.id,
+  })
+  if (error) throw new Error(error.message || "Could not enrol the selected children")
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/learners")
+  revalidatePath("/admin/sessions")
+  revalidatePath("/admin/operations")
 }

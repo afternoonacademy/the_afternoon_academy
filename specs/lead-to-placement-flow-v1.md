@@ -120,3 +120,12 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - A learner’s standing placement records their weekday, TAA1 table and seat. When a dated table is opened, only children both paid for that date and assigned to that table/day are automatically seated.
 - The ad-hoc **Add eligible learner** control remains for a planned exception; it only lists learners paid for the selected date.
 - Attendance is delivery evidence only. It does not automatically refund, credit, invoice or amend payment status.
+
+
+## Accepted place then payment activation correction
+
+- An offer records the specific TAA1 room, table, seat, weekday and time agreed with a family. Table session type remains operational configuration, not part of a child booking.
+- Parent acceptance creates a held booking and moves the lead to **Accepted — awaiting payment**; the child is not yet active for delivery.
+- Recording a family payment records both the received date and the covered service period. It activates all the parent’s held child bookings, creates/activates their learner records and assigns their paid recurring seats.
+- The parent lead becomes **Enrolled / paid** only after staff records payment.
+- One-off trials and genuine exceptions are added on the dated room board; they do not overwrite the normal booking.

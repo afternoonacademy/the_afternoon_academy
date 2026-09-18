@@ -2,13 +2,13 @@
 
 import { useActionState } from "react"
 
-import { submitAcceptedPlace } from "@/actions/update-lead-status"
+import { submitAcceptedPlace, type AcceptedPlaceActionState } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 type Child = { id: string; first_name: string | null; child_age: number }
 
-const initialState = {}
+const initialState: AcceptedPlaceActionState = {}
 
 export function AcceptedPlaceForm({ parentLeadId, children }: { parentLeadId: string; children: Child[] }) {
   const [state, formAction, pending] = useActionState(submitAcceptedPlace, initialState)

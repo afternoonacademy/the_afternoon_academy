@@ -90,6 +90,13 @@ export default async function AdminLeadsPage() {
     .from("accepted_bookings")
     .select("parent_lead_id, child_lead_id, status")
     .in("status", ["accepted_awaiting_payment", "paid_active"])
+  const { data: bookableSlots } = await supabaseAdmin
+    .from("weekly_table_templates")
+    .select("id, weekday, table_number, starts_at, duration_minutes")
+    .eq("status", "active")
+    .order("weekday")
+    .order("starts_at")
+    .order("table_number")
 
   const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
   for (const child of familyChildren || []) {
@@ -124,7 +131,7 @@ export default async function AdminLeadsPage() {
             const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
-              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept}/> : <form action={activateAcceptedBookingsPayment}>
+              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept} slots={bookableSlots || []}/> : <form action={activateAcceptedBookingsPayment}>
                 <input name="parentLeadId" type="hidden" value={lead.id}/>
                 <p className="mb-2 text-sm text-muted-foreground">All children have accepted places. Record payment to activate their booked sessions.</p>
                 <div className="grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div><Button className="sm:col-span-3">Record payment — activate bookings</Button></div>

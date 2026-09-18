@@ -132,30 +132,32 @@ export async function enrolPaidChildren(formData: FormData) {
 export async function acceptBookedPlace(formData: FormData) {
   const { user } = await requireAdmin()
   const parsed = z.object({
-    parentLeadId: z.string().uuid(), childLeadId: z.string().uuid(),
-    weekday: z.coerce.number().int().min(0).max(6), tableNumber: z.coerce.number().int().min(1).max(2),
-    seatNumber: z.coerce.number().int().min(1).max(6), startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-    durationMinutes: z.coerce.number().int().min(15).max(360),
+    parentLeadId: z.string().uuid(), childLeadId: z.string().uuid(), templateId: z.string().uuid(),
+    seatNumber: z.coerce.number().int().min(1).max(6),
   }).safeParse({
     parentLeadId: formData.get("parentLeadId"), childLeadId: formData.get("childLeadId"),
-    weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"), seatNumber: formData.get("seatNumber"),
-    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    templateId: formData.get("templateId"), seatNumber: formData.get("seatNumber"),
   })
-  if (!parsed.success) throw new Error("Please complete the accepted place")
+  if (!parsed.success) throw new Error("Choose a bookable timetable slot and seat")
   const data = parsed.data
   const supabase = supabaseService()
-  const { data: child, error: childError } = await supabase.from("child_leads").select("parent_lead_id")
-    .eq("id", data.childLeadId).single()
+  const [{ data: child, error: childError }, { data: template, error: templateError }] = await Promise.all([
+    supabase.from("child_leads").select("parent_lead_id").eq("id", data.childLeadId).single(),
+    supabase.from("weekly_table_templates").select("weekday, table_number, starts_at, duration_minutes")
+      .eq("id", data.templateId).eq("status", "active").maybeSingle(),
+  ])
   if (childError || child?.parent_lead_id !== data.parentLeadId) throw new Error("That child does not belong to this parent")
+  if (templateError || !template) throw new Error("That timetable slot is no longer available")
   const { data: occupied, error: occupiedError } = await supabase.from("accepted_bookings").select("id")
-    .eq("weekday", data.weekday).eq("table_number", data.tableNumber).eq("seat_number", data.seatNumber)
+    .eq("weekday", template.weekday).eq("table_number", template.table_number)
+    .eq("starts_at", template.starts_at).eq("seat_number", data.seatNumber)
     .in("status", ["accepted_awaiting_payment", "paid_active"]).maybeSingle()
   if (occupiedError) throw new Error("Could not check the seat")
   if (occupied) throw new Error("That recurring seat is already held")
   const { error: bookingError } = await supabase.from("accepted_bookings").insert({
     parent_lead_id: data.parentLeadId, child_lead_id: data.childLeadId,
-    weekday: data.weekday, table_number: data.tableNumber, seat_number: data.seatNumber,
-    starts_at: data.startsAt, duration_minutes: data.durationMinutes, accepted_by: user.id,
+    weekday: template.weekday, table_number: template.table_number, seat_number: data.seatNumber,
+    starts_at: template.starts_at, duration_minutes: template.duration_minutes, accepted_by: user.id,
   })
   if (bookingError) throw new Error("Could not save the accepted place")
   const { error: leadError } = await supabase.from("parent_leads").update({ status: "accepted_awaiting_payment" }).eq("id", data.parentLeadId)

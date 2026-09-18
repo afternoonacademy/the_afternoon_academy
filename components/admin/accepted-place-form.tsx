@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useMemo, useState } from "react"
 
 import { submitAcceptedPlace, type AcceptedPlaceActionState } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
@@ -11,15 +11,15 @@ type Slot = { id: string; weekday: number; table_number: number; starts_at: stri
 
 const initialState: AcceptedPlaceActionState = {}
 
-function slotLabel(slot: Slot) {
-  const [hour, minute] = slot.starts_at.slice(0,5).split(":").map(Number)
-  const end = hour * 60 + minute + slot.duration_minutes
-  const endText = `${String(Math.floor(end / 60) % 24).padStart(2,"0")}:${String(end % 60).padStart(2,"0")}`
-  return `${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][slot.weekday]} · ${slot.starts_at.slice(0,5)}–${endText} · TAA1 Table ${slot.table_number}`
-}
+
 
 export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLeadId: string; children: Child[]; slots: Slot[] }) {
   const [state, formAction, pending] = useActionState(submitAcceptedPlace, initialState)
+  const [weekday, setWeekday] = useState("")
+  const [startsAt, setStartsAt] = useState("")
+  const [tableNumber, setTableNumber] = useState("")
+  const times = useMemo(() => [...new Set(slots.filter((slot) => String(slot.weekday) === weekday).map((slot) => slot.starts_at.slice(0,5)))], [slots, weekday])
+  const templateId = slots.find((slot) => String(slot.weekday) === weekday && slot.starts_at.slice(0,5) === startsAt && String(slot.table_number) === tableNumber)?.id || ""
 
   return <form action={formAction}>
     <input name="parentLeadId" type="hidden" value={parentLeadId}/>
@@ -29,10 +29,16 @@ export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLea
         <option value="">Child</option>
         {children.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}
       </select>
-      <select className="h-10 rounded-md border bg-background px-3 sm:col-span-2" name="templateId" required>
-        <option value="">Bookable timetable slot</option>
-        {slots.map((slot) => <option key={slot.id} value={slot.id}>{slotLabel(slot)}</option>)}
-      </select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required>
+      <select className="h-10 rounded-md border bg-background px-3" value={weekday} onChange={(event) => { setWeekday(event.target.value); setStartsAt(""); setTableNumber("") }} required>
+        <option value="">Day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+      </select>
+      <select className="h-10 rounded-md border bg-background px-3" value={startsAt} onChange={(event) => { setStartsAt(event.target.value); setTableNumber("") }} disabled={!weekday} required>
+        <option value="">Time</option>{times.map((time) => <option key={time} value={time}>{time}</option>)}
+      </select>
+      <select className="h-10 rounded-md border bg-background px-3" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} disabled={!startsAt} required>
+        <option value="">Table</option>{slots.filter((slot) => String(slot.weekday) === weekday && slot.starts_at.slice(0,5) === startsAt).map((slot) => <option key={slot.id} value={slot.table_number}>TAA1 Table {slot.table_number}</option>)}
+      </select>
+      <input name="templateId" type="hidden" value={templateId}/><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required>
         <option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}
       </select>
       <Input name="durationMinutes" defaultValue="50" min="15" required type="number"/>

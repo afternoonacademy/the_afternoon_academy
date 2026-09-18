@@ -11,6 +11,13 @@ type Slot = { id: string; weekday: number; table_number: number; starts_at: stri
 
 const initialState: AcceptedPlaceActionState = {}
 
+function slotLabel(slot: Slot) {
+  const [hour, minute] = slot.starts_at.slice(0,5).split(":").map(Number)
+  const end = hour * 60 + minute + slot.duration_minutes
+  const endText = `${String(Math.floor(end / 60) % 24).padStart(2,"0")}:${String(end % 60).padStart(2,"0")}`
+  return `${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][slot.weekday]} · ${slot.starts_at.slice(0,5)}–${endText} · TAA1 Table ${slot.table_number}`
+}
+
 export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLeadId: string; children: Child[]; slots: Slot[] }) {
   const [state, formAction, pending] = useActionState(submitAcceptedPlace, initialState)
 
@@ -24,7 +31,7 @@ export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLea
       </select>
       <select className="h-10 rounded-md border bg-background px-3 sm:col-span-2" name="templateId" required>
         <option value="">Bookable timetable slot</option>
-        {slots.map((slot) => <option key={slot.id} value={slot.id}>{["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][slot.weekday]} · {slot.starts_at.slice(0,5)}–{new Date(`1970-01-01T${slot.starts_at}`).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:false})} · TAA1 Table {slot.table_number}</option>)}
+        {slots.map((slot) => <option key={slot.id} value={slot.id}>{slotLabel(slot)}</option>)}
       </select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required>
         <option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}
       </select>

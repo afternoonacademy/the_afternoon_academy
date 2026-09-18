@@ -226,3 +226,22 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
   if (leadError) throw new Error("Could not mark the family paid")
   revalidatePath("/admin"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/sessions")
 }
+
+
+export type AcceptedPlaceActionState = { error?: string; success?: string }
+
+export async function submitAcceptedPlace(
+  _previousState: AcceptedPlaceActionState,
+  formData: FormData,
+): Promise<AcceptedPlaceActionState> {
+  try {
+    await acceptBookedPlace(formData)
+    return { success: "Place held — you can now record another child or payment." }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not save the place"
+    if (message === "That recurring seat is already held") {
+      return { error: "Choose another seat — this recurring seat is already held for another family." }
+    }
+    return { error: message }
+  }
+}

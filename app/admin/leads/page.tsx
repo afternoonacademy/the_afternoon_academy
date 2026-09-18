@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
-import { acceptBookedPlace, activateAcceptedBookingsPayment, createManualLead } from "@/actions/update-lead-status"
+import { AcceptedPlaceForm } from "@/components/admin/accepted-place-form"
+import { activateAcceptedBookingsPayment, createManualLead } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -123,11 +124,7 @@ export default async function AdminLeadsPage() {
             const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
-              {childrenStillToAccept.length ? <form action={acceptBookedPlace}>
-                <input name="parentLeadId" type="hidden" value={lead.id}/>
-                <p className="mb-2 text-sm text-muted-foreground">Record the room, table, seat and recurring time accepted for the next child.</p>
-                <div className="grid gap-2 sm:grid-cols-3"><select className="h-10 rounded-md border bg-background px-3" name="childLeadId" required><option value="">Child</option>{childrenStillToAccept.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}</select><select className="h-10 rounded-md border bg-background px-3" name="weekday" defaultValue="1"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select><Input name="startsAt" defaultValue="17:00" required type="time"/><select className="h-10 rounded-md border bg-background px-3" name="tableNumber" defaultValue="1"><option value="1">TAA1 · Table 1</option><option value="2">TAA1 · Table 2</option></select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required><option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}</select><Input name="durationMinutes" defaultValue="50" min="15" required type="number"/><Button className="sm:col-span-3">Parent accepted — hold place</Button></div>
-              </form> : <form action={activateAcceptedBookingsPayment}>
+              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept}/> : <form action={activateAcceptedBookingsPayment}>
                 <input name="parentLeadId" type="hidden" value={lead.id}/>
                 <p className="mb-2 text-sm text-muted-foreground">All children have accepted places. Record payment to activate their booked sessions.</p>
                 <div className="grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div><Button className="sm:col-span-3">Record payment — activate bookings</Button></div>

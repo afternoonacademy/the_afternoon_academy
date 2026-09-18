@@ -42,7 +42,7 @@ export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLea
         <option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}
       </select>
       <Input name="durationMinutes" defaultValue="50" min="15" required type="number"/>
-      <Button className="sm:col-span-3" disabled={pending}>{pending ? "Checking seat…" : "Parent accepted — hold place"}</Button>
+      <Button className={pending ? "brand-loading sm:col-span-3" : "sm:col-span-3"} disabled={pending}>{pending ? "Checking seat…" : "Parent accepted — hold place"}</Button>
       {state.error ? <p className="sm:col-span-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{state.error}</p> : null}
       {state.success ? <p className="sm:col-span-3 rounded-md border border-emerald-400 bg-emerald-50 p-3 text-sm text-emerald-800" role="status">{state.success}</p> : null}
     </div>

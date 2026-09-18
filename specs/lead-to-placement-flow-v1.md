@@ -110,3 +110,13 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Staff select one or more recorded children; the action creates one active learner per child, each linked to its own child enquiry and the common parent lead.
 - The action records who confirmed payment and when. It does not collect payment, create a charge, or automate billing.
 - Direct editing of a lead status remains disabled for enrolment.
+
+
+## Weekly delivery and paid-seat correction
+
+- A **weekly table default** sets the usual teacher, session type, start time and duration for one weekday/table. It is a default, never a permanent lock.
+- Opening a date creates a dated copy of that default. Staff may edit or cancel that date without changing future weeks.
+- A family payment is recorded once, but each learner receives their own paid entitlement with a specific paid period.
+- A learner’s standing placement records their weekday, TAA1 table and seat. When a dated table is opened, only children both paid for that date and assigned to that table/day are automatically seated.
+- The ad-hoc **Add eligible learner** control remains for a planned exception; it only lists learners paid for the selected date.
+- Attendance is delivery evidence only. It does not automatically refund, credit, invoice or amend payment status.

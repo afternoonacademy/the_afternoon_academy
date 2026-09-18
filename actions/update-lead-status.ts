@@ -127,3 +127,102 @@ export async function enrolPaidChildren(formData: FormData) {
   revalidatePath("/admin/sessions")
   revalidatePath("/admin/operations")
 }
+
+
+export async function acceptBookedPlace(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({
+    parentLeadId: z.string().uuid(), childLeadId: z.string().uuid(),
+    weekday: z.coerce.number().int().min(0).max(6), tableNumber: z.coerce.number().int().min(1).max(2),
+    seatNumber: z.coerce.number().int().min(1).max(6), startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(360),
+  }).safeParse({
+    parentLeadId: formData.get("parentLeadId"), childLeadId: formData.get("childLeadId"),
+    weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"), seatNumber: formData.get("seatNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+  })
+  if (!parsed.success) throw new Error("Please complete the accepted place")
+  const data = parsed.data
+  const supabase = supabaseService()
+  const { data: child, error: childError } = await supabase.from("child_leads").select("parent_lead_id")
+    .eq("id", data.childLeadId).single()
+  if (childError || child?.parent_lead_id !== data.parentLeadId) throw new Error("That child does not belong to this parent")
+  const { data: occupied, error: occupiedError } = await supabase.from("accepted_bookings").select("id")
+    .eq("weekday", data.weekday).eq("table_number", data.tableNumber).eq("seat_number", data.seatNumber)
+    .in("status", ["accepted_awaiting_payment", "paid_active"]).maybeSingle()
+  if (occupiedError) throw new Error("Could not check the seat")
+  if (occupied) throw new Error("That recurring seat is already held")
+  const { error: bookingError } = await supabase.from("accepted_bookings").insert({
+    parent_lead_id: data.parentLeadId, child_lead_id: data.childLeadId,
+    weekday: data.weekday, table_number: data.tableNumber, seat_number: data.seatNumber,
+    starts_at: data.startsAt, duration_minutes: data.durationMinutes, accepted_by: user.id,
+  })
+  if (bookingError) throw new Error("Could not save the accepted place")
+  const { error: leadError } = await supabase.from("parent_leads").update({ status: "accepted_awaiting_payment" }).eq("id", data.parentLeadId)
+  if (leadError) throw new Error("Could not update the lead")
+  revalidatePath("/admin/leads"); revalidatePath("/admin/sessions")
+}
+
+export async function activateAcceptedBookingsPayment(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({
+    parentLeadId: z.string().uuid(), receivedOn: z.string().date(),
+    periodStart: z.string().date(), periodEnd: z.string().date(),
+  }).refine((value) => value.periodEnd >= value.periodStart, { message: "Service period is invalid" }).safeParse({
+    parentLeadId: formData.get("parentLeadId"), receivedOn: formData.get("receivedOn"),
+    periodStart: formData.get("periodStart"), periodEnd: formData.get("periodEnd"),
+  })
+  if (!parsed.success) throw new Error("Please check the payment dates")
+  const data = parsed.data
+  const supabase = supabaseService()
+  const { data: bookings, error: bookingError } = await supabase.from("accepted_bookings")
+    .select("id, child_lead_id, weekday, table_number, seat_number, starts_at, duration_minutes")
+    .eq("parent_lead_id", data.parentLeadId).eq("status", "accepted_awaiting_payment")
+  if (bookingError || !bookings?.length) throw new Error("No accepted places are awaiting payment")
+  const { data: payment, error: paymentError } = await supabase.from("payment_entitlements").upsert({
+    parent_lead_id: data.parentLeadId, period_start: data.periodStart, period_end: data.periodEnd,
+    sessions_per_week: 1, status: "paid", received_at: `${data.receivedOn}T12:00:00Z`, recorded_by: user.id,
+  }, { onConflict: "parent_lead_id,period_start,period_end" }).select("id").single()
+  if (paymentError || !payment) throw new Error("Could not record the family payment")
+  for (const booking of bookings) {
+    const { data: child, error: childError } = await supabase.from("child_leads").select("first_name, school_year")
+      .eq("id", booking.child_lead_id).single()
+    if (childError || !child?.first_name) throw new Error("Each accepted child needs a first name before activation")
+    let { data: learner } = await supabase.from("learners").select("id").eq("child_lead_id", booking.child_lead_id).maybeSingle()
+    if (!learner) {
+      const { data: created, error: createError } = await supabase.from("learners").insert({
+        parent_lead_id: data.parentLeadId, child_lead_id: booking.child_lead_id, first_name: child.first_name,
+        year_group: child.school_year || null, status: "active", parent_information_confirmed: true,
+      }).select("id").single()
+      if (createError || !created) throw new Error("Could not create the learner record")
+      learner = created
+    } else {
+      const { error } = await supabase.from("learners").update({ status: "active" }).eq("id", learner.id)
+      if (error) throw new Error("Could not activate the learner")
+    }
+    const { error: entitlementError } = await supabase.from("child_payment_entitlements").upsert({
+      payment_entitlement_id: payment.id, learner_id: learner.id, period_start: data.periodStart, period_end: data.periodEnd,
+      sessions_per_week: 1, status: "paid", recorded_by: user.id,
+    }, { onConflict: "learner_id,period_start,period_end" })
+    if (entitlementError) throw new Error("Could not activate the child payment period")
+    const { error: endError } = await supabase.from("standing_placements").update({ status: "ended", effective_to: data.periodStart, updated_by: user.id })
+      .eq("learner_id", learner.id).eq("weekday", booking.weekday).eq("status", "active")
+    if (endError) throw new Error("Could not update the previous standing place")
+    const { error: placementError } = await supabase.from("standing_placements").insert({
+      learner_id: learner.id, weekday: booking.weekday, table_number: booking.table_number, seat_number: booking.seat_number,
+      starts_at: booking.starts_at, duration_minutes: booking.duration_minutes, effective_from: data.periodStart,
+      created_by: user.id, updated_by: user.id,
+    })
+    if (placementError) throw new Error("Could not activate the standing place")
+    const { error: paidError } = await supabase.from("accepted_bookings").update({
+      learner_id: learner.id, payment_entitlement_id: payment.id, status: "paid_active", paid_at: new Date().toISOString(), paid_by: user.id,
+    }).eq("id", booking.id)
+    if (paidError) throw new Error("Could not activate the accepted place")
+  }
+  const { error: leadError } = await supabase.from("parent_leads").update({
+    status: "converted", enrolled_at: new Date().toISOString(), enrolled_by: user.id,
+    payment_confirmed_at: new Date().toISOString(), payment_confirmed_by: user.id,
+  }).eq("id", data.parentLeadId)
+  if (leadError) throw new Error("Could not mark the family paid")
+  revalidatePath("/admin"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/sessions")
+}

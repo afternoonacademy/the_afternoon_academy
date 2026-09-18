@@ -147,6 +147,26 @@ const weeklyDeliveryChangeSchema = z.object({
   if (value.learnerAction !== "none" && !value.learnerId) ctx.addIssue({ code: "custom", message: "Choose a learner" })
 })
 
+const paymentEntitlementSchema = z.object({
+  parentLeadId: z.string().uuid(),
+  periodStart: z.string().date(),
+  periodEnd: z.string().date(),
+  sessionsPerWeek: z.coerce.number().int().min(1).max(7),
+  amountCents: z.coerce.number().int().min(0).optional(),
+  note: z.string().trim().max(500).optional(),
+})
+
+const standingPlacementSchema = z.object({
+  learnerId: z.string().uuid(),
+  weekday: z.coerce.number().int().min(0).max(6),
+  tableNumber: z.coerce.number().int().min(1).max(2),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  durationMinutes: z.coerce.number().int().min(15).max(360),
+  teacherName: z.string().trim().min(1).max(160),
+  focus: z.string().trim().min(1).max(500),
+  effectiveFrom: z.string().date(),
+})
+
 const tutorBookingSchema = z.object({
   learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
   teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
@@ -724,5 +744,40 @@ export async function applyWeeklyDeliveryChange(formData: FormData) {
     })))
     if (error) throw new Error("Could not add the learner for this week")
   }
+  revalidatePath("/admin/sessions")
+}
+
+
+export async function recordPaymentEntitlement(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = paymentEntitlementSchema.safeParse({
+    parentLeadId: formData.get("parentLeadId"), periodStart: formData.get("periodStart"),
+    periodEnd: formData.get("periodEnd"), sessionsPerWeek: formData.get("sessionsPerWeek"),
+    amountCents: formData.get("amountCents") || undefined, note: formData.get("note") || undefined,
+  })
+  if (!parsed.success) throw new Error("Please check the payment period")
+  const { error } = await supabaseService().from("payment_entitlements").upsert({
+    parent_lead_id: parsed.data.parentLeadId, period_start: parsed.data.periodStart, period_end: parsed.data.periodEnd,
+    sessions_per_week: parsed.data.sessionsPerWeek, status: "paid", amount_cents: parsed.data.amountCents || null,
+    recorded_by: user.id, note: parsed.data.note || null,
+  }, { onConflict: "parent_lead_id,period_start,period_end" })
+  if (error) throw new Error("Could not record the payment period")
+  revalidatePath("/admin/sessions")
+}
+
+export async function saveStandingPlacement(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = standingPlacementSchema.safeParse({
+    learnerId: formData.get("learnerId"), weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName"), focus: formData.get("focus"), effectiveFrom: formData.get("effectiveFrom"),
+  })
+  if (!parsed.success) throw new Error("Please complete the standing timetable place")
+  const { error } = await supabaseService().from("standing_placements").insert({
+    learner_id: parsed.data.learnerId, weekday: parsed.data.weekday, table_number: parsed.data.tableNumber,
+    starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes, teacher_name: parsed.data.teacherName,
+    focus: parsed.data.focus, effective_from: parsed.data.effectiveFrom, created_by: user.id, updated_by: user.id,
+  })
+  if (error) throw new Error("Could not save the standing timetable place")
   revalidatePath("/admin/sessions")
 }

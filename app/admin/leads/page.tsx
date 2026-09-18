@@ -85,12 +85,23 @@ export default async function AdminLeadsPage() {
     .from("child_leads")
     .select("id, parent_lead_id, first_name, child_age, school_year")
     .order("created_at")
+  const { data: acceptedBookings } = await supabaseAdmin
+    .from("accepted_bookings")
+    .select("parent_lead_id, child_lead_id, status")
+    .in("status", ["accepted_awaiting_payment", "paid_active"])
 
   const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
   for (const child of familyChildren || []) {
     const current = childrenByParent.get(child.parent_lead_id) || []
     current.push(child)
     childrenByParent.set(child.parent_lead_id, current)
+  }
+
+  const bookedChildIdsByParent = new Map<string, Set<string>>()
+  for (const booking of acceptedBookings || []) {
+    const ids = bookedChildIdsByParent.get(booking.parent_lead_id) || new Set<string>()
+    ids.add(booking.child_lead_id)
+    bookedChildIdsByParent.set(booking.parent_lead_id, ids)
   }
 
   return (
@@ -108,16 +119,20 @@ export default async function AdminLeadsPage() {
           <p className="text-sm text-muted-foreground">First record the place the parent accepted. When payment is later confirmed, the children become active and their agreed paid dates are prepared automatically.</p>
           {familyLeads?.length ? familyLeads.map((lead) => {
             const children = childrenByParent.get(lead.id) || []
-            if (lead.status === "accepted_awaiting_payment") return <form action={activateAcceptedBookingsPayment} className="rounded-lg border p-4" key={lead.id}>
-              <input name="parentLeadId" type="hidden" value={lead.id}/>
-              <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">Accepted place — awaiting payment</p></div><Button className="min-h-11">Record payment — activate booking</Button></div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div></div>
-            </form>
-            return <form action={acceptBookedPlace} className="rounded-lg border p-4" key={lead.id}>
-              <input name="parentLeadId" type="hidden" value={lead.id}/>
-              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">Record the room, table, seat and recurring time the parent has accepted.</p></div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3"><select className="h-10 rounded-md border bg-background px-3" name="childLeadId" required><option value="">Child</option>{children.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}</select><select className="h-10 rounded-md border bg-background px-3" name="weekday" defaultValue="1"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select><Input name="startsAt" defaultValue="17:00" required type="time"/><select className="h-10 rounded-md border bg-background px-3" name="tableNumber" defaultValue="1"><option value="1">TAA1 · Table 1</option><option value="2">TAA1 · Table 2</option></select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required><option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}</select><Input name="durationMinutes" defaultValue="50" min="15" required type="number"/><Button className="sm:col-span-3">Parent accepted — hold place</Button></div>
-            </form>
+            const bookedIds = bookedChildIdsByParent.get(lead.id) || new Set<string>()
+            const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
+            return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
+              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
+              {childrenStillToAccept.length ? <form action={acceptBookedPlace}>
+                <input name="parentLeadId" type="hidden" value={lead.id}/>
+                <p className="mb-2 text-sm text-muted-foreground">Record the room, table, seat and recurring time accepted for the next child.</p>
+                <div className="grid gap-2 sm:grid-cols-3"><select className="h-10 rounded-md border bg-background px-3" name="childLeadId" required><option value="">Child</option>{childrenStillToAccept.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}</select><select className="h-10 rounded-md border bg-background px-3" name="weekday" defaultValue="1"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select><Input name="startsAt" defaultValue="17:00" required type="time"/><select className="h-10 rounded-md border bg-background px-3" name="tableNumber" defaultValue="1"><option value="1">TAA1 · Table 1</option><option value="2">TAA1 · Table 2</option></select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required><option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}</select><Input name="durationMinutes" defaultValue="50" min="15" required type="number"/><Button className="sm:col-span-3">Parent accepted — hold place</Button></div>
+              </form> : <form action={activateAcceptedBookingsPayment}>
+                <input name="parentLeadId" type="hidden" value={lead.id}/>
+                <p className="mb-2 text-sm text-muted-foreground">All children have accepted places. Record payment to activate their booked sessions.</p>
+                <div className="grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div><Button className="sm:col-span-3">Record payment — activate bookings</Button></div>
+              </form>}
+            </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>
       </Card>

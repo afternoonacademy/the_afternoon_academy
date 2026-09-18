@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
-import { createManualLead, enrolPaidChildren } from "@/actions/update-lead-status"
+import { acceptBookedPlace, activateAcceptedBookingsPayment, createManualLead } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -103,20 +103,24 @@ export default async function AdminLeadsPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Payment received — enrol children</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Accepted place and payment activation</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Use this only after you have manually confirmed payment. It creates one learner record for each selected child; it does not take or charge a payment.</p>
+          <p className="text-sm text-muted-foreground">First record the place the parent accepted. When payment is later confirmed, the children become active and their agreed paid dates are prepared automatically.</p>
           {familyLeads?.length ? familyLeads.map((lead) => {
             const children = childrenByParent.get(lead.id) || []
-            return <form action={enrolPaidChildren} className="rounded-lg border p-4" key={lead.id}>
-              <input name="parentLeadId" type="hidden" value={lead.id} />
-              <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email} · {formatValue(lead.status)}</p></div><Button className="min-h-11">Payment received — enrol selected</Button></div>
-              <div className="mt-3 flex flex-wrap gap-3">{children.map((child) => <label className="flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm" key={child.id}><input defaultChecked name="childLeadId" type="checkbox" value={child.id} /><span>{child.first_name || "Child"} · age {child.child_age}{child.school_year ? ` · ${child.school_year}` : ""}</span></label>)}</div>
+            if (lead.status === "accepted_awaiting_payment") return <form action={activateAcceptedBookingsPayment} className="rounded-lg border p-4" key={lead.id}>
+              <input name="parentLeadId" type="hidden" value={lead.id}/>
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">Accepted place — awaiting payment</p></div><Button className="min-h-11">Record payment — activate booking</Button></div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3"><div><Label>Payment received</Label><Input name="receivedOn" required type="date"/></div><div><Label>First covered session</Label><Input name="periodStart" required type="date"/></div><div><Label>Last covered session</Label><Input name="periodEnd" required type="date"/></div></div>
             </form>
-          }) : <p className="text-sm text-muted-foreground">No unpaid family leads are ready to enrol.</p>}
+            return <form action={acceptBookedPlace} className="rounded-lg border p-4" key={lead.id}>
+              <input name="parentLeadId" type="hidden" value={lead.id}/>
+              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">Record the room, table, seat and recurring time the parent has accepted.</p></div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3"><select className="h-10 rounded-md border bg-background px-3" name="childLeadId" required><option value="">Child</option>{children.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}</select><select className="h-10 rounded-md border bg-background px-3" name="weekday" defaultValue="1"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select><Input name="startsAt" defaultValue="17:00" required type="time"/><select className="h-10 rounded-md border bg-background px-3" name="tableNumber" defaultValue="1"><option value="1">TAA1 · Table 1</option><option value="2">TAA1 · Table 2</option></select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required><option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}</select><Input name="durationMinutes" defaultValue="50" min="15" required type="number"/><Button className="sm:col-span-3">Parent accepted — hold place</Button></div>
+            </form>
+          }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader><CardTitle>Add a lead received outside the website</CardTitle></CardHeader>
         <CardContent><form action={createManualLead} className="grid gap-3 md:grid-cols-3"><div><Label>Parent name</Label><Input name="parentName" required/></div><div><Label>Email</Label><Input name="email" type="email" required/></div><div><Label>Phone</Label><Input name="phone"/></div><div><Label>Child first name</Label><Input name="childFirstName" required/></div><div><Label>Child age</Label><Input name="childAge" type="number" min="4" max="18" required/></div><div><Label>School year</Label><Input name="schoolYear"/></div><div><Label>Source</Label><select name="source" className="h-10 w-full rounded-md border bg-background px-3" defaultValue="phone"><option value="phone">Phone</option><option value="email">Email</option><option value="referral">Referral</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></div><Button className="w-fit self-end">Add as new lead</Button></form></CardContent>
@@ -195,7 +199,7 @@ export default async function AdminLeadsPage() {
                         <LeadActions
                           leadId={lead.parent_lead_id}
                           parentName={lead.parent_name}
-                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "offer_sent" | "waitlist" | "converted" | "closed"}
+                          status={lead.status as "new" | "warm" | "priority" | "contacted" | "offer_sent" | "accepted_awaiting_payment" | "waitlist" | "converted" | "closed"}
                         />
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">

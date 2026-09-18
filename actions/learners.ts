@@ -167,6 +167,8 @@ const standingPlacementSchema = z.object({
   effectiveFrom: z.string().date(),
 })
 
+const generatePaidMonthSchema = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) })
+
 const tutorBookingSchema = z.object({
   learnerId: z.string().uuid().optional(), parentLeadId: z.string().uuid().optional(),
   teacherName: z.string().trim().min(1).max(160), startsAt: z.string().min(16).max(40), endsAt: z.string().min(16).max(40), note: z.string().trim().max(1000).optional(),
@@ -779,5 +781,62 @@ export async function saveStandingPlacement(formData: FormData) {
     focus: parsed.data.focus, effective_from: parsed.data.effectiveFrom, created_by: user.id, updated_by: user.id,
   })
   if (error) throw new Error("Could not save the standing timetable place")
+  revalidatePath("/admin/sessions")
+}
+
+
+export async function generatePaidMonth(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = generatePaidMonthSchema.safeParse({ month: formData.get("month") })
+  if (!parsed.success) throw new Error("Choose a month to generate")
+  const month = parsed.data.month
+  const [year, monthNumber] = month.split("-").map(Number)
+  const start = `${month}-01`
+  const end = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10)
+  const supabase = supabaseService()
+  const [{ data: placements, error: placementError }, { data: learners, error: learnerError }, { data: entitlements, error: paymentError }] = await Promise.all([
+    supabase.from("standing_placements").select("id, learner_id, weekday, table_number, starts_at, duration_minutes, teacher_name, focus, effective_from, effective_to").eq("status", "active"),
+    supabase.from("learners").select("id, parent_lead_id").eq("status", "active"),
+    supabase.from("payment_entitlements").select("parent_lead_id, period_start, period_end").eq("status", "paid").lte("period_start", end).gte("period_end", start),
+  ])
+  if (placementError || learnerError || paymentError) throw new Error("Could not load the paid timetable")
+  const parentByLearner = new Map((learners || []).map((learner) => [learner.id, learner.parent_lead_id]))
+  const paidParents = new Set((entitlements || []).map((entitlement) => entitlement.parent_lead_id))
+  const eligible = (placements || []).filter((placement) => {
+    const parentLeadId = parentByLearner.get(placement.learner_id)
+    return parentLeadId && paidParents.has(parentLeadId) &&
+      placement.effective_from <= end && (!placement.effective_to || placement.effective_to >= start)
+  })
+
+  for (const placement of eligible) {
+    for (const serviceDate of datesInMonthForWeekday(month, placement.weekday)) {
+      const { data: session, error: existingError } = await supabase.from("delivery_sessions")
+        .select("id, teacher_name, focus, starts_at, duration_minutes")
+        .eq("service_date", serviceDate).eq("table_number", placement.table_number).maybeSingle()
+      if (existingError) throw new Error("Could not check generated dates")
+      let sessionId = session?.id
+      if (!sessionId) {
+        const { data: created, error: createError } = await supabase.from("delivery_sessions").insert({
+          service_date: serviceDate, table_number: placement.table_number, starts_at: placement.starts_at,
+          duration_minutes: placement.duration_minutes, teacher_name: placement.teacher_name, focus: placement.focus,
+          created_by: user.id, updated_by: user.id,
+        }).select("id").single()
+        if (createError || !created) throw new Error("Could not create a paid delivery date")
+        sessionId = created.id
+      }
+      const { data: seat } = await supabase.from("delivery_seats").select("id")
+        .eq("delivery_session_id", sessionId).eq("learner_id", placement.learner_id).eq("status", "scheduled").maybeSingle()
+      if (!seat) {
+        const { count } = await supabase.from("delivery_seats").select("id", { count: "exact", head: true })
+          .eq("delivery_session_id", sessionId).eq("status", "scheduled")
+        if ((count || 0) >= 6) throw new Error("A paid table would exceed six seats")
+        const { error: seatError } = await supabase.from("delivery_seats").insert({
+          delivery_session_id: sessionId, learner_id: placement.learner_id, seat_number: (count || 0) + 1,
+          status: "scheduled", updated_by: user.id,
+        })
+        if (seatError) throw new Error("Could not reserve a paid learner seat")
+      }
+    }
+  }
   revalidatePath("/admin/sessions")
 }

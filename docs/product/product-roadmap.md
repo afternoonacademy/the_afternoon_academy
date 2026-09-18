@@ -44,6 +44,7 @@ Not now: a public live calendar for group places; a full parent app; AI-generate
 - **Buildings and rooms:** a reusable hierarchy for Academy locations, rooms, capacity, room purpose and availability.
 - **Teacher profiles:** staff identity, role, availability, safeguarding/qualification evidence and cover context; access remains least-privilege.
 - **Timetable assignment:** sessions and one-to-one bookings will reference those approved buildings, rooms and staff records rather than free-text names.
+- **Capacity and utilisation:** reliable reporting of available seats, filled seats, attendance, no-shows and utilisation by room, table, session and teacher—after the weekly delivery workflow is proven.
 
 This is deliberately deferred from the launch correction: TAA currently has one location, TAA1 and one Tutor Room, with a small team. The present slice uses simple named teacher assignment and fixed room choices while preserving a clean migration path to the fuller model.
 

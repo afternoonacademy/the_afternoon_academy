@@ -840,3 +840,92 @@ export async function generatePaidMonth(formData: FormData) {
   }
   revalidatePath("/admin/sessions")
 }
+
+
+export async function saveWeeklyTableTemplate(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({
+    weekday: z.coerce.number().int().min(0).max(6),
+    tableNumber: z.coerce.number().int().min(1).max(2),
+    startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(360),
+    teacherName: z.string().trim().max(160).optional(),
+    focus: z.string().trim().min(1).max(500),
+    effectiveFrom: z.string().date(),
+  }).safeParse({
+    weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName") || undefined, focus: formData.get("focus"),
+    effectiveFrom: formData.get("effectiveFrom"),
+  })
+  if (!parsed.success) throw new Error("Please complete the weekly table details")
+  const supabase = supabaseService()
+  const { error: closeError } = await supabase.from("weekly_table_templates")
+    .update({ status: "paused", updated_by: user.id })
+    .eq("weekday", parsed.data.weekday).eq("table_number", parsed.data.tableNumber).eq("status", "active")
+  if (closeError) throw new Error("Could not update the weekly table plan")
+  const { error } = await supabase.from("weekly_table_templates").insert({
+    weekday: parsed.data.weekday, table_number: parsed.data.tableNumber,
+    starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
+    teacher_name: parsed.data.teacherName || null, focus: parsed.data.focus,
+    effective_from: parsed.data.effectiveFrom, created_by: user.id, updated_by: user.id,
+  })
+  if (error) throw new Error("Could not save the weekly table plan")
+  revalidatePath("/admin/sessions")
+}
+
+export async function openWeeklyTableForDate(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({
+    serviceDate: z.string().date(),
+    tableNumber: z.coerce.number().int().min(1).max(2),
+  }).safeParse({ serviceDate: formData.get("serviceDate"), tableNumber: formData.get("tableNumber") })
+  if (!parsed.success) throw new Error("Invalid table date")
+  const day = new Date(`${parsed.data.serviceDate}T12:00:00`).getDay()
+  const supabase = supabaseService()
+  const { data: existing, error: existingError } = await supabase.from("delivery_sessions")
+    .select("id").eq("service_date", parsed.data.serviceDate).eq("table_number", parsed.data.tableNumber).maybeSingle()
+  if (existingError) throw new Error("Could not check this table")
+  let sessionId = existing?.id
+  if (!sessionId) {
+    const { data: template, error: templateError } = await supabase.from("weekly_table_templates")
+      .select("starts_at, duration_minutes, teacher_name, focus")
+      .eq("weekday", day).eq("table_number", parsed.data.tableNumber).eq("status", "active")
+      .lte("effective_from", parsed.data.serviceDate)
+      .or(`effective_to.is.null,effective_to.gte.${parsed.data.serviceDate}`)
+      .order("effective_from", { ascending: false }).limit(1).maybeSingle()
+    if (templateError) throw new Error("Could not load the weekly table plan")
+    if (!template) throw new Error("Set up the weekly table first")
+    const { data: created, error: createError } = await supabase.from("delivery_sessions").insert({
+      service_date: parsed.data.serviceDate, table_number: parsed.data.tableNumber,
+      starts_at: template.starts_at, duration_minutes: template.duration_minutes,
+      teacher_name: template.teacher_name, focus: template.focus,
+      created_by: user.id, updated_by: user.id,
+    }).select("id").single()
+    if (createError || !created) throw new Error("Could not open this table for the selected date")
+    sessionId = created.id
+  }
+  const [{ data: placements, error: placementError }, { data: paid, error: paidError }] = await Promise.all([
+    supabase.from("standing_placements").select("learner_id, seat_number")
+      .eq("weekday", day).eq("table_number", parsed.data.tableNumber).eq("status", "active")
+      .lte("effective_from", parsed.data.serviceDate)
+      .or(`effective_to.is.null,effective_to.gte.${parsed.data.serviceDate}`),
+    supabase.from("child_payment_entitlements").select("learner_id")
+      .eq("status", "paid").lte("period_start", parsed.data.serviceDate).gte("period_end", parsed.data.serviceDate),
+  ])
+  if (placementError || paidError) throw new Error("Could not load paid standing places")
+  const paidIds = new Set((paid || []).map((item) => item.learner_id))
+  for (const placement of placements || []) {
+    if (!placement.seat_number || !paidIds.has(placement.learner_id)) continue
+    const { data: occupied } = await supabase.from("delivery_seats").select("id, learner_id")
+      .eq("delivery_session_id", sessionId).eq("seat_number", placement.seat_number).eq("status", "scheduled").maybeSingle()
+    if (!occupied) {
+      const { error } = await supabase.from("delivery_seats").insert({
+        delivery_session_id: sessionId, learner_id: placement.learner_id, seat_number: placement.seat_number,
+        status: "scheduled", updated_by: user.id,
+      })
+      if (error) throw new Error("Could not reserve a paid standing seat")
+    }
+  }
+  revalidatePath("/admin/sessions")
+}

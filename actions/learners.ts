@@ -929,3 +929,53 @@ export async function openWeeklyTableForDate(formData: FormData) {
   }
   revalidatePath("/admin/sessions")
 }
+
+
+export async function savePaidWeeklyPlace(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({
+    learnerId: z.string().uuid(),
+    periodStart: z.string().date(),
+    periodEnd: z.string().date(),
+    weekday: z.coerce.number().int().min(0).max(6),
+    tableNumber: z.coerce.number().int().min(1).max(2),
+    seatNumber: z.coerce.number().int().min(1).max(6),
+    startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(360),
+    teacherName: z.string().trim().max(160).optional(),
+    focus: z.string().trim().min(1).max(500),
+  }).refine((value) => value.periodEnd >= value.periodStart, { message: "Payment end date must follow the start date" }).safeParse({
+    learnerId: formData.get("learnerId"), periodStart: formData.get("periodStart"), periodEnd: formData.get("periodEnd"),
+    weekday: formData.get("weekday"), tableNumber: formData.get("tableNumber"), seatNumber: formData.get("seatNumber"),
+    startsAt: formData.get("startsAt"), durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName") || undefined, focus: formData.get("focus"),
+  })
+  if (!parsed.success) throw new Error("Please complete the paid weekly place")
+  const supabase = supabaseService()
+  const { data: learner, error: learnerError } = await supabase.from("learners").select("parent_lead_id")
+    .eq("id", parsed.data.learnerId).eq("status", "active").single()
+  if (learnerError || !learner?.parent_lead_id) throw new Error("That learner needs a linked parent record")
+  const { data: payment, error: paymentError } = await supabase.from("payment_entitlements").upsert({
+    parent_lead_id: learner.parent_lead_id, period_start: parsed.data.periodStart, period_end: parsed.data.periodEnd,
+    sessions_per_week: 1, status: "paid", recorded_by: user.id,
+  }, { onConflict: "parent_lead_id,period_start,period_end" }).select("id").single()
+  if (paymentError || !payment) throw new Error("Could not record the family payment period")
+  const { error: childPaymentError } = await supabase.from("child_payment_entitlements").upsert({
+    payment_entitlement_id: payment.id, learner_id: parsed.data.learnerId,
+    period_start: parsed.data.periodStart, period_end: parsed.data.periodEnd,
+    sessions_per_week: 1, status: "paid", recorded_by: user.id,
+  }, { onConflict: "learner_id,period_start,period_end" })
+  if (childPaymentError) throw new Error("Could not give the child paid eligibility")
+  const { error: closeError } = await supabase.from("standing_placements").update({
+    status: "ended", effective_to: parsed.data.periodStart, updated_by: user.id,
+  }).eq("learner_id", parsed.data.learnerId).eq("weekday", parsed.data.weekday).eq("status", "active")
+  if (closeError) throw new Error("Could not update the learner's previous weekly place")
+  const { error: placementError } = await supabase.from("standing_placements").insert({
+    learner_id: parsed.data.learnerId, weekday: parsed.data.weekday, table_number: parsed.data.tableNumber,
+    seat_number: parsed.data.seatNumber, starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
+    teacher_name: parsed.data.teacherName || null, focus: parsed.data.focus, effective_from: parsed.data.periodStart,
+    created_by: user.id, updated_by: user.id,
+  })
+  if (placementError) throw new Error("Could not save the learner's standing seat")
+  revalidatePath("/admin/sessions")
+}

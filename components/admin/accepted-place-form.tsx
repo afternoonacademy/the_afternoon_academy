@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 type Child = { id: string; first_name: string | null; child_age: number }
+type Slot = { id: string; weekday: number; table_number: number; starts_at: string; duration_minutes: number }
 
 const initialState: AcceptedPlaceActionState = {}
 
-export function AcceptedPlaceForm({ parentLeadId, children }: { parentLeadId: string; children: Child[] }) {
+export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLeadId: string; children: Child[]; slots: Slot[] }) {
   const [state, formAction, pending] = useActionState(submitAcceptedPlace, initialState)
 
   return <form action={formAction}>
@@ -21,15 +22,10 @@ export function AcceptedPlaceForm({ parentLeadId, children }: { parentLeadId: st
         <option value="">Child</option>
         {children.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}
       </select>
-      <select className="h-10 rounded-md border bg-background px-3" name="weekday" defaultValue="1">
-        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
-        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
-      </select>
-      <Input name="startsAt" defaultValue="17:00" required type="time"/>
-      <select className="h-10 rounded-md border bg-background px-3" name="tableNumber" defaultValue="1">
-        <option value="1">TAA1 · Table 1</option><option value="2">TAA1 · Table 2</option>
-      </select>
-      <select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required>
+      <select className="h-10 rounded-md border bg-background px-3 sm:col-span-2" name="templateId" required>
+        <option value="">Bookable timetable slot</option>
+        {slots.map((slot) => <option key={slot.id} value={slot.id}>{["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][slot.weekday]} · {slot.starts_at.slice(0,5)}–{new Date(`1970-01-01T${slot.starts_at}`).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:false})} · TAA1 Table {slot.table_number}</option>)}
+      </select><select className="h-10 rounded-md border bg-background px-3" name="seatNumber" required>
         <option value="">Seat</option>{[1,2,3,4,5,6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}
       </select>
       <Input name="durationMinutes" defaultValue="50" min="15" required type="number"/>

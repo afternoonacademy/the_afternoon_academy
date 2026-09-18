@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
-import { createManualLead } from "@/actions/update-lead-status"
+import { createManualLead, enrolPaidChildren } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -76,6 +76,23 @@ export default async function AdminLeadsPage() {
 
   const leads = (data || []) as LeadOverviewRow[]
 
+  const { data: familyLeads } = await supabaseAdmin
+    .from("parent_leads")
+    .select("id, parent_name, email, status")
+    .not("status", "in", '("converted","closed")')
+    .order("created_at", { ascending: false })
+  const { data: familyChildren } = await supabaseAdmin
+    .from("child_leads")
+    .select("id, parent_lead_id, first_name, child_age, school_year")
+    .order("created_at")
+
+  const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
+  for (const child of familyChildren || []) {
+    const current = childrenByParent.get(child.parent_lead_id) || []
+    current.push(child)
+    childrenByParent.set(child.parent_lead_id, current)
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -84,6 +101,21 @@ export default async function AdminLeadsPage() {
           Every parent timetable response submitted through the landing page.
         </p>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle>Payment received — enrol children</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Use this only after you have manually confirmed payment. It creates one learner record for each selected child; it does not take or charge a payment.</p>
+          {familyLeads?.length ? familyLeads.map((lead) => {
+            const children = childrenByParent.get(lead.id) || []
+            return <form action={enrolPaidChildren} className="rounded-lg border p-4" key={lead.id}>
+              <input name="parentLeadId" type="hidden" value={lead.id} />
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email} · {formatValue(lead.status)}</p></div><Button className="min-h-11">Payment received — enrol selected</Button></div>
+              <div className="mt-3 flex flex-wrap gap-3">{children.map((child) => <label className="flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm" key={child.id}><input defaultChecked name="childLeadId" type="checkbox" value={child.id} /><span>{child.first_name || "Child"} · age {child.child_age}{child.school_year ? ` · ${child.school_year}` : ""}</span></label>)}</div>
+            </form>
+          }) : <p className="text-sm text-muted-foreground">No unpaid family leads are ready to enrol.</p>}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle>Add a lead received outside the website</CardTitle></CardHeader>

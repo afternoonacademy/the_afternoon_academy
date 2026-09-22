@@ -52,7 +52,7 @@ export default async function AdminPage({
       .eq("attendance_date", date),
     supabaseAdmin
       .from("academy_tables")
-      .select("id, name, seat_capacity")
+      .select("id, table_number, name, seat_capacity")
       .eq("status", "active")
       .order("table_number"),
     supabaseAdmin

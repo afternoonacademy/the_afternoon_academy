@@ -24,6 +24,17 @@ const learnerDetailsSchema = z.object({
   schoolContactPermissionConfirmed: z.boolean(),
 })
 
+const learnerPersonalProfileSchema = z.object({
+  learnerId: z.string().uuid(),
+  firstName: z.string().trim().min(1).max(80),
+  yearGroup: z.string().trim().max(80).optional(),
+  currentSchoolName: z.string().trim().max(160).optional(),
+  teacherName: z.string().trim().max(160).optional(),
+  teacherEmail: z.union([z.string().trim().email().max(254), z.literal("")]),
+  teacherPhone: z.string().trim().max(50).optional(),
+  schoolContactPermissionConfirmed: z.boolean(),
+})
+
 const attendanceSchema = z.object({
   learnerId: z.string().uuid(),
   attendanceDate: z.string().date(),
@@ -123,7 +134,11 @@ const dailyDeliverySchema = z.object({
   focus: z.string().trim().min(1).max(500),
 })
 
-const updateDeliverySessionSchema = dailyDeliverySchema.extend({ deliverySessionId: z.string().uuid() })
+const updateDeliverySessionSchema = z.object({
+  deliverySessionId: z.string().uuid(),
+  teacherName: z.string().trim().max(160).optional(),
+  focus: z.string().trim().min(1).max(500),
+})
 
 const deliverySeatSchema = z.object({
   deliverySessionId: z.string().uuid(),
@@ -254,13 +269,13 @@ export async function updateLearnerDetails(formData: FormData) {
   const supabase = supabaseService()
   const { data: learner, error: learnerError } = await supabase
     .from("learners")
-    .select("parent_lead_id")
+    .select("parent_lead_id, status")
     .eq("id", details.learnerId)
     .single()
 
   if (learnerError || !learner) throw new Error("Learner record not found")
 
-  if (details.status === "active" && learner.parent_lead_id) {
+  if (details.status === "active" && learner.status !== "active" && learner.parent_lead_id) {
     const { count, error: placementError } = await supabase
       .from("session_placements")
       .select("id", { count: "exact", head: true })
@@ -275,11 +290,6 @@ export async function updateLearnerDetails(formData: FormData) {
 
   const { error } = await supabase.from("learners").update({
     status: details.status,
-    current_school_name: details.currentSchoolName || null,
-    teacher_name: details.teacherName || null,
-    teacher_email: details.teacherEmail || null,
-    teacher_phone: details.teacherPhone || null,
-    school_contact_permission_confirmed: details.schoolContactPermissionConfirmed,
   }).eq("id", details.learnerId)
 
   if (error) throw new Error("Could not update learner details")
@@ -287,6 +297,26 @@ export async function updateLearnerDetails(formData: FormData) {
   revalidatePath(`/admin/learners/${details.learnerId}`)
   revalidatePath("/admin/operations")
   revalidatePath("/admin/sessions")
+}
+
+export async function updateLearnerPersonalProfile(formData: FormData) {
+  await requireAdmin()
+  const parsed = learnerPersonalProfileSchema.safeParse({
+    learnerId: formData.get("learnerId"), firstName: formData.get("firstName"), yearGroup: formData.get("yearGroup") || undefined,
+    currentSchoolName: formData.get("currentSchoolName") || undefined, teacherName: formData.get("teacherName") || undefined,
+    teacherEmail: formData.get("teacherEmail") || "", teacherPhone: formData.get("teacherPhone") || undefined,
+    schoolContactPermissionConfirmed: formData.get("schoolContactPermissionConfirmed") === "on",
+  })
+  if (!parsed.success) throw new Error("Please check the personal profile details")
+  const value = parsed.data
+  if ((value.teacherName || value.teacherEmail || value.teacherPhone) && !value.schoolContactPermissionConfirmed) throw new Error("Confirm permission before recording school contact details")
+  const { error } = await supabaseService().from("learners").update({
+    first_name: value.firstName, year_group: value.yearGroup || null, current_school_name: value.currentSchoolName || null,
+    teacher_name: value.teacherName || null, teacher_email: value.teacherEmail || null, teacher_phone: value.teacherPhone || null,
+    school_contact_permission_confirmed: value.schoolContactPermissionConfirmed,
+  }).eq("id", value.learnerId)
+  if (error) throw new Error("Could not update the personal profile")
+  revalidatePath("/admin/learners"); revalidatePath(`/admin/learners/${value.learnerId}`)
 }
 
 export async function recordAttendance(formData: FormData) {
@@ -672,12 +702,11 @@ export async function updateDailyDeliverySession(formData: FormData) {
   const parsed = updateDeliverySessionSchema.safeParse({
     deliverySessionId: formData.get("deliverySessionId"), serviceDate: formData.get("serviceDate"),
     tableNumber: formData.get("tableNumber"), startsAt: formData.get("startsAt"),
-    durationMinutes: formData.get("durationMinutes"), teacherName: formData.get("teacherName"), focus: formData.get("focus"),
+    durationMinutes: formData.get("durationMinutes"), teacherName: formData.get("teacherName") || undefined, focus: formData.get("focus"),
   })
   if (!parsed.success) throw new Error("Please check the daily table plan")
   const { error } = await supabaseService().from("delivery_sessions").update({
-    starts_at: parsed.data.startsAt, duration_minutes: parsed.data.durationMinutes,
-    teacher_name: parsed.data.teacherName, focus: parsed.data.focus, updated_by: user.id,
+    teacher_name: parsed.data.teacherName || null, focus: parsed.data.focus, updated_by: user.id,
   }).eq("id", parsed.data.deliverySessionId)
   if (error) throw new Error("Could not save this date's table plan")
   revalidatePath("/admin/sessions")

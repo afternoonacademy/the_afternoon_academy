@@ -48,6 +48,10 @@ Not now: a public live calendar for group places; a full parent app; AI-generate
 
 This is deliberately deferred from the launch correction: TAA currently has one location, TAA1 and one Tutor Room, with a small team. The present slice uses simple named teacher assignment and fixed room choices while preserving a clean migration path to the fuller model.
 
+### Operations foundation progress — September 2026
+
+The first Academy configuration layer is now in place: building, room and table records; multi-slot weekly timetable support; and paid recurring-seat generation. The next required completion item is a reviewed, preview-verified delivery board that presents these pre-filled dated seats cleanly on mobile. Capacity and utilisation reporting remains future work.
+
 ## Phase 3 — Scale the trusted network (Year 2 to 3)
 
 - Staff quality system.

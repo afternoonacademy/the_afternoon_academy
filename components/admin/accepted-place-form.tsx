@@ -13,7 +13,7 @@ const initialState: AcceptedPlaceActionState = {}
 
 
 
-export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLeadId: string; children: Child[]; slots: Slot[] }) {
+export function AcceptedPlaceForm({ parentLeadId, childOptions, slots }: { parentLeadId: string; childOptions: Child[]; slots: Slot[] }) {
   const [state, formAction, pending] = useActionState(submitAcceptedPlace, initialState)
   const [weekday, setWeekday] = useState("")
   const [startsAt, setStartsAt] = useState("")
@@ -27,7 +27,7 @@ export function AcceptedPlaceForm({ parentLeadId, children, slots }: { parentLea
     <div className="grid gap-2 sm:grid-cols-3">
       <select className="h-10 rounded-md border bg-background px-3" name="childLeadId" required>
         <option value="">Child</option>
-        {children.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}
+        {childOptions.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"} · age {child.child_age}</option>)}
       </select>
       <select className="h-10 rounded-md border bg-background px-3" value={weekday} onChange={(event) => { setWeekday(event.target.value); setStartsAt(""); setTableNumber("") }} required>
         <option value="">Day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>

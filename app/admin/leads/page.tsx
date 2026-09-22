@@ -136,7 +136,7 @@ export default async function AdminLeadsPage() {
             }))
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
-              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} children={childrenStillToAccept} slots={bookableSlots || []}/> : <PaymentActivationForm parentLeadId={lead.id} bookings={acceptedChildBookings}/>}
+              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} childOptions={childrenStillToAccept} slots={bookableSlots || []}/> : <PaymentActivationForm parentLeadId={lead.id} bookings={acceptedChildBookings}/>}
             </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>

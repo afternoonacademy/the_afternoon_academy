@@ -143,20 +143,24 @@ export async function acceptBookedPlace(formData: FormData) {
   const supabase = supabaseService()
   const [{ data: child, error: childError }, { data: template, error: templateError }] = await Promise.all([
     supabase.from("child_leads").select("parent_lead_id").eq("id", data.childLeadId).single(),
-    supabase.from("weekly_table_templates").select("weekday, table_number, starts_at, duration_minutes")
+    supabase.from("weekly_table_templates").select("weekday, table_number, academy_table_id, starts_at, duration_minutes")
       .eq("id", data.templateId).eq("status", "active").maybeSingle(),
   ])
   if (childError || child?.parent_lead_id !== data.parentLeadId) throw new Error("That child does not belong to this parent")
   if (templateError || !template) throw new Error("That timetable slot is no longer available")
+  const { data: table, error: tableError } = await supabase.from("academy_tables")
+    .select("seat_capacity, status").eq("id", template.academy_table_id).maybeSingle()
+  if (tableError || !table || table.status !== "active") throw new Error("That Academy table is no longer available")
+  if (data.seatNumber > table.seat_capacity) throw new Error("Choose a seat within this table’s configured capacity")
   const { data: occupied, error: occupiedError } = await supabase.from("accepted_bookings").select("id")
-    .eq("weekday", template.weekday).eq("table_number", template.table_number)
+    .eq("weekday", template.weekday).eq("academy_table_id", template.academy_table_id)
     .eq("starts_at", template.starts_at).eq("seat_number", data.seatNumber)
     .in("status", ["accepted_awaiting_payment", "paid_active"]).maybeSingle()
   if (occupiedError) throw new Error("Could not check the seat")
   if (occupied) throw new Error("That recurring seat is already held")
   const { error: bookingError } = await supabase.from("accepted_bookings").insert({
     parent_lead_id: data.parentLeadId, child_lead_id: data.childLeadId,
-    weekday: template.weekday, table_number: template.table_number, seat_number: data.seatNumber,
+    weekday: template.weekday, table_number: template.table_number, academy_table_id: template.academy_table_id, seat_number: data.seatNumber,
     starts_at: template.starts_at, duration_minutes: template.duration_minutes, accepted_by: user.id,
   })
   if (bookingError) throw new Error("Could not save the accepted place")
@@ -178,7 +182,7 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
   const data = parsed.data
   const supabase = supabaseService()
   const { data: bookings, error: bookingError } = await supabase.from("accepted_bookings")
-    .select("id, child_lead_id, weekday, table_number, seat_number, starts_at, duration_minutes")
+    .select("id, child_lead_id, weekday, table_number, academy_table_id, seat_number, starts_at, duration_minutes")
     .eq("parent_lead_id", data.parentLeadId).eq("status", "accepted_awaiting_payment")
   if (bookingError || !bookings?.length) throw new Error("No accepted places are awaiting payment")
   const { data: payment, error: paymentError } = await supabase.from("payment_entitlements").upsert({
@@ -211,7 +215,7 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
       .eq("learner_id", learner.id).eq("weekday", booking.weekday).eq("status", "active")
     if (endError) throw new Error("Could not update the previous standing place")
     const { error: placementError } = await supabase.from("standing_placements").insert({
-      learner_id: learner.id, weekday: booking.weekday, table_number: booking.table_number, seat_number: booking.seat_number,
+      learner_id: learner.id, weekday: booking.weekday, table_number: booking.table_number, academy_table_id: booking.academy_table_id, seat_number: booking.seat_number,
       starts_at: booking.starts_at, duration_minutes: booking.duration_minutes, effective_from: data.periodStart,
       created_by: user.id, updated_by: user.id,
     })
@@ -220,6 +224,24 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
       learner_id: learner.id, payment_entitlement_id: payment.id, status: "paid_active", paid_at: new Date().toISOString(), paid_by: user.id,
     }).eq("id", booking.id)
     if (paidError) throw new Error("Could not activate the accepted place")
+
+    const cursor = new Date(`${data.periodStart}T12:00:00Z`)
+    const end = new Date(`${data.periodEnd}T12:00:00Z`)
+    while (cursor <= end) {
+      if (cursor.getUTCDay() === booking.weekday) {
+        const serviceDate = cursor.toISOString().slice(0, 10)
+        const { data: session, error: sessionError } = await supabase.from("delivery_sessions")
+          .upsert({ service_date: serviceDate, table_number: booking.table_number, academy_table_id: booking.academy_table_id,
+            starts_at: booking.starts_at, duration_minutes: booking.duration_minutes, status: "scheduled", created_by: user.id, updated_by: user.id },
+            { onConflict: "service_date,academy_table_id,starts_at", ignoreDuplicates: false })
+          .select("id").single()
+        if (sessionError || !session) throw new Error("Could not prepare the paid delivery session")
+        const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: learner.id,
+          seat_number: booking.seat_number, status: "scheduled", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id", ignoreDuplicates: false })
+        if (seatError) throw new Error("Could not prepare the paid learner seat")
+      }
+      cursor.setUTCDate(cursor.getUTCDate() + 1)
+    }
   }
   const { error: leadError } = await supabase.from("parent_leads").update({
     status: "converted", enrolled_at: new Date().toISOString(), enrolled_by: user.id,

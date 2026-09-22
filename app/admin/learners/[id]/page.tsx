@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 
-import { createLearnerGoal, createTeacherUpdate, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus } from "@/actions/learners"
+import { createLearnerGoal, createTeacherUpdate, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,22 +42,24 @@ export default async function LearnerPage({ params }: PageProps) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>Learner details and lifecycle</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Personal profile</CardTitle></CardHeader>
           <CardContent>
-            <form action={updateLearnerDetails} className="space-y-4">
+            <form action={updateLearnerPersonalProfile} className="space-y-4">
               <input type="hidden" name="learnerId" value={id} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2"><Label htmlFor="learnerStatus">Learner status</Label><select id="learnerStatus" name="status" className="h-10 w-full rounded-md border bg-background px-3 text-sm" defaultValue={learner.status}><option value="active">Active</option><option value="paused">Paused</option><option value="left">Left the academy</option></select></div>
+                <div className="space-y-2"><Label htmlFor="firstName">First name</Label><Input id="firstName" name="firstName" maxLength={80} defaultValue={learner.first_name} required /></div>
+                <div className="space-y-2"><Label htmlFor="yearGroup">Year group</Label><Input id="yearGroup" name="yearGroup" maxLength={80} defaultValue={learner.year_group || ""} /></div>
                 <div className="space-y-2"><Label htmlFor="currentSchoolName">Current school</Label><Input id="currentSchoolName" name="currentSchoolName" maxLength={160} defaultValue={learner.current_school_name || ""} /></div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="teacherName">Teacher/contact name</Label><Input id="teacherName" name="teacherName" maxLength={160} defaultValue={learner.teacher_name || ""} /></div><div className="space-y-2"><Label htmlFor="teacherEmail">Teacher/contact email</Label><Input id="teacherEmail" name="teacherEmail" type="email" maxLength={254} defaultValue={learner.teacher_email || ""} /></div></div>
               <div className="space-y-2"><Label htmlFor="teacherPhone">Teacher/contact phone</Label><Input id="teacherPhone" name="teacherPhone" maxLength={50} defaultValue={learner.teacher_phone || ""} /></div>
               <label className="flex gap-3 rounded-md border p-3 text-sm"><input type="checkbox" name="schoolContactPermissionConfirmed" defaultChecked={learner.school_contact_permission_confirmed} /><span>I have confirmed it is appropriate to retain these school contact details for TAA&apos;s educational service.</span></label>
               <p className="text-xs text-muted-foreground">Only record a school contact where it is necessary for the child&apos;s support. Do not add sensitive information to contact fields.</p>
-              <Button type="submit">Save learner details</Button>
+              <Button type="submit">Save personal profile</Button>
             </form>
           </CardContent>
         </Card>
+        <Card><CardHeader><CardTitle>Learner details and lifecycle</CardTitle></CardHeader><CardContent><form action={updateLearnerDetails} className="space-y-4"><input type="hidden" name="learnerId" value={id} /><input type="hidden" name="currentSchoolName" value="" /><input type="hidden" name="teacherName" value="" /><input type="hidden" name="teacherEmail" value="" /><input type="hidden" name="teacherPhone" value="" /><div className="space-y-2"><Label htmlFor="learnerStatus">Learner status</Label><select id="learnerStatus" name="status" className="h-10 w-full rounded-md border bg-background px-3 text-sm" defaultValue={learner.status}><option value="active">Active</option><option value="paused">Paused</option><option value="left">Left the academy</option></select></div><p className="text-sm text-muted-foreground">Changing status preserves the learner’s attendance and progress history.</p><Button type="submit">Save status</Button></form></CardContent></Card>
         <Card>
           <CardHeader><CardTitle>Learning profile</CardTitle></CardHeader>
           <CardContent className="space-y-4 text-sm">

@@ -76,13 +76,13 @@ export default async function AdminPage({
   const attendanceOutstanding = (sessions || []).filter(
     (session) => !attendanceSessionIds.has(session.id),
   ).length;
-  const totalCapacity = (sessions || []).reduce(
-    (total, session) =>
-      total +
-      ((tables || []).find((item) => item.id === session.academy_table_id)
-        ?.seat_capacity || 6),
-    0,
+  const runningTimeBands = new Set(
+    (sessions || []).map((session) => session.starts_at),
   );
+  const teachingTableCapacity = (tables || [])
+    .filter((table) => table.table_number === 1 || table.table_number === 2)
+    .reduce((total, table) => total + table.seat_capacity, 0);
+  const totalCapacity = runningTimeBands.size * teachingTableCapacity;
   const link = (next: Record<string, string>) =>
     `/admin?${new URLSearchParams({ date, ...next })}`;
 

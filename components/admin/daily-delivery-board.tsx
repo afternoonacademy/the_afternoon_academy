@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   addDeliverySeat,
   cancelDeliverySession,
+  openWeeklyTableForDate,
   recordAttendance,
   removeDeliverySeat,
 } from "@/actions/learners";
@@ -32,6 +33,16 @@ type Attendance = {
   delivery_session_id: string;
   status: string;
 };
+type Table = { table_number: number; name: string | null };
+type WeeklyTemplate = {
+  weekday: number;
+  table_number: number;
+  starts_at: string;
+  teacher_name: string | null;
+  focus: string | null;
+  effective_from: string;
+  effective_to: string | null;
+};
 
 export function DailyDeliveryBoard({
   date,
@@ -40,6 +51,9 @@ export function DailyDeliveryBoard({
   learners,
   attendance,
   eligibleLearnerIds,
+  tables,
+  weeklyTemplates,
+  weekday,
 }: {
   date: string;
   sessions: Session[];
@@ -47,6 +61,9 @@ export function DailyDeliveryBoard({
   learners: Learner[];
   attendance: Attendance[];
   eligibleLearnerIds: string[];
+  tables: Table[];
+  weeklyTemplates: WeeklyTemplate[];
+  weekday: number;
 }) {
   const sortedSessions = useMemo(
     () =>
@@ -57,10 +74,20 @@ export function DailyDeliveryBoard({
       ),
     [sessions],
   );
+  const availableTables = useMemo(() => {
+    const configured = tables.filter((table) => table.table_number > 0);
+    return configured.length > 0
+      ? configured
+      : [1, 2].map((table_number) => ({ table_number, name: null }));
+  }, [tables]);
+  const [selectedTable, setSelectedTable] = useState(
+    sortedSessions[0]?.table_number ?? availableTables[0]?.table_number ?? 1,
+  );
   const [sessionId, setSessionId] = useState(sortedSessions[0]?.id ?? "");
-  const selected =
-    sortedSessions.find((session) => session.id === sessionId) ??
-    sortedSessions[0];
+  const selected = sortedSessions.find(
+    (session) =>
+      session.id === sessionId && session.table_number === selectedTable,
+  );
   const selectedSeats = useMemo(
     () =>
       seats.filter(
@@ -86,48 +113,49 @@ export function DailyDeliveryBoard({
   const eligibleLearners = learners.filter((learner) =>
     eligibleLearnerIds.includes(learner.id),
   );
-  const tables = [
-    ...new Set(sortedSessions.map((session) => session.table_number)),
-  ];
-  const selectedTable = selected?.table_number ?? tables[0];
   const slots = sortedSessions.filter(
     (session) => session.table_number === selectedTable,
   );
-
-  if (!selected)
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No dated session</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No delivery session is open for this date.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  const selectedTableName = availableTables.find(
+    (table) => table.table_number === selectedTable,
+  )?.name;
+  const weeklyTemplate = weeklyTemplates
+    .filter(
+      (template) =>
+        template.weekday === weekday &&
+        template.table_number === selectedTable &&
+        template.effective_from <= date &&
+        (!template.effective_to || template.effective_to >= date),
+    )
+    .sort(
+      (a, b) =>
+        a.starts_at.localeCompare(b.starts_at) ||
+        b.effective_from.localeCompare(a.effective_from),
+    )[0];
 
   return (
     <Card>
       <CardHeader className="space-y-3">
         <CardTitle>Daily delivery</CardTitle>
         <div className="flex flex-wrap gap-2" aria-label="Choose table">
-          {tables.map((table) => (
+          {availableTables.map((table) => (
             <Button
-              key={table}
-              onClick={() =>
+              key={table.table_number}
+              onClick={() => {
+                setSelectedTable(table.table_number);
                 setSessionId(
                   sortedSessions.find(
-                    (session) => session.table_number === table,
-                  )?.id ?? selected.id,
-                )
-              }
+                    (session) => session.table_number === table.table_number,
+                  )?.id ?? "",
+                );
+              }}
               size="sm"
               type="button"
-              variant={table === selectedTable ? "default" : "outline"}
+              variant={
+                table.table_number === selectedTable ? "default" : "outline"
+              }
             >
-              Table {table}
+              {table.name || `Table ${table.table_number}`}
             </Button>
           ))}
         </div>
@@ -138,20 +166,49 @@ export function DailyDeliveryBoard({
               onClick={() => setSessionId(slot.id)}
               size="sm"
               type="button"
-              variant={slot.id === selected.id ? "default" : "outline"}
+              variant={slot.id === selected?.id ? "default" : "outline"}
             >
               {slot.starts_at.slice(0, 5)}
             </Button>
           ))}
         </div>
         <p className="text-sm font-normal text-muted-foreground">
-          Table {selected.table_number} · {selected.starts_at.slice(0, 5)} ·{" "}
-          {selected.teacher_name || "Teacher to confirm"} ·{" "}
-          {selected.focus || "General support"}
+          {selected
+            ? `${selectedTableName || `Table ${selected.table_number}`} · ${selected.starts_at.slice(0, 5)} · ${selected.teacher_name || "Teacher to confirm"} · ${selected.focus || "General support"}`
+            : `${selectedTableName || `Table ${selectedTable}`} · no dated session`}
         </p>
       </CardHeader>
       <CardContent>
-        {selected.status === "cancelled" ? (
+        {!selected ? (
+          <div className="space-y-3 rounded-md border p-4 text-sm">
+            {weeklyTemplate ? (
+              <>
+                <p className="font-medium">Weekly default ready</p>
+                <p className="text-muted-foreground">
+                  {weeklyTemplate.starts_at.slice(0, 5)} ·{" "}
+                  {weeklyTemplate.teacher_name || "Teacher to confirm"} ·{" "}
+                  {weeklyTemplate.focus || "General support"}
+                </p>
+                <form action={openWeeklyTableForDate}>
+                  <input name="serviceDate" type="hidden" value={date} />
+                  <input
+                    name="tableNumber"
+                    type="hidden"
+                    value={selectedTable}
+                  />
+                  <Button className="min-h-11">
+                    Open this table for today
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                There is no weekly default or dated session for this table on
+                this day. Set its weekly plan before opening a delivery board.
+              </p>
+            )}
+          </div>
+        ) : selected.status === "cancelled" ? (
           <p className="rounded-md border p-3 text-sm">
             This session is cancelled.
           </p>

@@ -52,6 +52,7 @@ export default async function SessionsPage({
     { data: leads },
     { data: templates },
     { data: paidEntitlements },
+    { data: academyTables },
   ] = await Promise.all([
     supabaseAdmin
       .from("delivery_sessions")
@@ -94,6 +95,11 @@ export default async function SessionsPage({
       .eq("status", "paid")
       .lte("period_start", date)
       .gte("period_end", date),
+    supabaseAdmin
+      .from("academy_tables")
+      .select("table_number, name")
+      .eq("status", "active")
+      .order("table_number"),
   ]);
   const weekday = new Date(`${date}T12:00:00`).getDay();
   const tableSessions = (sessions || []).filter(
@@ -464,6 +470,9 @@ export default async function SessionsPage({
         learners={learners || []}
         seats={seats || []}
         sessions={sessions || []}
+        tables={academyTables || []}
+        weekday={weekday}
+        weeklyTemplates={templates || []}
       />
       <div className="hidden">
         <Card>

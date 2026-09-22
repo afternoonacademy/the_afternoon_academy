@@ -16,6 +16,10 @@ const navItems = [
     href: "/admin/learners",
     label: "Learners",
   },
+  {
+    href: "/admin/tutor-room",
+    label: "Tutor Room",
+  },
   { href: "/admin/setup", label: "Academy setup" },
 ];
 

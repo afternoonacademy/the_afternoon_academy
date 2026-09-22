@@ -1,238 +1,169 @@
-import { supabaseAdmin } from "@/lib/supabase/admin"
-import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import Link from "next/link";
 
-type LeadOverviewRow = {
-  parent_lead_id: string
-  parent_name: string
-  email: string
-  phone: string | null
-  area: string | null
-  school_name: string | null
-  interest_level: string
-  status: string
-  child_age: number
-  preferred_days: string[] | null
-  preferred_times: string[] | null
-  created_at: string
-}
+import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type DemandRow = {
-  child_age: number
-  preferred_day: string
-  preferred_time: string
-  interested_children: number
-}
+const iso = (date: Date) => date.toISOString().slice(0, 10);
+const move = (date: string, days: number) => {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + days);
+  return iso(value);
+};
 
-function formatArray(value: string[] | null) {
-  if (!value || value.length === 0) return "Not provided"
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const query = await searchParams;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(query.date || "")
+    ? query.date!
+    : iso(new Date());
+  const [
+    { data: sessions },
+    { data: seats },
+    { data: learners },
+    { data: attendance },
+    { data: tables },
+    { data: paidEntitlements },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("delivery_sessions")
+      .select(
+        "id, table_number, academy_table_id, starts_at, duration_minutes, teacher_name, focus, status",
+      )
+      .eq("service_date", date)
+      .order("starts_at"),
+    supabaseAdmin
+      .from("delivery_seats")
+      .select("id, delivery_session_id, learner_id, seat_number")
+      .eq("status", "scheduled"),
+    supabaseAdmin
+      .from("learners")
+      .select("id, first_name, year_group")
+      .eq("status", "active")
+      .order("first_name"),
+    supabaseAdmin
+      .from("attendance_records")
+      .select("learner_id, delivery_session_id, status")
+      .eq("attendance_date", date),
+    supabaseAdmin
+      .from("academy_tables")
+      .select("id, name, seat_capacity")
+      .eq("status", "active")
+      .order("table_number"),
+    supabaseAdmin
+      .from("child_payment_entitlements")
+      .select("learner_id")
+      .eq("status", "paid")
+      .lte("period_start", date)
+      .gte("period_end", date),
+  ]);
 
-  return value.map((item) => item.replaceAll("_", " ")).join(", ")
-}
-
-function formatValue(value: string) {
-  return value.replaceAll("_", " ")
-}
-
-export default async function AdminPage() {
-  const { data: leadsData, error: leadsError } = await supabaseAdmin
-    .from("lead_overview_view")
-    .select("*")
-    .order("created_at", { ascending: false })
-
-  const { data: demandData, error: demandError } = await supabaseAdmin
-    .from("timetable_demand_view")
-    .select("*")
-    .order("interested_children", { ascending: false })
-
-  if (leadsError || demandError) {
-    return (
-      <div className="rounded-lg border bg-background p-6">
-        <h2 className="text-lg font-semibold">Could not load admin overview</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {leadsError?.message || demandError?.message}
-        </p>
-      </div>
-    )
-  }
-
-  const leads = (leadsData || []) as LeadOverviewRow[]
-  const demandRows = (demandData || []) as DemandRow[]
-
-  const totalLeads = leads.length
-  const priorityLeads = leads.filter((lead) => lead.status === "priority").length
-  const timetableInterested = leads.filter(
-    (lead) =>
-      lead.interest_level === "very_interested" ||
-      lead.interest_level === "priority_launch" ||
-      lead.interest_level === "interested_timetable"
-  ).length
-
-  const strongestSlot = demandRows[0]
+  const sessionIds = new Set((sessions || []).map((session) => session.id));
+  const visibleSeats = (seats || []).filter((seat) =>
+    sessionIds.has(seat.delivery_session_id),
+  );
+  const paidLearnerIds = new Set(
+    (paidEntitlements || []).map((item) => item.learner_id),
+  );
+  const attendanceSessionIds = new Set(
+    (attendance || []).map((item) => item.delivery_session_id),
+  );
+  const attendanceOutstanding = (sessions || []).filter(
+    (session) => !attendanceSessionIds.has(session.id),
+  ).length;
+  const totalCapacity = (sessions || []).reduce(
+    (total, session) =>
+      total +
+      ((tables || []).find((item) => item.id === session.academy_table_id)
+        ?.seat_capacity || 6),
+    0,
+  );
+  const link = (next: Record<string, string>) =>
+    `/admin?${new URLSearchParams({ date, ...next })}`;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">
-          Launch demand overview
-        </h2>
-        <p className="text-muted-foreground">
-          A quick snapshot of parent interest from the landing page form.
+    <div className="space-y-6 pb-10">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Teacher delivery board
+          </p>
+          <h2 className="text-3xl font-bold">Today at the Academy</h2>
+        </div>
+        <form className="flex gap-2" method="get">
+          <Input className="w-40" defaultValue={date} name="date" type="date" />
+          <Button size="sm">View day</Button>
+        </form>
+      </div>
+      <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
+        <Link
+          className="px-3 py-2 text-sm"
+          href={link({ date: move(date, -1) })}
+        >
+          ← Previous
+        </Link>
+        <p className="font-semibold">
+          {new Intl.DateTimeFormat("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }).format(new Date(`${date}T12:00:00`))}
         </p>
+        <Link
+          className="px-3 py-2 text-sm"
+          href={link({ date: move(date, 1) })}
+        >
+          Next →
+        </Link>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total leads
+            <CardTitle className="text-sm text-muted-foreground">
+              Sessions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{totalLeads}</p>
+            <p className="text-3xl font-bold">{sessions?.length || 0}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Priority leads
+            <CardTitle className="text-sm text-muted-foreground">
+              Booked seats
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{priorityLeads}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Timetable-fit leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{timetableInterested}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Strongest signal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {strongestSlot ? (
-              <div>
-                <p className="text-lg font-bold capitalize">
-                  {strongestSlot.preferred_day}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Age {strongestSlot.child_age} at {strongestSlot.preferred_time}
-                </p>
-              </div>
-            ) : (
-              <p className="text-3xl font-bold">-</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {strongestSlot ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current strongest timetable signal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              The strongest current signal is for{" "}
-              <span className="font-semibold text-foreground">
-                age {strongestSlot.child_age}
-              </span>{" "}
-              on{" "}
-              <span className="font-semibold capitalize text-foreground">
-                {strongestSlot.preferred_day}
-              </span>{" "}
-              at{" "}
-              <span className="font-semibold text-foreground">
-                {strongestSlot.preferred_time}
-              </span>
-              .
+            <p className="text-3xl font-bold">
+              {visibleSeats.length}/{totalCapacity}
             </p>
           </CardContent>
         </Card>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Latest leads</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {leads.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No leads have been submitted yet.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Child age</TableHead>
-                  <TableHead>School</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Times</TableHead>
-                  <TableHead>Interest</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leads.slice(0, 6).map((lead) => (
-                  <TableRow key={lead.parent_lead_id}>
-                    <TableCell>
-                      <div className="font-medium">{lead.parent_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {lead.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>{lead.child_age}</TableCell>
-                    <TableCell>{lead.school_name || "Not provided"}</TableCell>
-                    <TableCell className="capitalize">
-                      {formatArray(lead.preferred_days)}
-                    </TableCell>
-                    <TableCell>{formatArray(lead.preferred_times)}</TableCell>
-                    <TableCell className="capitalize">
-                      {formatValue(lead.interest_level)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          lead.status === "priority" ? "default" : "secondary"
-                        }
-                        className="capitalize"
-                      >
-                        {lead.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              Attendance to record
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{attendanceOutstanding}</p>
+          </CardContent>
+        </Card>
+      </div>
+      <TodayDeliveryBoard
+        attendance={attendance || []}
+        date={date}
+        eligibleLearnerIds={[...paidLearnerIds]}
+        learners={learners || []}
+        seats={visibleSeats}
+        sessions={sessions || []}
+        tables={tables || []}
+      />
     </div>
-  )
+  );
 }

@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 const navItems = [
   {
     href: "/admin",
-    label: "Overview",
+    label: "Today",
   },
   {
     href: "/admin/leads",
@@ -16,15 +16,6 @@ const navItems = [
     href: "/admin/learners",
     label: "Learners",
   },
-  {
-    href: "/admin/operations",
-    label: "Operations",
-  },
-  {
-    href: "/admin/sessions",
-    label: "Sessions",
-  },
-  { href: "/admin/trends", label: "Trends" },
   { href: "/admin/setup", label: "Academy setup" },
 ];
 

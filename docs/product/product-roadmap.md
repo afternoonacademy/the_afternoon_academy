@@ -50,7 +50,15 @@ This is deliberately deferred from the launch correction: TAA currently has one 
 
 ### Operations foundation progress — September 2026
 
-The first Academy configuration layer is now in place: building, room and table records; multi-slot weekly timetable support; and paid recurring-seat generation. The next required completion item is a reviewed, preview-verified delivery board that presents these pre-filled dated seats cleanly on mobile. Capacity and utilisation reporting remains future work.
+The first Academy configuration layer is now in place: building, room and table records; multi-slot weekly timetable support; and paid recurring-seat generation. The current delivery surface is a mobile-first Today board: teachers see dated sessions in time order, named booked seats, teacher, session type and start/end time; staff record attendance in place; and admins can make a last-minute paid booking. Payment activation remains the source of truth for dated seats.
+
+### Deferred analytics
+
+The launch-demand "timetable fit" dashboard and the separate Trends screen are not active launch operations. Revisit reporting when there is sufficient reliable delivery data:
+
+- lead and conversion trends;
+- paid-seat capacity, utilisation, attendance and no-show reporting;
+- permissioned learner learning-evidence trends.
 
 ## Phase 3 — Scale the trusted network (Year 2 to 3)
 

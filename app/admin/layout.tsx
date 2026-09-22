@@ -13,6 +13,14 @@ const navItems = [
     label: "Leads",
   },
   {
+    href: "/admin/payments",
+    label: "Payments",
+  },
+  {
+    href: "/admin/business",
+    label: "Business",
+  },
+  {
     href: "/admin/learners",
     label: "Learners",
   },

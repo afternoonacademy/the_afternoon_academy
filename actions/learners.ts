@@ -1500,3 +1500,169 @@ export async function savePaidWeeklyPlace(formData: FormData) {
     throw new Error("Could not save the learner's standing seat");
   revalidatePath("/admin/sessions");
 }
+
+export async function recordRenewalPayment(formData: FormData) {
+  const { user } = await requireAdmin();
+  const parsed = z
+    .object({
+      parentLeadId: z.string().uuid(),
+      receivedOn: z.string().date(),
+      periodStart: z.string().date(),
+      periodEnd: z.string().date(),
+      amountEuros: z.coerce.number().min(0).max(100000).optional(),
+      bankReference: z.string().trim().max(160).optional(),
+      note: z.string().trim().max(300).optional(),
+    })
+    .refine((value) => value.periodEnd >= value.periodStart, {
+      message: "Payment end date must follow the start date",
+    })
+    .safeParse({
+      parentLeadId: formData.get("parentLeadId"),
+      receivedOn: formData.get("receivedOn"),
+      periodStart: formData.get("periodStart"),
+      periodEnd: formData.get("periodEnd"),
+      amountEuros: formData.get("amountEuros") || undefined,
+      bankReference: formData.get("bankReference") || undefined,
+      note: formData.get("note") || undefined,
+    });
+  if (!parsed.success) throw new Error("Please check the payment details");
+
+  const value = parsed.data;
+  const supabase = supabaseService();
+  const [
+    { data: learners, error: learnerError },
+    { data: placements, error: placementError },
+  ] = await Promise.all([
+    supabase
+      .from("learners")
+      .select("id")
+      .eq("parent_lead_id", value.parentLeadId)
+      .eq("status", "active"),
+    supabase
+      .from("standing_placements")
+      .select(
+        "learner_id, weekday, table_number, academy_table_id, seat_number, starts_at, duration_minutes, teacher_name, focus",
+      )
+      .eq("status", "active")
+      .lte("effective_from", value.periodEnd)
+      .or(`effective_to.is.null,effective_to.gte.${value.periodStart}`),
+  ]);
+  if (learnerError || placementError)
+    throw new Error("Could not load the family's active bookings");
+  const learnerIds = new Set((learners || []).map((learner) => learner.id));
+  const familyPlacements = (placements || []).filter((placement) =>
+    learnerIds.has(placement.learner_id),
+  );
+  if (!familyPlacements.length)
+    throw new Error("This family has no active booked place to renew");
+
+  const ledgerNote = [
+    value.bankReference ? `Bank reference: ${value.bankReference}` : null,
+    value.note || null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const { data: payment, error: paymentError } = await supabase
+    .from("payment_entitlements")
+    .upsert(
+      {
+        parent_lead_id: value.parentLeadId,
+        period_start: value.periodStart,
+        period_end: value.periodEnd,
+        sessions_per_week: familyPlacements.length,
+        status: "paid",
+        amount_cents:
+          value.amountEuros === undefined
+            ? null
+            : Math.round(value.amountEuros * 100),
+        received_at: `${value.receivedOn}T12:00:00Z`,
+        recorded_by: user.id,
+        note: ledgerNote || null,
+      },
+      { onConflict: "parent_lead_id,period_start,period_end" },
+    )
+    .select("id")
+    .single();
+  if (paymentError || !payment)
+    throw new Error("Could not record the received payment");
+
+  const cursor = new Date(`${value.periodStart}T12:00:00Z`);
+  const end = new Date(`${value.periodEnd}T12:00:00Z`);
+  for (const placement of familyPlacements) {
+    const { error: entitlementError } = await supabase
+      .from("child_payment_entitlements")
+      .upsert(
+        {
+          payment_entitlement_id: payment.id,
+          learner_id: placement.learner_id,
+          period_start: value.periodStart,
+          period_end: value.periodEnd,
+          sessions_per_week: 1,
+          status: "paid",
+          recorded_by: user.id,
+        },
+        { onConflict: "learner_id,period_start,period_end" },
+      );
+    if (entitlementError)
+      throw new Error("Could not activate the child payment period");
+
+    const dateCursor = new Date(cursor);
+    while (dateCursor <= end) {
+      if (dateCursor.getUTCDay() === placement.weekday) {
+        const serviceDate = dateCursor.toISOString().slice(0, 10);
+        const { data: session, error: sessionError } = await supabase
+          .from("delivery_sessions")
+          .upsert(
+            {
+              service_date: serviceDate,
+              table_number: placement.table_number,
+              academy_table_id: placement.academy_table_id,
+              starts_at: placement.starts_at,
+              duration_minutes: placement.duration_minutes,
+              teacher_name: placement.teacher_name,
+              focus: placement.focus,
+              status: "scheduled",
+              created_by: user.id,
+              updated_by: user.id,
+            },
+            { onConflict: "service_date,academy_table_id,starts_at" },
+          )
+          .select("id")
+          .single();
+        if (sessionError || !session)
+          throw new Error("Could not prepare a paid delivery session");
+        const { data: occupied, error: occupiedError } = await supabase
+          .from("delivery_seats")
+          .select("learner_id")
+          .eq("delivery_session_id", session.id)
+          .eq("seat_number", placement.seat_number)
+          .eq("status", "scheduled")
+          .maybeSingle();
+        if (occupiedError) throw new Error("Could not check the paid seat");
+        if (occupied && occupied.learner_id !== placement.learner_id) {
+          throw new Error(
+            "A booked seat is already occupied for one of these dates",
+          );
+        }
+        const { error: seatError } = await supabase
+          .from("delivery_seats")
+          .upsert(
+            {
+              delivery_session_id: session.id,
+              learner_id: placement.learner_id,
+              seat_number: placement.seat_number,
+              status: "scheduled",
+              updated_by: user.id,
+            },
+            { onConflict: "delivery_session_id,learner_id" },
+          );
+        if (seatError)
+          throw new Error("Could not prepare the paid learner seat");
+      }
+      dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
+    }
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin/business");
+}

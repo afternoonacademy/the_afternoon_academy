@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DailyDeliveryBoard } from "@/components/admin/daily-delivery-board";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
@@ -456,279 +457,292 @@ export default async function SessionsPage({
           <Button className="sm:col-span-2">Save paid weekly place</Button>
         </form>
       </details>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Table {table}{" "}
-            {session ? (
-              <span className="text-base font-normal text-muted-foreground">
-                · {session.starts_at.slice(0, 5)} · {session.teacher_name} ·{" "}
-                {session.focus}
-              </span>
-            ) : null}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!session ? (
-            <div className="space-y-4">
-              {weeklyTemplate ? (
-                <>
-                  <div className="rounded-lg bg-muted p-3 text-sm">
-                    <p className="font-medium">Weekly default ready</p>
-                    <p>
-                      {weeklyTemplate.starts_at.slice(0, 5)} ·{" "}
-                      {weeklyTemplate.teacher_name || "Teacher to confirm"} ·{" "}
-                      {weeklyTemplate.focus}
+      <DailyDeliveryBoard
+        attendance={attendance || []}
+        date={date}
+        eligibleLearnerIds={[...paidLearnerIds]}
+        learners={learners || []}
+        seats={seats || []}
+        sessions={sessions || []}
+      />
+      <div className="hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Table {table}{" "}
+              {session ? (
+                <span className="text-base font-normal text-muted-foreground">
+                  · {session.starts_at.slice(0, 5)} · {session.teacher_name} ·{" "}
+                  {session.focus}
+                </span>
+              ) : null}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!session ? (
+              <div className="space-y-4">
+                {weeklyTemplate ? (
+                  <>
+                    <div className="rounded-lg bg-muted p-3 text-sm">
+                      <p className="font-medium">Weekly default ready</p>
+                      <p>
+                        {weeklyTemplate.starts_at.slice(0, 5)} ·{" "}
+                        {weeklyTemplate.teacher_name || "Teacher to confirm"} ·{" "}
+                        {weeklyTemplate.focus}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        Open this table to create today’s editable copy and
+                        place currently paid learners in their standing seats.
+                      </p>
+                    </div>
+                    <form action={openWeeklyTableForDate}>
+                      <input name="serviceDate" type="hidden" value={date} />
+                      <input name="tableNumber" type="hidden" value={table} />
+                      <Button className="min-h-11">
+                        Open this table for {date}
+                      </Button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      There is no weekly default for this table on this day yet.
+                      Set it once; each matching day can still be changed later.
                     </p>
-                    <p className="mt-1 text-muted-foreground">
-                      Open this table to create today’s editable copy and place
-                      currently paid learners in their standing seats.
-                    </p>
-                  </div>
-                  <form action={openWeeklyTableForDate}>
+                    <form
+                      action={saveWeeklyTableTemplate}
+                      className="grid gap-3 sm:grid-cols-2"
+                    >
+                      <input name="weekday" type="hidden" value={weekday} />
+                      <input name="tableNumber" type="hidden" value={table} />
+                      <input name="effectiveFrom" type="hidden" value={date} />
+                      <Input
+                        name="teacherName"
+                        placeholder="Teacher (optional)"
+                      />
+                      <Input
+                        name="focus"
+                        defaultValue="General homework support"
+                        required
+                      />
+                      <Input
+                        name="startsAt"
+                        defaultValue="17:00"
+                        type="time"
+                        required
+                      />
+                      <Input
+                        name="durationMinutes"
+                        defaultValue="50"
+                        type="number"
+                        required
+                      />
+                      <Button className="min-h-11 sm:col-span-2">
+                        Save weekly default
+                      </Button>
+                    </form>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <details className="mb-4 rounded-lg border p-3">
+                  <summary className="cursor-pointer font-medium">
+                    Edit this date / manage plan
+                  </summary>
+                  <form
+                    action={updateDailyDeliverySession}
+                    className="mt-3 grid gap-2 sm:grid-cols-2"
+                  >
+                    <input
+                      name="deliverySessionId"
+                      type="hidden"
+                      value={session.id}
+                    />
                     <input name="serviceDate" type="hidden" value={date} />
                     <input name="tableNumber" type="hidden" value={table} />
-                    <Button className="min-h-11">
-                      Open this table for {date}
-                    </Button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    There is no weekly default for this table on this day yet.
-                    Set it once; each matching day can still be changed later.
-                  </p>
-                  <form
-                    action={saveWeeklyTableTemplate}
-                    className="grid gap-3 sm:grid-cols-2"
-                  >
-                    <input name="weekday" type="hidden" value={weekday} />
-                    <input name="tableNumber" type="hidden" value={table} />
-                    <input name="effectiveFrom" type="hidden" value={date} />
                     <Input
+                      defaultValue={session.teacher_name || ""}
                       name="teacherName"
-                      placeholder="Teacher (optional)"
-                    />
-                    <Input
-                      name="focus"
-                      defaultValue="General homework support"
                       required
                     />
                     <Input
+                      defaultValue={session.focus || ""}
+                      name="focus"
+                      required
+                    />
+                    <Input
+                      defaultValue={session.starts_at.slice(0, 5)}
                       name="startsAt"
-                      defaultValue="17:00"
                       type="time"
                       required
                     />
                     <Input
+                      defaultValue={session.duration_minutes}
                       name="durationMinutes"
-                      defaultValue="50"
                       type="number"
                       required
                     />
-                    <Button className="min-h-11 sm:col-span-2">
-                      Save weekly default
-                    </Button>
+                    <Button>Save changes</Button>
                   </form>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-              <details className="mb-4 rounded-lg border p-3">
-                <summary className="cursor-pointer font-medium">
-                  Edit this date / manage plan
-                </summary>
-                <form
-                  action={updateDailyDeliverySession}
-                  className="mt-3 grid gap-2 sm:grid-cols-2"
-                >
-                  <input
-                    name="deliverySessionId"
-                    type="hidden"
-                    value={session.id}
-                  />
-                  <input name="serviceDate" type="hidden" value={date} />
-                  <input name="tableNumber" type="hidden" value={table} />
-                  <Input
-                    defaultValue={session.teacher_name || ""}
-                    name="teacherName"
-                    required
-                  />
-                  <Input
-                    defaultValue={session.focus || ""}
-                    name="focus"
-                    required
-                  />
-                  <Input
-                    defaultValue={session.starts_at.slice(0, 5)}
-                    name="startsAt"
-                    type="time"
-                    required
-                  />
-                  <Input
-                    defaultValue={session.duration_minutes}
-                    name="durationMinutes"
-                    type="number"
-                    required
-                  />
-                  <Button>Save changes</Button>
-                </form>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  This changes this date only. Your weekly default remains
-                  unchanged.
-                </p>
-              </details>
-              {session.status === "cancelled" ? (
-                <form action={restoreDeliverySession}>
-                  <input
-                    name="deliverySessionId"
-                    type="hidden"
-                    value={session.id}
-                  />
-                  <Button>Restore table</Button>
-                </form>
-              ) : (
-                <>
-                  <div className="mx-auto grid max-w-md grid-cols-3 gap-3 rounded-[2rem] border-8 border-amber-900 bg-amber-100 p-6">
-                    {[1, 2, 3, 4, 5, 6].map((number) => {
-                      const seat = activeSeats.find(
-                        (item) => item.seat_number === number,
-                      );
-                      const learner = seat
-                        ? learnerById.get(seat.learner_id)
-                        : undefined;
-                      return (
-                        <div
-                          className={
-                            learner
-                              ? "min-h-24 rounded-full bg-primary p-3 text-center text-xs text-primary-foreground"
-                              : "min-h-24 rounded-full border-2 border-emerald-500 bg-emerald-50 p-3 text-center text-xs text-emerald-800"
-                          }
-                          key={number}
-                        >
-                          {learner ? (
-                            <>
-                              <p className="font-semibold">
-                                {learner.first_name}
-                              </p>
-                              <form action={recordAttendance} className="mt-2">
-                                <input
-                                  name="learnerId"
-                                  type="hidden"
-                                  value={learner.id}
-                                />
-                                <input
-                                  name="attendanceDate"
-                                  type="hidden"
-                                  value={date}
-                                />
-                                <input
-                                  name="deliverySessionId"
-                                  type="hidden"
-                                  value={session.id}
-                                />
-                                <input
-                                  name="status"
-                                  type="hidden"
-                                  value="present"
-                                />
-                                <Button
-                                  className="h-8 text-xs"
-                                  disabled={
-                                    attendanceMap.get(
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    This changes this date only. Your weekly default remains
+                    unchanged.
+                  </p>
+                </details>
+                {session.status === "cancelled" ? (
+                  <form action={restoreDeliverySession}>
+                    <input
+                      name="deliverySessionId"
+                      type="hidden"
+                      value={session.id}
+                    />
+                    <Button>Restore table</Button>
+                  </form>
+                ) : (
+                  <>
+                    <div className="mx-auto grid max-w-md grid-cols-3 gap-3 rounded-[2rem] border-8 border-amber-900 bg-amber-100 p-6">
+                      {[1, 2, 3, 4, 5, 6].map((number) => {
+                        const seat = activeSeats.find(
+                          (item) => item.seat_number === number,
+                        );
+                        const learner = seat
+                          ? learnerById.get(seat.learner_id)
+                          : undefined;
+                        return (
+                          <div
+                            className={
+                              learner
+                                ? "min-h-24 rounded-full bg-primary p-3 text-center text-xs text-primary-foreground"
+                                : "min-h-24 rounded-full border-2 border-emerald-500 bg-emerald-50 p-3 text-center text-xs text-emerald-800"
+                            }
+                            key={number}
+                          >
+                            {learner ? (
+                              <>
+                                <p className="font-semibold">
+                                  {learner.first_name}
+                                </p>
+                                <form
+                                  action={recordAttendance}
+                                  className="mt-2"
+                                >
+                                  <input
+                                    name="learnerId"
+                                    type="hidden"
+                                    value={learner.id}
+                                  />
+                                  <input
+                                    name="attendanceDate"
+                                    type="hidden"
+                                    value={date}
+                                  />
+                                  <input
+                                    name="deliverySessionId"
+                                    type="hidden"
+                                    value={session.id}
+                                  />
+                                  <input
+                                    name="status"
+                                    type="hidden"
+                                    value="present"
+                                  />
+                                  <Button
+                                    className="h-8 text-xs"
+                                    disabled={
+                                      attendanceMap.get(
+                                        `${session.id}:${learner.id}`,
+                                      ) === "present"
+                                    }
+                                    size="sm"
+                                  >
+                                    {attendanceMap.get(
                                       `${session.id}:${learner.id}`,
                                     ) === "present"
-                                  }
-                                  size="sm"
+                                      ? "✓"
+                                      : "Present"}
+                                  </Button>
+                                </form>
+                                <form
+                                  action={removeDeliverySeat}
+                                  className="mt-1"
                                 >
-                                  {attendanceMap.get(
-                                    `${session.id}:${learner.id}`,
-                                  ) === "present"
-                                    ? "✓"
-                                    : "Present"}
-                                </Button>
-                              </form>
-                              <form
-                                action={removeDeliverySeat}
-                                className="mt-1"
-                              >
-                                <input
-                                  name="deliverySeatId"
-                                  type="hidden"
-                                  value={seat!.id}
-                                />
-                                <Button
-                                  className="h-7 text-xs"
-                                  size="sm"
-                                  variant="outline"
-                                >
-                                  Remove
-                                </Button>
-                              </form>
-                            </>
-                          ) : (
-                            <>
-                              Seat {number}
-                              <p className="mt-2 font-semibold">Available</p>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <form
-                    action={addDeliverySeat}
-                    className="mt-5 grid gap-2 sm:grid-cols-3"
-                  >
-                    <input
-                      name="deliverySessionId"
-                      type="hidden"
-                      value={session.id}
-                    />
-                    <select
-                      className="h-10 rounded-md border bg-background px-3"
-                      name="learnerId"
-                      required
+                                  <input
+                                    name="deliverySeatId"
+                                    type="hidden"
+                                    value={seat!.id}
+                                  />
+                                  <Button
+                                    className="h-7 text-xs"
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    Remove
+                                  </Button>
+                                </form>
+                              </>
+                            ) : (
+                              <>
+                                Seat {number}
+                                <p className="mt-2 font-semibold">Available</p>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <form
+                      action={addDeliverySeat}
+                      className="mt-5 grid gap-2 sm:grid-cols-3"
                     >
-                      <option value="">Add learner</option>
-                      {eligibleLearners.map((learner) => (
-                        <option key={learner.id} value={learner.id}>
-                          {learner.first_name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="h-10 rounded-md border bg-background px-3"
-                      name="seatNumber"
-                      required
-                    >
-                      <option value="">Seat</option>
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                    <Button disabled={!eligibleLearners.length}>
-                      Add eligible learner
-                    </Button>
-                  </form>
-                  <form action={cancelDeliverySession} className="mt-4">
-                    <input
-                      name="deliverySessionId"
-                      type="hidden"
-                      value={session.id}
-                    />
-                    <Button variant="outline">Cancel this table</Button>
-                  </form>
-                </>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+                      <input
+                        name="deliverySessionId"
+                        type="hidden"
+                        value={session.id}
+                      />
+                      <select
+                        className="h-10 rounded-md border bg-background px-3"
+                        name="learnerId"
+                        required
+                      >
+                        <option value="">Add learner</option>
+                        {eligibleLearners.map((learner) => (
+                          <option key={learner.id} value={learner.id}>
+                            {learner.first_name}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="h-10 rounded-md border bg-background px-3"
+                        name="seatNumber"
+                        required
+                      >
+                        <option value="">Seat</option>
+                        {[1, 2, 3, 4, 5, 6].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                      <Button disabled={!eligibleLearners.length}>
+                        Add eligible learner
+                      </Button>
+                    </form>
+                    <form action={cancelDeliverySession} className="mt-4">
+                      <input
+                        name="deliverySessionId"
+                        type="hidden"
+                        value={session.id}
+                      />
+                      <Button variant="outline">Cancel this table</Button>
+                    </form>
+                  </>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

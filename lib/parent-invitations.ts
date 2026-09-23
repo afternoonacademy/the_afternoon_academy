@@ -1,5 +1,6 @@
 import { getResend, emailFrom } from "@/lib/resend"
 import { supabaseService } from "@/lib/supabase/service"
+import { getRequestOrigin } from "@/lib/site-url"
 
 export async function sendPaymentConfirmedInvitation(input: {
   parentLeadId: string
@@ -21,7 +22,7 @@ export async function sendPaymentConfirmedInvitation(input: {
     .maybeSingle()
   if (previous?.status === "sent") return
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://theafternoonacademy.com"
+  const siteUrl = await getRequestOrigin()
   let link = await supabase.auth.admin.generateLink({
     type: "magiclink",
     email: parent.email,

@@ -88,11 +88,17 @@ export default async function AdminLeadsPage() {
     .order("created_at")
   const { data: bookableSlots } = await supabaseAdmin
     .from("weekly_table_templates")
-    .select("id, weekday, table_number, starts_at, duration_minutes")
+    .select("id, weekday, table_number, academy_table_id, starts_at, duration_minutes")
     .eq("status", "active")
     .order("weekday")
     .order("starts_at")
     .order("table_number")
+  const [{ data: activeBookings }, { data: academyTables }] = await Promise.all([
+    supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number").in("status", ["accepted_awaiting_payment", "paid_active"]),
+    supabaseAdmin.from("academy_tables").select("id, seat_capacity").eq("status", "active"),
+  ])
+  const takenSeatKeys = (activeBookings || []).map((booking) => `${booking.weekday}:${booking.academy_table_id}:${booking.starts_at}:${booking.seat_number}`)
+  const seatCapacities = Object.fromEntries((academyTables || []).map((table) => [table.id, table.seat_capacity]))
 
   const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
   for (const child of familyChildren || []) {
@@ -118,7 +124,7 @@ export default async function AdminLeadsPage() {
             const children = childrenByParent.get(lead.id) || []
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email}</p></div>
-              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []}/>
+              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeatKeys={takenSeatKeys} seatCapacities={seatCapacities}/>
             </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>

@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type Child = { id: string; first_name: string | null; child_age: number | null }
-type Slot = { id: string; weekday: number; table_number: number; starts_at: string }
+type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string }
 const initialState: ManualEnrolmentActionState = {}
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-export function ManualEnrolmentForm({ parentLeadId, childOptions, slots }: { parentLeadId: string; childOptions: Child[]; slots: Slot[] }) {
+export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeatKeys, seatCapacities }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeatKeys: string[]; seatCapacities: Record<string, number> }) {
   const today = new Date().toISOString().slice(0, 10)
   const [state, formAction, pending] = useActionState(recordManualEnrolment, initialState)
   const [weekday, setWeekday] = useState("")
@@ -19,7 +19,10 @@ export function ManualEnrolmentForm({ parentLeadId, childOptions, slots }: { par
   const [tableNumber, setTableNumber] = useState("")
   const times = useMemo(() => [...new Set(slots.filter((slot) => String(slot.weekday) === weekday).map((slot) => slot.starts_at.slice(0, 5)))], [slots, weekday])
   const tableSlots = slots.filter((slot) => String(slot.weekday) === weekday && slot.starts_at.slice(0, 5) === startsAt)
-  const templateId = tableSlots.find((slot) => String(slot.table_number) === tableNumber)?.id || ""
+  const selectedSlot = tableSlots.find((slot) => String(slot.table_number) === tableNumber)
+  const templateId = selectedSlot?.id || ""
+  const seats = Array.from({ length: selectedSlot ? seatCapacities[selectedSlot.academy_table_id] || 0 : 0 }, (_, index) => index + 1)
+  const isTaken = (seat: number) => Boolean(selectedSlot && takenSeatKeys.includes(`${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`))
 
   return <form action={formAction} className="space-y-3">
     <input name="parentLeadId" type="hidden" value={parentLeadId} />
@@ -29,7 +32,7 @@ export function ManualEnrolmentForm({ parentLeadId, childOptions, slots }: { par
       <div><Label>Day</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={weekday} onChange={(event) => { setWeekday(event.target.value); setStartsAt(""); setTableNumber("") }} required><option value="">Choose day</option>{days.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></div>
       <div><Label>Start time</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={startsAt} onChange={(event) => { setStartsAt(event.target.value); setTableNumber("") }} disabled={!weekday} required><option value="">Choose time</option>{times.map((time) => <option key={time} value={time}>{time}</option>)}</select></div>
       <div><Label>Table</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} disabled={!startsAt} required><option value="">Choose table</option>{tableSlots.map((slot) => <option key={slot.id} value={slot.table_number}>TAA1 Table {slot.table_number}</option>)}</select><input name="templateId" type="hidden" value={templateId} /></div>
-      <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" required><option value="">Choose seat</option>{[1, 2, 3, 4, 5, 6].map((seat) => <option key={seat} value={seat}>Seat {seat}</option>)}</select></div>
+      <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" disabled={!selectedSlot} required><option value="">{selectedSlot ? "Choose available seat" : "Choose table first"}</option>{seats.map((seat) => <option disabled={isTaken(seat)} key={seat} value={seat}>{isTaken(seat) ? `Seat ${seat} — taken` : `Seat ${seat} — available`}</option>)}</select></div>
       <div><Label>Payment received on</Label><Input name="receivedOn" defaultValue={today} required type="date" /></div>
       <div><Label>Seat start date</Label><Input name="periodStart" defaultValue={today} required type="date" /></div>
       <div><Label>Seat end date</Label><Input name="periodEnd" required type="date" /></div>

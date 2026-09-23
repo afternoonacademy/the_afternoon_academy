@@ -74,3 +74,30 @@ Payment activation of an accepted family place remains the operational source of
 ### Data-integrity follow-up
 
 The source migration for this slice changes attendance uniqueness from learner/date to delivery-session/learner/date. It is required before a production release because a learner can correctly attend more than one booked session on a day.
+
+
+## 23 September 2026 — Parent place offer, manual payment and secure onboarding
+
+### Decision
+
+TAA will use a manual bank-transfer flow in the first release rather than Stripe. Resend is the transactional-email provider. An offered place is not activated by sending an email or by a parent clicking a link; it is activated only after a staff member reconciles the payment.
+
+### Workflow
+
+1. Staff create a time-limited offer containing the specific recurring seat, service period, price and unique bank-transfer reference.
+2. Resend sends the parent branded payment instructions and a secure offer link.
+3. The place remains held while payment awaits manual reconciliation.
+4. After staff confirm payment, TAA activates the learner/place and sends a one-time Supabase magic login link through Resend.
+5. The parent can access only their own family’s records. Future learning updates remain human-reviewed before any notification is sent.
+
+### Safeguarding and data boundary
+
+- No password or sensitive learning content is sent by email.
+- Offer links use stored hashes, expire, and are not enumerable.
+- Parent access is an explicit family-email-to-auth-user mapping; arbitrary sign-in must not create access to a learner.
+- All offer, payment and email events retain timestamps and staff attribution.
+- The first parent surface is intentionally minimal: secure access and operational reassurance. It is not a scored performance dashboard or an AI assessment feature.
+
+### Roadmap effect
+
+This is Phase 1 operating infrastructure that prepares, but does not replace, Phase 2’s evidence-led parent experience.

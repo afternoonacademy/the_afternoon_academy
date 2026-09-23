@@ -76,8 +76,7 @@ export async function sendPaymentConfirmedInvitation(input: {
   const { data, error } = await getResend().emails.send({
     from: emailFrom, to: [parent.email], subject: "Your TAA place is confirmed",
     html, text: `Hello ${parent.parent_name}, your TAA place is confirmed. Sign in securely: ${link.data.properties.action_link}`,
-    headers: { "Idempotency-Key": idempotencyKey },
-  })
+  }, { headers: { "Idempotency-Key": idempotencyKey } })
   if (error) {
     await supabase.from("email_delivery_log").update({ status: "failed", error_message: error.message.slice(0, 500) }).eq("id", log?.id || "")
     throw new Error("Payment was recorded, but the parent sign-in email could not be sent")

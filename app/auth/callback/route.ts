@@ -5,102 +5,61 @@ import { supabaseAuthServer } from "@/lib/supabase/server"
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
-
   const supabase = await supabaseAuthServer()
   const code = url.searchParams.get("code")
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (error) {
-      console.error("Auth exchange failed:", error)
-      return NextResponse.redirect(new URL("/sign-in", url.origin))
-    }
+    if (error) return NextResponse.redirect(new URL("/sign-in", url.origin))
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user || !user.email) {
-    return NextResponse.redirect(new URL("/sign-in", url.origin))
-  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return NextResponse.redirect(new URL("/sign-in", url.origin))
 
   const email = user.email.toLowerCase()
-  const name =
-    user.user_metadata?.name ||
-    user.user_metadata?.full_name ||
-    email.split("@")[0]
+  const name = user.user_metadata?.name || user.user_metadata?.full_name || email.split("@")[0]
+  const admin = supabaseService()
+  const { data: profile } = await admin.from("users").select("id,role").eq("auth_user_id", user.id).maybeSingle()
 
-  const supabaseAdmin = supabaseService()
-
-  const { data: existingProfile, error: profileFetchError } =
-    await supabaseAdmin
-      .from("users")
-      .select("id, role")
-      .eq("auth_user_id", user.id)
+  if (!profile) {
+    const { data: invitation } = await admin
+      .from("parent_portal_access")
+      .select("id")
+      .ilike("email", email)
+      .in("status", ["invited","active"])
       .maybeSingle()
 
-  if (profileFetchError) {
-    console.error("Profile fetch failed:", profileFetchError)
-    return NextResponse.redirect(new URL("/sign-in", url.origin))
-  }
-
-  let appRole = existingProfile?.role || "parent"
-
-  if (!existingProfile) {
-    const { error: insertProfileError } = await supabaseAdmin
-      .from("users")
-      .insert({
-        auth_user_id: user.id,
-        email,
-        name,
-        role: "parent",
-      })
-
-    if (insertProfileError) {
-      console.error("Profile insert failed:", insertProfileError)
-      return NextResponse.redirect(new URL("/sign-in", url.origin))
+    if (!invitation) {
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL("/sign-in?error=invitation-required", url.origin))
     }
 
-    appRole = "parent"
-  }
-
-  const { data: existingRole, error: roleFetchError } = await supabaseAdmin
-    .from("user_roles")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("role", appRole)
-    .maybeSingle()
-
-  if (roleFetchError) {
-    console.error("Role fetch failed:", roleFetchError)
-    return NextResponse.redirect(new URL("/sign-in", url.origin))
-  }
-
-  if (!existingRole) {
-    const { error: insertRoleError } = await supabaseAdmin
-      .from("user_roles")
-      .insert({
-        user_id: user.id,
-        role: appRole,
-      })
-
-    if (insertRoleError) {
-      console.error("Role insert failed:", insertRoleError)
+    const { error: profileError } = await admin.from("users").insert({
+      auth_user_id: user.id, email, name, role: "parent",
+    })
+    if (profileError) {
+      await supabase.auth.signOut()
       return NextResponse.redirect(new URL("/sign-in", url.origin))
     }
+    const { error: roleError } = await admin.from("user_roles").insert({ user_id: user.id, role: "parent" })
+    if (roleError) {
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL("/sign-in", url.origin))
+    }
+    await admin.from("parent_portal_access").update({
+      auth_user_id: user.id, status: "active", activated_at: new Date().toISOString(),
+    }).ilike("email", email).in("status", ["invited","active"])
+  } else if (profile.role === "parent") {
+    await admin.from("parent_portal_access").update({
+      auth_user_id: user.id, status: "active", activated_at: new Date().toISOString(),
+    }).ilike("email", email).eq("status", "invited")
   }
 
   const requestedNext = url.searchParams.get("next")
-  const fallbackRoute = appRole === "admin" ? "/admin" : "/"
-
-  const safeNext =
-    requestedNext &&
-    requestedNext.startsWith("/") &&
-    !requestedNext.startsWith("//")
-      ? requestedNext
-      : fallbackRoute
+  const fallbackRoute = profile?.role === "admin" ? "/admin" : "/parent"
+  const safeNext = requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : fallbackRoute
 
   return NextResponse.redirect(new URL(safeNext, url.origin))
 }

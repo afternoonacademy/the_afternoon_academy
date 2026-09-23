@@ -102,3 +102,16 @@ Do not build a full parent portal at launch. First build/configure the invisible
 ## Engineering architecture decision — 17 September 2026
 
 TAA adopts **Safe Agentic Development** as the delivery architecture for this roadmap. Significant slices move through Discover → Plan → Approve → Build → Test → Independent Review → Preview → Human Acceptance → Release. See `docs/engineering/agentic-development.md` and `docs/security/security-model.md`.
+
+
+## Phase 1 addition — Parent place offer and secure onboarding
+
+This is an operating workflow, not a full parent portal. When staff select a place, the system records the exact held seat, service period, price, payment reference and expiry. TAA sends a branded transactional email with bank-transfer instructions. Staff reconcile payment manually; only then is the place activated and the parent sent a one-time magic login link.
+
+- A place offer expires after 48 hours by default; staff can review it before sending.
+- A secure, unguessable offer link may show only that family’s offer and does not create an account.
+- Payment confirmation is a staff decision. No email, portal action or AI system may infer that a bank transfer has been received.
+- Parent portal access is invitation-gated, tied to the approved family email and limited to that family’s learner records.
+- Email is notification and payment instruction only. Detailed learning/safeguarding content remains in the authenticated portal and is human-approved.
+
+This moves the parent experience one step closer to Phase 2 while preserving the operations-first principle.

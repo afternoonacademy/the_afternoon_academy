@@ -86,6 +86,7 @@ TAA will not require prospective families to use an automated place-offer or ban
 
 - The primary Leads workflow is now **Record payment and activate a seat**.
 - Seat choices show only the selected table's configured capacity; occupied recurring seats remain visible as disabled **taken** choices.
+- Each occupied seat identifies the learner holding it, so capacity decisions are auditable without leaving the enrolment form.
 - Recording payment creates the learner, standing place, payment entitlement and dated delivery seats; no parent email is sent automatically.
 - Automated offers and secure onboarding are retained as optional future infrastructure, but removed from the active admin navigation.
 - Parent portal access will be granted deliberately when the evidence-led parent surface is ready, rather than being coupled to payment activation.

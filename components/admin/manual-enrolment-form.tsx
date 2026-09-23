@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label"
 
 type Child = { id: string; first_name: string | null; child_age: number | null }
 type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string }
+type TakenSeat = { key: string; childName: string }
 const initialState: ManualEnrolmentActionState = {}
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeatKeys, seatCapacities }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeatKeys: string[]; seatCapacities: Record<string, number> }) {
+export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeats, seatCapacities }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeats: TakenSeat[]; seatCapacities: Record<string, number> }) {
   const today = new Date().toISOString().slice(0, 10)
   const [state, formAction, pending] = useActionState(recordManualEnrolment, initialState)
   const [weekday, setWeekday] = useState("")
@@ -22,7 +23,7 @@ export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSe
   const selectedSlot = tableSlots.find((slot) => String(slot.table_number) === tableNumber)
   const templateId = selectedSlot?.id || ""
   const seats = Array.from({ length: selectedSlot ? seatCapacities[selectedSlot.academy_table_id] || 0 : 0 }, (_, index) => index + 1)
-  const isTaken = (seat: number) => Boolean(selectedSlot && takenSeatKeys.includes(`${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`))
+  const takenSeat = (seat: number) => selectedSlot ? takenSeats.find(({ key }) => key === `${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`) : undefined
 
   return <form action={formAction} className="space-y-3">
     <input name="parentLeadId" type="hidden" value={parentLeadId} />
@@ -32,7 +33,7 @@ export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSe
       <div><Label>Day</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={weekday} onChange={(event) => { setWeekday(event.target.value); setStartsAt(""); setTableNumber("") }} required><option value="">Choose day</option>{days.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></div>
       <div><Label>Start time</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={startsAt} onChange={(event) => { setStartsAt(event.target.value); setTableNumber("") }} disabled={!weekday} required><option value="">Choose time</option>{times.map((time) => <option key={time} value={time}>{time}</option>)}</select></div>
       <div><Label>Table</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} disabled={!startsAt} required><option value="">Choose table</option>{tableSlots.map((slot) => <option key={slot.id} value={slot.table_number}>TAA1 Table {slot.table_number}</option>)}</select><input name="templateId" type="hidden" value={templateId} /></div>
-      <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" disabled={!selectedSlot} required><option value="">{selectedSlot ? "Choose available seat" : "Choose table first"}</option>{seats.map((seat) => <option disabled={isTaken(seat)} key={seat} value={seat}>{isTaken(seat) ? `Seat ${seat} — taken` : `Seat ${seat} — available`}</option>)}</select></div>
+      <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" disabled={!selectedSlot} required><option value="">{selectedSlot ? "Choose available seat" : "Choose table first"}</option>{seats.map((seat) => { const held = takenSeat(seat); return <option disabled={Boolean(held)} key={seat} value={seat}>{held ? `Seat ${seat} — ${held.childName}` : `Seat ${seat} — available`}</option> })}</select>{selectedSlot && seats.some((seat) => takenSeat(seat)) ? <p className="mt-1 text-xs text-muted-foreground">Already held: {seats.flatMap((seat) => { const held = takenSeat(seat); return held ? [`Seat ${seat}: ${held.childName}`] : [] }).join(" · ")}</p> : null}</div>
       <div><Label>Payment received on</Label><Input name="receivedOn" defaultValue={today} required type="date" /></div>
       <div><Label>Seat start date</Label><Input name="periodStart" defaultValue={today} required type="date" /></div>
       <div><Label>Seat end date</Label><Input name="periodEnd" required type="date" /></div>

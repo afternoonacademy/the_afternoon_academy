@@ -94,10 +94,18 @@ export default async function AdminLeadsPage() {
     .order("starts_at")
     .order("table_number")
   const [{ data: activeBookings }, { data: academyTables }] = await Promise.all([
-    supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number").in("status", ["accepted_awaiting_payment", "paid_active"]),
+    supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number, learner_id").in("status", ["accepted_awaiting_payment", "paid_active"]),
     supabaseAdmin.from("academy_tables").select("id, seat_capacity").eq("status", "active"),
   ])
-  const takenSeatKeys = (activeBookings || []).map((booking) => `${booking.weekday}:${booking.academy_table_id}:${booking.starts_at}:${booking.seat_number}`)
+  const learnerIds = (activeBookings || []).flatMap((booking) => booking.learner_id ? [booking.learner_id] : [])
+  const { data: bookedLearners } = learnerIds.length
+    ? await supabaseAdmin.from("learners").select("id, first_name").in("id", learnerIds)
+    : { data: [] as { id: string; first_name: string | null }[] }
+  const learnerNames = new Map((bookedLearners || []).map((learner) => [learner.id, learner.first_name || "Booked learner"]))
+  const takenSeats = (activeBookings || []).map((booking) => ({
+    key: `${booking.weekday}:${booking.academy_table_id}:${booking.starts_at}:${booking.seat_number}`,
+    childName: booking.learner_id ? learnerNames.get(booking.learner_id) || "Booked learner" : "Held place",
+  }))
   const seatCapacities = Object.fromEntries((academyTables || []).map((table) => [table.id, table.seat_capacity]))
 
   const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
@@ -124,7 +132,7 @@ export default async function AdminLeadsPage() {
             const children = childrenByParent.get(lead.id) || []
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
               <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email}</p></div>
-              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeatKeys={takenSeatKeys} seatCapacities={seatCapacities}/>
+              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/>
             </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>

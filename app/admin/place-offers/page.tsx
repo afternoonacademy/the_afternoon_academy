@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 
 export default async function PlaceOffersPage() {
   const [{ data: families }, { data: children }, { data: slots }, { data: offers }] = await Promise.all([
-    supabaseAdmin.from("parent_leads").select("id,parent_name,email").not("status", "in", '("converted","closed")').order("created_at", { ascending: false }),
+    supabaseAdmin.from("parent_leads").select("id,parent_name,email").neq("status", "closed").order("created_at", { ascending: false }),
     supabaseAdmin.from("child_leads").select("id,parent_lead_id,first_name,school_year").order("created_at"),
     supabaseAdmin.from("weekly_table_templates").select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes").eq("status", "active").order("weekday").order("starts_at"),
     supabaseAdmin.from("place_offers").select("id,status,payment_reference,expires_at,created_at,parent_leads(parent_name),child_leads(first_name)").in("status", ["draft","sent","viewed","accepted"]).order("created_at", { ascending: false }),

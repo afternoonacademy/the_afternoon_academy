@@ -12,12 +12,12 @@ type Slot = { id: string; weekday: number; table_number: number; academy_table_i
 
 const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
 
-export function PlaceOfferForm({ families, children, slots }: { families: Family[]; children: Child[]; slots: Slot[] }) {
+export function PlaceOfferForm({ families, childOptions, slots }: { families: Family[]; childOptions: Child[]; slots: Slot[] }) {
   const today = new Date().toISOString().slice(0, 10)
   const [parentLeadId, setParentLeadId] = useState("")
   const [message, setMessage] = useState("")
   const [pending, startTransition] = useTransition()
-  const familyChildren = useMemo(() => children.filter((child) => child.parent_lead_id === parentLeadId), [children, parentLeadId])
+  const familyChildren = useMemo(() => childOptions.filter((child) => child.parent_lead_id === parentLeadId), [childOptions, parentLeadId])
 
   return <form className="grid gap-4" action={(formData) => {
     setMessage("")

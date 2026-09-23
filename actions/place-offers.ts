@@ -143,8 +143,7 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   try {
     const { data, error } = await getResend().emails.send({
       from: emailFrom, to: [parent.email], subject: message.subject, html: message.html, text: message.text,
-      headers: { "Idempotency-Key": idempotencyKey },
-    })
+    }, { headers: { "Idempotency-Key": idempotencyKey } })
     if (error) throw new Error(error.message)
     await Promise.all([
       supabase.from("place_offers").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", offer.id),

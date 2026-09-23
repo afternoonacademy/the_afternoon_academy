@@ -244,8 +244,12 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
             { onConflict: "service_date,academy_table_id,starts_at", ignoreDuplicates: false })
           .select("id").single()
         if (sessionError || !session) throw new Error("Could not prepare the paid delivery session")
-        const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: learner.id,
-          seat_number: booking.seat_number, status: "scheduled", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id", ignoreDuplicates: false })
+        const { data: existingSeat, error: existingSeatError } = await supabase.from("delivery_seats")
+          .select("id").eq("delivery_session_id", session.id).eq("learner_id", learner.id).maybeSingle()
+        if (existingSeatError) throw new Error("Could not check the existing delivery seat")
+        const { error: seatError } = existingSeat
+          ? await supabase.from("delivery_seats").update({ seat_number: booking.seat_number, status: "scheduled", updated_by: user.id }).eq("id", existingSeat.id)
+          : await supabase.from("delivery_seats").insert({ delivery_session_id: session.id, learner_id: learner.id, seat_number: booking.seat_number, status: "scheduled", updated_by: user.id })
         if (seatError) throw new Error("Could not prepare the paid learner seat")
       }
       cursor.setUTCDate(cursor.getUTCDate() + 1)
@@ -309,8 +313,16 @@ export async function recordManualEnrolment(_previousState: ManualEnrolmentActio
         const serviceDate = cursor.toISOString().slice(0, 10)
         const { data: session, error: sessionError } = await supabase.from("delivery_sessions").upsert({ service_date: serviceDate, table_number: template.table_number, academy_table_id: template.academy_table_id, starts_at: template.starts_at, duration_minutes: template.duration_minutes, status: "scheduled", created_by: user.id, updated_by: user.id }, { onConflict: "service_date,academy_table_id,starts_at", ignoreDuplicates: false }).select("id").single()
         if (sessionError || !session) return { error: "Payment was recorded, but a delivery session could not be prepared. Please contact support before retrying." }
-        const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: learner.id, seat_number: data.seatNumber, status: "scheduled", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id", ignoreDuplicates: false })
-        if (seatError) return { error: "Payment was recorded, but a dated seat could not be prepared. Please contact support before retrying." }
+        const { data: existingSeat, error: existingSeatError } = await supabase.from("delivery_seats")
+          .select("id").eq("delivery_session_id", session.id).eq("learner_id", learner.id).maybeSingle()
+        if (existingSeatError) return { error: "Payment was recorded, but the existing dated seat could not be checked. Please contact support before retrying." }
+        const { error: seatError } = existingSeat
+          ? await supabase.from("delivery_seats").update({ seat_number: data.seatNumber, status: "scheduled", updated_by: user.id }).eq("id", existingSeat.id)
+          : await supabase.from("delivery_seats").insert({ delivery_session_id: session.id, learner_id: learner.id, seat_number: data.seatNumber, status: "scheduled", updated_by: user.id })
+        if (seatError) {
+          console.error("Dated seat preparation failed", { learnerId: learner.id, deliverySessionId: session.id, seatNumber: data.seatNumber, code: seatError.code, message: seatError.message })
+          return { error: "Payment was recorded, but a dated seat could not be prepared. Please contact support before retrying." }
+        }
       }
       cursor.setUTCDate(cursor.getUTCDate() + 1)
     }

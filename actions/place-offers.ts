@@ -7,6 +7,7 @@ import { createHash, randomBytes } from "node:crypto"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { getResend, emailFrom } from "@/lib/resend"
 import { supabaseService } from "@/lib/supabase/service"
+import { getRequestOrigin } from "@/lib/site-url"
 
 const offerSchema = z
   .object({
@@ -97,6 +98,9 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   if (!parsed.success) throw new Error("Please complete the offer details")
 
   const value = parsed.data
+  if (!process.env.TAA_BANK_ACCOUNT_NAME || !process.env.TAA_BANK_IBAN) {
+    throw new Error("TAA bank details are not configured in Vercel yet")
+  }
   const supabase = supabaseService()
   const [{ data: parent }, { data: child }, { data: template }] = await Promise.all([
     supabase.from("parent_leads").select("parent_name,email").eq("id", value.parentLeadId).single(),
@@ -128,7 +132,7 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   }).select("id").single()
   if (offerError || !offer) throw new Error("Could not create the place offer")
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://theafternoonacademy.com"
+  const siteUrl = await getRequestOrigin()
   const message = placeOfferEmail({
     parentName: parent.parent_name, childName: child.first_name || "your child", weekday: template.weekday,
     startsAt: template.starts_at, tableNumber: template.table_number, periodStart: value.periodStart,

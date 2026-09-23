@@ -1,7 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
-import { AcceptedPlaceForm } from "@/components/admin/accepted-place-form"
-import { PaymentActivationForm } from "@/components/admin/payment-activation-form"
+import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
 import { createManualLead } from "@/actions/update-lead-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,10 +86,6 @@ export default async function AdminLeadsPage() {
     .from("child_leads")
     .select("id, parent_lead_id, first_name, child_age, school_year")
     .order("created_at")
-  const { data: acceptedBookings } = await supabaseAdmin
-    .from("accepted_bookings")
-    .select("parent_lead_id, child_lead_id, status, weekday, starts_at, table_number, seat_number")
-    .in("status", ["accepted_awaiting_payment", "paid_active"])
   const { data: bookableSlots } = await supabaseAdmin
     .from("weekly_table_templates")
     .select("id, weekday, table_number, starts_at, duration_minutes")
@@ -106,13 +101,6 @@ export default async function AdminLeadsPage() {
     childrenByParent.set(child.parent_lead_id, current)
   }
 
-  const bookedChildIdsByParent = new Map<string, Set<string>>()
-  for (const booking of acceptedBookings || []) {
-    const ids = bookedChildIdsByParent.get(booking.parent_lead_id) || new Set<string>()
-    ids.add(booking.child_lead_id)
-    bookedChildIdsByParent.set(booking.parent_lead_id, ids)
-  }
-
   return (
     <div className="space-y-8">
       <div>
@@ -123,20 +111,14 @@ export default async function AdminLeadsPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Accepted place and payment activation</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Record payment and activate a seat</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">First record the place the parent accepted. When payment is later confirmed, the children become active and their agreed paid dates are prepared automatically.</p>
+          <p className="text-sm text-muted-foreground">Communicate with the family personally first. When the bank transfer is confirmed, record the paid recurring seat and its service dates here.</p>
           {familyLeads?.length ? familyLeads.map((lead) => {
             const children = childrenByParent.get(lead.id) || []
-            const bookedIds = bookedChildIdsByParent.get(lead.id) || new Set<string>()
-            const childrenStillToAccept = children.filter((child) => !bookedIds.has(child.id))
-            const acceptedChildBookings = (acceptedBookings || []).filter((booking) => booking.parent_lead_id === lead.id).map((booking) => ({
-              childName: children.find((child) => child.id === booking.child_lead_id)?.first_name || "Child",
-              weekday: booking.weekday, startsAt: booking.starts_at, tableNumber: booking.table_number, seatNumber: booking.seat_number,
-            }))
             return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
-              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{bookedIds.size} of {children.length} children have an accepted place.</p></div>
-              {childrenStillToAccept.length ? <AcceptedPlaceForm parentLeadId={lead.id} childOptions={childrenStillToAccept} slots={bookableSlots || []}/> : <PaymentActivationForm parentLeadId={lead.id} bookings={acceptedChildBookings}/>}
+              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email}</p></div>
+              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []}/>
             </div>
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>

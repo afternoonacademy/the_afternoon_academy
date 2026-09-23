@@ -13,10 +13,6 @@ const navItems = [
     label: "Leads",
   },
   {
-    href: "/admin/place-offers",
-    label: "Place offers",
-  },
-  {
     href: "/admin/payments",
     label: "Payments",
   },

@@ -76,9 +76,26 @@ Payment activation of an accepted family place remains the operational source of
 The source migration for this slice changes attendance uniqueness from learner/date to delivery-session/learner/date. It is required before a production release because a learner can correctly attend more than one booked session on a day.
 
 
-## 23 September 2026 — Parent place offer, manual payment and secure onboarding
+## 23 September 2026 — Enrolment workflow simplified to founder-led manual communication
 
 ### Decision
+
+TAA will not require prospective families to use an automated place-offer or bank-transfer email flow at launch. A founder or staff member communicates personally, confirms the transfer manually, then records the paid recurring seat, payment date and service start/end dates in one admin action.
+
+### Product and operational effect
+
+- The primary Leads workflow is now **Record payment and activate a seat**.
+- Recording payment creates the learner, standing place, payment entitlement and dated delivery seats; no parent email is sent automatically.
+- Automated offers and secure onboarding are retained as optional future infrastructure, but removed from the active admin navigation.
+- Parent portal access will be granted deliberately when the evidence-led parent surface is ready, rather than being coupled to payment activation.
+
+### Rationale
+
+At launch, personal communication is a premium part of the service and manual reconciliation is proportionate to expected lead volume. TAA needs a dependable internal record more than a complex sales funnel.
+
+## 23 September 2026 — Parent place offer, manual payment and secure onboarding
+
+### Superseded decision
 
 TAA will use a manual bank-transfer flow in the first release rather than Stripe. Resend is the transactional-email provider. An offered place is not activated by sending an email or by a parent clicking a link; it is activated only after a staff member reconciles the payment.
 
@@ -98,6 +115,6 @@ TAA will use a manual bank-transfer flow in the first release rather than Stripe
 - All offer, payment and email events retain timestamps and staff attribution.
 - The first parent surface is intentionally minimal: secure access and operational reassurance. It is not a scored performance dashboard or an AI assessment feature.
 
-### Roadmap effect
+### Historical roadmap effect
 
 This is Phase 1 operating infrastructure that prepares, but does not replace, Phase 2’s evidence-led parent experience.

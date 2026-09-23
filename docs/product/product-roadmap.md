@@ -104,14 +104,13 @@ Do not build a full parent portal at launch. First build/configure the invisible
 TAA adopts **Safe Agentic Development** as the delivery architecture for this roadmap. Significant slices move through Discover → Plan → Approve → Build → Test → Independent Review → Preview → Human Acceptance → Release. See `docs/engineering/agentic-development.md` and `docs/security/security-model.md`.
 
 
-## Phase 1 addition — Parent place offer and secure onboarding
+## Phase 1 enrolment decision — founder-led, manually communicated
 
-This is an operating workflow, not a full parent portal. When staff select a place, the system records the exact held seat, service period, price, payment reference and expiry. TAA sends a branded transactional email with bank-transfer instructions. Staff reconcile payment manually; only then is the place activated and the parent sent a one-time magic login link.
+TAA will communicate with prospective families personally in the launch phase. The website is the protected operational record: after staff have agreed the place and reconciled the bank transfer, they record one paid recurring seat, the payment date, and the seat start/end dates. This activates the learner and creates the dated delivery sessions.
 
-- A place offer expires after 48 hours by default; staff can review it before sending.
-- A secure, unguessable offer link may show only that family’s offer and does not create an account.
-- Payment confirmation is a staff decision. No email, portal action or AI system may infer that a bank transfer has been received.
-- Parent portal access is invitation-gated, tied to the approved family email and limited to that family’s learner records.
-- Email is notification and payment instruction only. Detailed learning/safeguarding content remains in the authenticated portal and is human-approved.
+- No automated offer or payment email is required to enrol a family.
+- Payment confirmation remains an explicit staff decision; no portal action or AI system may infer that a bank transfer has been received.
+- Automated offer links, transactional messages and magic-link onboarding remain optional infrastructure for a later scale trigger, not the frontline workflow.
+- Parent access remains invitation-gated and must be granted deliberately when the evidence-led parent experience is ready.
 
-This moves the parent experience one step closer to Phase 2 while preserving the operations-first principle.
+This keeps launch operations personal, auditable and proportionate while TAA learns what families actually need.

@@ -5,7 +5,6 @@ import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { supabaseService } from "@/lib/supabase/service"
-import { sendPaymentConfirmedInvitation } from "@/lib/parent-invitations"
 
 const leadStatusSchema = z.object({
   leadId: z.string().uuid(),
@@ -35,6 +34,14 @@ const manualLeadSchema = z.object({
   childFirstName: z.string().trim().min(1).max(80), childAge: z.coerce.number().int().min(4).max(18), schoolYear: z.string().trim().max(80).optional(),
   source: z.string().trim().min(2).max(80),
 })
+
+const manualEnrolmentSchema = z.object({
+  parentLeadId: z.string().uuid(), childLeadId: z.string().uuid(), templateId: z.string().uuid(),
+  seatNumber: z.coerce.number().int().min(1).max(6), receivedOn: z.string().date(),
+  periodStart: z.string().date(), periodEnd: z.string().date(), paymentReceived: z.literal("yes"),
+}).refine((value) => value.periodEnd >= value.periodStart, { message: "Seat end date must be on or after the start date" })
+
+export type ManualEnrolmentActionState = { error?: string; success?: string }
 
 export async function updateLeadStatus(formData: FormData) {
   await requireAdmin()
@@ -249,8 +256,72 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
     payment_confirmed_at: new Date().toISOString(), payment_confirmed_by: user.id,
   }).eq("id", data.parentLeadId)
   if (leadError) throw new Error("Could not mark the family paid")
-  await sendPaymentConfirmedInvitation({ parentLeadId: data.parentLeadId, actorId: user.id })
   revalidatePath("/admin"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/sessions")
+}
+
+export async function recordManualEnrolment(_previousState: ManualEnrolmentActionState, formData: FormData): Promise<ManualEnrolmentActionState> {
+  try {
+    const { user } = await requireAdmin()
+    const parsed = manualEnrolmentSchema.safeParse({
+      parentLeadId: formData.get("parentLeadId"), childLeadId: formData.get("childLeadId"), templateId: formData.get("templateId"),
+      seatNumber: formData.get("seatNumber"), receivedOn: formData.get("receivedOn"), periodStart: formData.get("periodStart"),
+      periodEnd: formData.get("periodEnd"), paymentReceived: formData.get("paymentReceived"),
+    })
+    if (!parsed.success) return { error: "Check the payment, seat and service dates." }
+    const data = parsed.data; const supabase = supabaseService()
+    const [{ data: child, error: childError }, { data: template, error: templateError }] = await Promise.all([
+      supabase.from("child_leads").select("parent_lead_id, first_name, school_year").eq("id", data.childLeadId).single(),
+      supabase.from("weekly_table_templates").select("weekday, table_number, academy_table_id, starts_at, duration_minutes").eq("id", data.templateId).eq("status", "active").maybeSingle(),
+    ])
+    if (childError || child?.parent_lead_id !== data.parentLeadId) return { error: "That child does not belong to this family." }
+    if (templateError || !template) return { error: "That timetable slot is no longer available." }
+    if (!child.first_name) return { error: "Add the child’s first name before recording their place." }
+    const { data: table, error: tableError } = await supabase.from("academy_tables").select("seat_capacity, status").eq("id", template.academy_table_id).maybeSingle()
+    if (tableError || !table || table.status !== "active") return { error: "That Academy table is not available." }
+    if (data.seatNumber > table.seat_capacity) return { error: "Choose a seat within this table’s configured capacity." }
+    const { data: occupied, error: occupiedError } = await supabase.from("accepted_bookings").select("id").eq("weekday", template.weekday).eq("academy_table_id", template.academy_table_id).eq("starts_at", template.starts_at).eq("seat_number", data.seatNumber).in("status", ["accepted_awaiting_payment", "paid_active"]).maybeSingle()
+    if (occupiedError) return { error: "Could not check whether that seat is available." }
+    if (occupied) return { error: "That recurring seat is already in use. Choose another seat." }
+    const { data: booking, error: bookingError } = await supabase.from("accepted_bookings").insert({ parent_lead_id: data.parentLeadId, child_lead_id: data.childLeadId, weekday: template.weekday, table_number: template.table_number, academy_table_id: template.academy_table_id, seat_number: data.seatNumber, starts_at: template.starts_at, duration_minutes: template.duration_minutes, accepted_by: user.id }).select("id").single()
+    if (bookingError || !booking) return { error: "Could not save the recurring seat." }
+    const { data: payment, error: paymentError } = await supabase.from("payment_entitlements").upsert({ parent_lead_id: data.parentLeadId, period_start: data.periodStart, period_end: data.periodEnd, sessions_per_week: 1, status: "paid", received_at: `${data.receivedOn}T12:00:00Z`, recorded_by: user.id }, { onConflict: "parent_lead_id,period_start,period_end" }).select("id").single()
+    if (paymentError || !payment) return { error: "The seat was saved, but the payment record could not be created. Please contact support before retrying." }
+    let { data: learner } = await supabase.from("learners").select("id").eq("child_lead_id", data.childLeadId).maybeSingle()
+    if (!learner) {
+      const { data: created, error: createError } = await supabase.from("learners").insert({ parent_lead_id: data.parentLeadId, child_lead_id: data.childLeadId, first_name: child.first_name, year_group: child.school_year || null, status: "active", parent_information_confirmed: true }).select("id").single()
+      if (createError || !created) return { error: "Payment was recorded, but the learner could not be created. Please contact support before retrying." }
+      learner = created
+    } else {
+      const { error } = await supabase.from("learners").update({ status: "active" }).eq("id", learner.id)
+      if (error) return { error: "Payment was recorded, but the learner could not be activated. Please contact support before retrying." }
+    }
+    const { error: entitlementError } = await supabase.from("child_payment_entitlements").upsert({ payment_entitlement_id: payment.id, learner_id: learner.id, period_start: data.periodStart, period_end: data.periodEnd, sessions_per_week: 1, status: "paid", recorded_by: user.id }, { onConflict: "learner_id,period_start,period_end" })
+    if (entitlementError) return { error: "Payment was recorded, but the child payment period could not be activated. Please contact support before retrying." }
+    const { error: endError } = await supabase.from("standing_placements").update({ status: "ended", effective_to: data.periodStart, updated_by: user.id }).eq("learner_id", learner.id).eq("weekday", template.weekday).eq("status", "active")
+    if (endError) return { error: "Payment was recorded, but the previous placement could not be updated. Please contact support before retrying." }
+    const { error: placementError } = await supabase.from("standing_placements").insert({ learner_id: learner.id, weekday: template.weekday, table_number: template.table_number, academy_table_id: template.academy_table_id, seat_number: data.seatNumber, starts_at: template.starts_at, duration_minutes: template.duration_minutes, effective_from: data.periodStart, created_by: user.id, updated_by: user.id })
+    if (placementError) return { error: "Payment was recorded, but the standing place could not be activated. Please contact support before retrying." }
+    const { error: bookingUpdateError } = await supabase.from("accepted_bookings").update({ learner_id: learner.id, payment_entitlement_id: payment.id, status: "paid_active", paid_at: new Date().toISOString(), paid_by: user.id }).eq("id", booking.id)
+    if (bookingUpdateError) return { error: "Payment was recorded, but the booking could not be activated. Please contact support before retrying." }
+    const cursor = new Date(`${data.periodStart}T12:00:00Z`); const end = new Date(`${data.periodEnd}T12:00:00Z`)
+    while (cursor <= end) {
+      if (cursor.getUTCDay() === template.weekday) {
+        const serviceDate = cursor.toISOString().slice(0, 10)
+        const { data: session, error: sessionError } = await supabase.from("delivery_sessions").upsert({ service_date: serviceDate, table_number: template.table_number, academy_table_id: template.academy_table_id, starts_at: template.starts_at, duration_minutes: template.duration_minutes, status: "scheduled", created_by: user.id, updated_by: user.id }, { onConflict: "service_date,academy_table_id,starts_at", ignoreDuplicates: false }).select("id").single()
+        if (sessionError || !session) return { error: "Payment was recorded, but a delivery session could not be prepared. Please contact support before retrying." }
+        const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: learner.id, seat_number: data.seatNumber, status: "scheduled", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id", ignoreDuplicates: false })
+        if (seatError) return { error: "Payment was recorded, but a dated seat could not be prepared. Please contact support before retrying." }
+      }
+      cursor.setUTCDate(cursor.getUTCDate() + 1)
+    }
+    const { error: leadError } = await supabase.from("parent_leads").update({ status: "converted", enrolled_at: new Date().toISOString(), enrolled_by: user.id, payment_confirmed_at: new Date().toISOString(), payment_confirmed_by: user.id }).eq("id", data.parentLeadId)
+    if (leadError) return { error: "The enrolment was recorded, but the lead status could not be updated. Please contact support before retrying." }
+    revalidatePath("/admin"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/sessions"); revalidatePath("/admin/payments")
+    return { success: "Payment recorded and recurring seat activated. No parent email was sent automatically." }
+  } catch (error) {
+    console.error("Manual enrolment failed:", error)
+    return { error: "Could not record this enrolment. Please try again." }
+  }
 }
 
 

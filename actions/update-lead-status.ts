@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { supabaseService } from "@/lib/supabase/service"
+import { sendPaymentConfirmedInvitation } from "@/lib/parent-invitations"
 
 const leadStatusSchema = z.object({
   leadId: z.string().uuid(),
@@ -248,6 +249,7 @@ export async function activateAcceptedBookingsPayment(formData: FormData) {
     payment_confirmed_at: new Date().toISOString(), payment_confirmed_by: user.id,
   }).eq("id", data.parentLeadId)
   if (leadError) throw new Error("Could not mark the family paid")
+  await sendPaymentConfirmedInvitation({ parentLeadId: data.parentLeadId, actorId: user.id })
   revalidatePath("/admin"); revalidatePath("/admin/leads"); revalidatePath("/admin/learners"); revalidatePath("/admin/sessions")
 }
 

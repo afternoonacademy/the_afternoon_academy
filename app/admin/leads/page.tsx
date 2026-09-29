@@ -118,7 +118,7 @@ export default async function AdminLeadsPage() {
     current.push(child)
     childrenByParent.set(child.parent_lead_id, current)
   }
-  const awaitingPaymentFamilies = (familyLeads || []).filter((lead) => lead.status === "accepted_awaiting_payment")
+  const paymentFamilies = familyLeads || []
 
   return (
     <div className="space-y-8">
@@ -132,11 +132,11 @@ export default async function AdminLeadsPage() {
       <Card className="border-indigo-100">
         <CardHeader><CardTitle>3 · Confirm payment, then activate a dated place</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Only families with an accepted place appear here. Expand a row after you have personally confirmed the transfer.</p>
-          {awaitingPaymentFamilies.length ? <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Family</TableHead><TableHead>Children</TableHead><TableHead>Stage</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{awaitingPaymentFamilies.map((lead) => {
+          <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment, recurring seat and dated service period in one action.</p>
+          {paymentFamilies.length ? <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Family</TableHead><TableHead>Children</TableHead><TableHead>Current stage</TableHead><TableHead className="text-right">Payment and seat</TableHead></TableRow></TableHeader><TableBody>{paymentFamilies.map((lead) => {
             const children = childrenByParent.get(lead.id) || []
-            return <TableRow key={lead.id}><TableCell><p className="font-semibold">{lead.parent_name}</p><p className="text-xs text-muted-foreground">{lead.email}</p></TableCell><TableCell>{children.map((child) => child.first_name || "Child").join(", ") || "No children recorded"}</TableCell><TableCell>Awaiting payment</TableCell><TableCell className="relative text-right"><details className="inline-block text-left"><summary className="cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Enter payment</summary><div className="absolute right-0 z-10 mt-2 w-[min(42rem,calc(100vw-3rem))] rounded-2xl border bg-white p-4 shadow-xl"><ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/></div></details></TableCell></TableRow>
-          })}</TableBody></Table></div> : <p className="text-sm text-muted-foreground">No family leads are awaiting payment.</p>}
+            return <TableRow className="hover:bg-indigo-50/40" key={lead.id}><TableCell><p className="font-semibold">{lead.parent_name}</p><p className="text-xs text-muted-foreground">{lead.email}</p></TableCell><TableCell>{children.map((child) => child.first_name || "Child").join(", ") || "No children recorded"}</TableCell><TableCell className="capitalize">{formatValue(lead.status)}</TableCell><TableCell className="relative text-right"><details className="inline-block text-left"><summary className="cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Add payment and seat</summary><div className="absolute right-0 z-10 mt-2 w-[min(42rem,calc(100vw-3rem))] rounded-2xl border bg-white p-4 shadow-xl"><ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/></div></details></TableCell></TableRow>
+          })}</TableBody></Table></div> : <p className="text-sm text-muted-foreground">No active family leads yet.</p>}
         </CardContent>
       </Card>
       <Card className="border-indigo-100">

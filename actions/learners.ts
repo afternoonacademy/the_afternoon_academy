@@ -1556,6 +1556,7 @@ export async function recordRenewalPayment(formData: FormData) {
   if (!parsed.success) throw new Error("Please check the payment details");
 
   const value = parsed.data;
+  const renewalCaseId = z.string().uuid().safeParse(formData.get("renewalCaseId"));
   const supabase = supabaseService();
   const [
     { data: learners, error: learnerError },
@@ -1693,4 +1694,17 @@ export async function recordRenewalPayment(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/payments");
   revalidatePath("/admin/business");
+  if (renewalCaseId.success) {
+    const { error: renewalError } = await supabase
+      .from("renewal_cases")
+      .update({
+        status: "renewed",
+        renewed_at: new Date().toISOString(),
+        updated_by: user.id,
+      })
+      .eq("id", renewalCaseId.data)
+      .eq("parent_lead_id", value.parentLeadId);
+    if (renewalError) throw new Error("Payment was recorded, but the renewal case could not be completed");
+  }
+  revalidatePath("/admin/renewals");
 }

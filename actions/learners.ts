@@ -944,6 +944,30 @@ export async function addAdhocDeliverySeat(formData: FormData) {
   revalidatePath(`/admin/learners/${value.learnerId}`);
 }
 
+export async function saveAdhocDeliverySession(formData: FormData) {
+  const { user } = await requireAdmin();
+  const parsed = z.object({
+    serviceDate: z.string().date(), academyTableId: z.string().uuid(),
+    tableNumber: z.coerce.number().int().min(1).max(40),
+    startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(360),
+    focus: z.string().trim().min(1).max(500),
+  }).safeParse({
+    serviceDate: formData.get("serviceDate"), academyTableId: formData.get("academyTableId"),
+    tableNumber: formData.get("tableNumber"), startsAt: formData.get("startsAt"),
+    durationMinutes: formData.get("durationMinutes"), focus: formData.get("focus"),
+  });
+  if (!parsed.success) throw new Error("Choose a session type");
+  const value = parsed.data;
+  const { error } = await supabaseService().from("delivery_sessions").upsert({
+    service_date: value.serviceDate, academy_table_id: value.academyTableId, table_number: value.tableNumber,
+    starts_at: value.startsAt, duration_minutes: value.durationMinutes, focus: value.focus,
+    status: "scheduled", created_by: user.id, updated_by: user.id,
+  }, { onConflict: "service_date,academy_table_id,starts_at" });
+  if (error) throw new Error("Could not save this session type");
+  revalidatePath("/admin");
+}
+
 export async function removeDeliverySeat(formData: FormData) {
   const { user } = await requireAdmin();
   const parsed = deliverySeatActionSchema.safeParse({

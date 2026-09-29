@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation"
 
-import { createLearnerGoal, createTeacherUpdate, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
+import { createLearnerGoal, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -33,7 +34,7 @@ export default async function LearnerPage({ params }: PageProps) {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">Learner record · AI disabled</p>
+          <p className="text-sm text-muted-foreground">Learner workspace · teacher-reviewed AI drafting</p>
           <h2 className="text-3xl font-bold tracking-tight">{learner.first_name}</h2>
           <p className="text-muted-foreground">{learner.year_group || "Year group not recorded"}</p>
         </div>
@@ -107,20 +108,9 @@ export default async function LearnerPage({ params }: PageProps) {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Teacher update</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Evidence to action</CardTitle></CardHeader>
         <CardContent>
-          <form action={createTeacherUpdate} className="space-y-4">
-            <input type="hidden" name="learnerId" value={id} />
-            <div className="max-w-xs space-y-2"><Label htmlFor="occurredOn">Date</Label><Input id="occurredOn" name="occurredOn" type="date" defaultValue={today} required /></div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2"><Label htmlFor="whatHappened">What happened?</Label><Textarea id="whatHappened" name="whatHappened" required placeholder="A concise, factual observation" /></div>
-              <div className="space-y-2"><Label htmlFor="whyItMattered">Why did it matter?</Label><Textarea id="whyItMattered" name="whyItMattered" required placeholder="The learning or confidence significance" /></div>
-              <div className="space-y-2"><Label htmlFor="nextStep">Next small step</Label><Textarea id="nextStep" name="nextStep" required placeholder="What the team will try next" /></div>
-            </div>
-            <label className="flex gap-3 rounded-md border p-3 text-sm"><input type="checkbox" name="parentVisible" /><span>Mark as ready for parent review. It will not be automatically sent.</span></label>
-            <p className="text-xs text-muted-foreground">Write only evidence-based observations. AI drafting is disabled and no information from this record is shared with an AI provider.</p>
-            <Button type="submit">Save teacher update</Button>
-          </form>
+          <AiTeacherUpdate learnerId={id} today={today} />
         </CardContent>
       </Card>
 

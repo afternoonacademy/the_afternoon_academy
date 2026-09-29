@@ -50,7 +50,6 @@ const teacherUpdateSchema = z.object({
   whatHappened: z.string().trim().min(2).max(2000),
   whyItMattered: z.string().trim().min(2).max(2000),
   nextStep: z.string().trim().min(2).max(2000),
-  parentVisible: z.boolean(),
 });
 
 const learnerGoalSchema = z.object({
@@ -435,7 +434,6 @@ export async function createTeacherUpdate(formData: FormData) {
     whatHappened: formData.get("whatHappened"),
     whyItMattered: formData.get("whyItMattered"),
     nextStep: formData.get("nextStep"),
-    parentVisible: formData.get("parentVisible") === "on",
   });
 
   if (!parsed.success) throw new Error("Please complete the teacher update");
@@ -447,7 +445,7 @@ export async function createTeacherUpdate(formData: FormData) {
     what_happened: parsed.data.whatHappened,
     why_it_mattered: parsed.data.whyItMattered,
     next_step: parsed.data.nextStep,
-    parent_visible: parsed.data.parentVisible,
+    parent_visible: false,
     author_id: user.id,
   });
 

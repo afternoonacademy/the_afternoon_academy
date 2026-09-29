@@ -68,11 +68,12 @@ function TeachingTable({
   );
   return (
     <section
-      className="rounded-3xl border-4 border-amber-900 bg-amber-50 p-3 sm:p-4"
+      className="rounded-3xl border border-indigo-100 bg-white p-4 shadow-sm"
       aria-label={table.name || `Table ${table.table_number}`}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Teaching table {table.table_number}</p>
           <h3 className="font-bold">
             {table.name || `Table ${table.table_number}`}
           </h3>
@@ -84,11 +85,11 @@ function TeachingTable({
         </div>
         <span className="rounded-full bg-background px-2 py-1 text-xs font-medium">
           {session
-            ? `${sessionSeats.length}/${capacity} booked`
+            ? `${sessionSeats.length}/${capacity} learners`
             : "Not running"}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {Array.from({ length: capacity }, (_, index) => index + 1).map(
           (seatNumber) => {
             const seat = sessionSeats.find(
@@ -102,8 +103,8 @@ function TeachingTable({
               <div
                 className={
                   learner
-                    ? "min-h-24 rounded-full bg-primary p-3 text-center text-xs text-primary-foreground"
-                    : "min-h-24 rounded-full border-2 border-emerald-500 bg-emerald-50 p-3 text-center text-xs text-emerald-800"
+                    ? "min-h-28 rounded-2xl bg-[#26345f] p-3 text-center text-xs text-primary-foreground shadow-sm"
+                    : "min-h-28 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/60 p-3 text-center text-xs text-indigo-700"
                 }
                 key={seatNumber}
               >
@@ -115,11 +116,11 @@ function TeachingTable({
                     >
                       {learner.first_name}
                     </Link>
-                    <p className="mt-1 text-[10px] opacity-80">
+                    <p className="mt-1 text-[10px] text-indigo-100">
                       {learner.year_group || "Learner"}
                     </p>
                     <div className="mt-2 flex justify-center gap-1">
-                      {(["present", "late", "absent"] as const).map((value) => (
+                      {(["present", "late", "absent", "authorised_absence"] as const).map((value) => (
                         <form action={recordAttendance} key={value}>
                           <input
                             name="learnerId"
@@ -143,11 +144,7 @@ function TeachingTable({
                             size="sm"
                             variant={status === value ? "secondary" : "outline"}
                           >
-                            {value === "present"
-                              ? "P"
-                              : value === "late"
-                                ? "L"
-                                : "A"}
+                            {value === "present" ? "Present" : value === "late" ? "Late" : value === "absent" ? "Absent" : "Excused"}
                           </Button>
                         </form>
                       ))}
@@ -155,7 +152,7 @@ function TeachingTable({
                   </>
                 ) : (
                   <>
-                    <p>Seat {seatNumber}</p>
+                    <p className="font-semibold">Seat {seatNumber}</p>
                     <p className="mt-2 font-semibold">
                       {session ? "Available" : "—"}
                     </p>
@@ -169,7 +166,7 @@ function TeachingTable({
       {session &&
       session.status !== "cancelled" &&
       sessionSeats.length < capacity ? (
-        <details className="mt-3 rounded-xl border bg-background p-3">
+        <details className="mt-3 rounded-xl border bg-[#fffdf5] p-3">
           <summary className="cursor-pointer text-sm font-medium">
             Admin: add last-minute paid booking
           </summary>
@@ -246,9 +243,9 @@ export function TodayDeliveryBoard({
   ].sort();
   if (!startTimes.length)
     return (
-      <Card>
+      <Card className="border-dashed">
         <CardContent className="p-6 text-muted-foreground">
-          No dated delivery sessions are open for this day.
+          No delivery sessions are open for this day. A paid placement creates the dated seats teachers need here.
         </CardContent>
       </Card>
     );
@@ -262,36 +259,18 @@ export function TodayDeliveryBoard({
           ? finishTime(startsAt, timeSessions[0].duration_minutes)
           : "";
         return (
-          <Card key={startsAt}>
+          <Card className="overflow-hidden border-indigo-100" key={startsAt}>
             <CardHeader>
               <CardTitle>
-                {startsAt.slice(0, 5)}–{endAt} · TAA1 floor plan
+                {startsAt.slice(0, 5)}–{endAt} · delivery room
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Two teaching tables · capacity 12. Transition seats are not
-                bookable.
+                Stable table cards show each learner’s place and attendance. Only teaching seats are bookable.
               </p>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="rounded-2xl border border-dashed bg-muted/30 p-3">
-                <p className="text-sm font-medium">
-                  Transition / waiting / activity seats
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {[1, 2, 3, 4, 5].map((seat) => (
-                    <span
-                      className="flex size-10 items-center justify-center rounded-full border bg-background text-xs text-muted-foreground"
-                      key={seat}
-                      title="Not bookable"
-                    >
-                      {seat}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Five room seats for handovers, late parents and activities —
-                  excluded from teaching capacity.
-                </p>
+              <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/50 p-3 text-sm text-indigo-900">
+                <span className="font-semibold">Unassigned today:</span> use the paid-learner control on the relevant table to place a last-minute learner. Waiting and handover space is deliberately not counted as a teaching seat.
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 {teachingTables.map((table) => (

@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     ".next-flow-check/**",
     "out/**",
     "build/**",
+    ".vercel/**",
     "next-env.d.ts",
   ]),
 ]);

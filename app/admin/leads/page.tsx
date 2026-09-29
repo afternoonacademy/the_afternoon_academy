@@ -76,6 +76,12 @@ export default async function AdminLeadsPage() {
   }
 
   const leads = (data || []) as LeadOverviewRow[]
+  const pipeline = [
+    ["New", "new"],
+    ["Contacted", "contacted"],
+    ["Offer sent", "offer_sent"],
+    ["Awaiting payment", "accepted_awaiting_payment"],
+  ] as const
 
   const { data: familyLeads } = await supabaseAdmin
     .from("parent_leads")
@@ -117,15 +123,16 @@ export default async function AdminLeadsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Parent leads</h2>
-        <p className="text-muted-foreground">
-          Every parent timetable response submitted through the landing page.
-        </p>
+      <div className="rounded-3xl bg-[#26345f] p-6 text-white shadow-lg shadow-indigo-950/10">
+        <p className="text-sm font-semibold text-yellow-200">From first message to a confirmed place</p>
+        <h2 className="mt-1 text-3xl font-bold tracking-tight text-white">Family pipeline</h2>
+        <p className="mt-2 max-w-2xl text-sm text-indigo-100">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{pipeline.map(([label, status]) => <Card className="border-indigo-100 bg-white" key={status}><CardHeader><CardTitle className="text-sm text-muted-foreground">{label}</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></CardContent></Card>)}</div>
+
       <Card>
-        <CardHeader><CardTitle>Record payment and activate a seat</CardTitle></CardHeader>
+        <CardHeader><CardTitle>3 · Confirm payment, then activate a dated place</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">Communicate with the family personally first. When the bank transfer is confirmed, record the paid recurring seat and its service dates here.</p>
           {familyLeads?.length ? familyLeads.map((lead) => {
@@ -137,13 +144,13 @@ export default async function AdminLeadsPage() {
           }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader><CardTitle>Add a lead received outside the website</CardTitle></CardHeader>
+      <Card className="border-indigo-100">
+        <CardHeader><CardTitle>1 · Add a family lead received outside the website</CardTitle></CardHeader>
         <CardContent><form action={createManualLead} className="grid gap-3 md:grid-cols-3"><div><Label>Parent name</Label><Input name="parentName" required/></div><div><Label>Email</Label><Input name="email" type="email" required/></div><div><Label>Phone</Label><Input name="phone"/></div><div><Label>Child first name</Label><Input name="childFirstName" required/></div><div><Label>Child age</Label><Input name="childAge" type="number" min="4" max="18" required/></div><div><Label>School year</Label><Input name="schoolYear"/></div><div><Label>Source</Label><select name="source" className="h-10 w-full rounded-md border bg-background px-3" defaultValue="phone"><option value="phone">Phone</option><option value="email">Email</option><option value="referral">Referral</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></div><Button className="w-fit self-end">Add as new lead</Button></form></CardContent>
       </Card>
-      <Card>
+      <Card className="border-indigo-100">
         <CardHeader>
-          <CardTitle>{leads.length} submitted leads</CardTitle>
+          <CardTitle>2 · Family follow-up queue · {leads.length} child responses</CardTitle>
         </CardHeader>
         <CardContent>
           {leads.length === 0 ? (

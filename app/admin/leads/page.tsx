@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
-import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
+import { PaymentActivationTable } from "@/components/admin/payment-activation-table"
 import {
   Card,
   CardContent,
@@ -122,23 +122,20 @@ export default async function AdminLeadsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-[#26345f] p-6 text-white shadow-lg shadow-indigo-950/10">
-        <div><p className="text-sm font-semibold text-yellow-200">From first message to a confirmed place</p><h2 className="mt-1 text-3xl font-bold tracking-tight text-white">Family pipeline</h2><p className="mt-2 max-w-2xl text-sm text-indigo-100">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p></div>
-        <Link className="rounded-xl bg-[#ffde59] px-4 py-2.5 text-sm font-bold text-[#26345f] shadow-sm hover:bg-[#ffe987]" href="/admin/leads/new">Add family lead</Link>
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div><p className="text-sm font-semibold text-muted-foreground">From first message to a confirmed place</p><h2 className="mt-1 text-3xl font-bold tracking-tight">Family pipeline</h2><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p></div>
+        <Link className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90" href="/admin/leads/new">Add family lead</Link>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{pipeline.map(([label, status]) => <Card className="border-indigo-100 bg-white" key={status}><CardHeader><CardTitle className="text-sm text-muted-foreground">{label}</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></CardContent></Card>)}</div>
+      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></div>)}</div>
 
-      <Card className="border-indigo-100">
+      <section>
         <CardHeader><CardTitle>3 · Confirm payment, then activate a dated place</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment, recurring seat and dated service period in one action.</p>
-          {paymentFamilies.length ? <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Family</TableHead><TableHead>Children</TableHead><TableHead>Current stage</TableHead><TableHead className="text-right">Payment and seat</TableHead></TableRow></TableHeader><TableBody>{paymentFamilies.map((lead) => {
-            const children = childrenByParent.get(lead.id) || []
-            return <TableRow className="hover:bg-indigo-50/40" key={lead.id}><TableCell><p className="font-semibold">{lead.parent_name}</p><p className="text-xs text-muted-foreground">{lead.email}</p></TableCell><TableCell>{children.map((child) => child.first_name || "Child").join(", ") || "No children recorded"}</TableCell><TableCell className="capitalize">{formatValue(lead.status)}</TableCell><TableCell className="relative text-right"><details className="inline-block text-left"><summary className="cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Add payment and seat</summary><div className="absolute right-0 z-10 mt-2 w-[min(42rem,calc(100vw-3rem))] rounded-2xl border bg-white p-4 shadow-xl"><ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/></div></details></TableCell></TableRow>
-          })}</TableBody></Table></div> : <p className="text-sm text-muted-foreground">No active family leads yet.</p>}
-        </CardContent>
-      </Card>
+          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} seatCapacities={seatCapacities} slots={bookableSlots || []} takenSeats={takenSeats} />
+        </div>
+      </section>
       <Card className="border-indigo-100">
         <CardHeader>
           <CardTitle>2 · Family follow-up queue · {leads.length} child responses</CardTitle>

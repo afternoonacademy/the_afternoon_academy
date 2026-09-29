@@ -19,7 +19,7 @@ export default async function LearnerPage({ params }: PageProps) {
   const [learnerResult, profileResult, attendanceResult, updatesResult, goalsResult] = await Promise.all([
     supabaseAdmin.from("learners").select("*").eq("id", id).maybeSingle(),
     supabaseAdmin.from("learner_profiles").select("*").eq("learner_id", id).maybeSingle(),
-    supabaseAdmin.from("attendance_records").select("*").eq("learner_id", id).order("attendance_date", { ascending: false }),
+    supabaseAdmin.from("attendance_records").select("*, delivery_sessions(focus, starts_at, teacher_name)").eq("learner_id", id).order("attendance_date", { ascending: false }),
     supabaseAdmin.from("teacher_updates").select("*").eq("learner_id", id).order("occurred_on", { ascending: false }),
     supabaseAdmin.from("learner_goals").select("*").eq("learner_id", id).order("created_at", { ascending: false }),
   ])
@@ -125,7 +125,7 @@ export default async function LearnerPage({ params }: PageProps) {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>Full attendance history</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">{(attendanceResult.data || []).length ? attendanceResult.data?.map((item) => <div key={item.id} className="border-b pb-3 last:border-0"><p className="font-medium capitalize">{item.attendance_date} · {item.status.replaceAll("_", " ")}</p>{item.note ? <p className="text-muted-foreground">{item.note}</p> : null}</div>) : <p className="text-muted-foreground">No attendance recorded yet.</p>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Full attendance history</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">{(attendanceResult.data || []).length ? attendanceResult.data?.map((item) => { const session = Array.isArray(item.delivery_sessions) ? item.delivery_sessions[0] : item.delivery_sessions; return <div key={item.id} className="border-b pb-3 last:border-0"><p className="font-medium capitalize">{item.attendance_date} · {item.status.replaceAll("_", " ")}</p>{session ? <p className="mt-1 text-muted-foreground">{session.focus || "Session type not recorded"}{session.starts_at ? ` · ${session.starts_at.slice(0, 5)}` : ""}{session.teacher_name ? ` · ${session.teacher_name}` : ""}</p> : null}{item.note ? <p className="text-muted-foreground">{item.note}</p> : null}</div> }) : <p className="text-muted-foreground">No attendance recorded yet.</p>}</CardContent></Card>
         <Card><CardHeader><CardTitle>Full teacher update history</CardTitle></CardHeader><CardContent className="space-y-4 text-sm">{(updatesResult.data || []).length ? updatesResult.data?.map((item) => <article key={item.id} className="border-b pb-4 last:border-0"><p className="font-medium">{item.occurred_on}{item.parent_visible ? " · ready for parent review" : ""}</p><p className="mt-2"><span className="font-medium">What happened:</span> {item.what_happened}</p><p><span className="font-medium">Why it mattered:</span> {item.why_it_mattered}</p><p><span className="font-medium">Next step:</span> {item.next_step}</p></article>) : <p className="text-muted-foreground">No teacher updates yet.</p>}</CardContent></Card>
       </div>
     </div>

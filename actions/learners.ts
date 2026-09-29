@@ -421,6 +421,7 @@ export async function recordAttendance(formData: FormData) {
   );
 
   if (error) throw new Error("Could not save attendance");
+  revalidatePath("/admin");
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`);
   revalidatePath("/admin/operations");
   revalidatePath("/admin/sessions");
@@ -904,6 +905,7 @@ export async function addDeliverySeat(formData: FormData) {
     updated_by: user.id,
   });
   if (error) throw new Error("That learner or seat is already on this table");
+  revalidatePath("/admin");
   revalidatePath("/admin/sessions");
 }
 
@@ -956,6 +958,7 @@ export async function updateDailyDeliverySession(formData: FormData) {
     })
     .eq("id", parsed.data.deliverySessionId);
   if (error) throw new Error("Could not save this date's table plan");
+  revalidatePath("/admin");
   revalidatePath("/admin/sessions");
 }
 

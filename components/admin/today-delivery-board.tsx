@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { addDeliverySeat, recordAttendance } from "@/actions/learners";
+import { addDeliverySeat, recordAttendance, updateDailyDeliverySession } from "@/actions/learners";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -47,7 +47,7 @@ function TeachingTable({
   seats,
   learnerById,
   attendance,
-  eligibleLearners,
+  availableLearners,
 }: {
   date: string;
   table: AcademyTable;
@@ -55,7 +55,7 @@ function TeachingTable({
   seats: Seat[];
   learnerById: Map<string, Learner>;
   attendance: Attendance[];
-  eligibleLearners: Learner[];
+  availableLearners: Learner[];
 }) {
   const capacity = table.seat_capacity || 6;
   const sessionSeats = session
@@ -120,7 +120,7 @@ function TeachingTable({
                       {learner.year_group || "Learner"}
                     </p>
                     <div className="mt-2 flex justify-center gap-1">
-                      {(["present", "late", "absent", "authorised_absence"] as const).map((value) => (
+                      {(["present", "absent"] as const).map((value) => (
                         <form action={recordAttendance} key={value}>
                           <input
                             name="learnerId"
@@ -144,7 +144,7 @@ function TeachingTable({
                             size="sm"
                             variant={status === value ? "secondary" : "outline"}
                           >
-                            {value === "present" ? "Present" : value === "late" ? "Late" : value === "absent" ? "Absent" : "Excused"}
+                            {value === "present" ? "Present" : "Absent"}
                           </Button>
                         </form>
                       ))}
@@ -163,6 +163,16 @@ function TeachingTable({
           },
         )}
       </div>
+      {session ? <form action={updateDailyDeliverySession} className="mt-3 grid gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 sm:grid-cols-[1fr_auto]">
+        <input name="deliverySessionId" type="hidden" value={session.id} />
+        <input name="serviceDate" type="hidden" value={date} />
+        <input name="tableNumber" type="hidden" value={table.table_number} />
+        <input name="startsAt" type="hidden" value={session.starts_at.slice(0, 5)} />
+        <input name="durationMinutes" type="hidden" value={session.duration_minutes} />
+        <input name="teacherName" type="hidden" value={session.teacher_name || ""} />
+        <label className="text-sm font-medium">Session type<select className="mt-1 h-10 w-full rounded-md border bg-white px-3" defaultValue={session.focus || "General homework support"} name="focus"><option>General homework support</option><option>English support</option><option>Spanish support</option><option>Maths support</option><option>Study skills</option><option>Creative learning</option><option>Other</option></select></label>
+        <Button className="self-end" size="sm">Save type</Button>
+      </form> : null}
       {session &&
       session.status !== "cancelled" &&
       sessionSeats.length < capacity ? (
@@ -180,8 +190,8 @@ function TeachingTable({
               name="learnerId"
               required
             >
-              <option value="">Paid learner</option>
-              {eligibleLearners.map((learner) => (
+              <option value="">Learner</option>
+              {availableLearners.map((learner) => (
                 <option key={learner.id} value={learner.id}>
                   {learner.first_name}
                 </option>
@@ -204,8 +214,8 @@ function TeachingTable({
                   </option>
                 ))}
             </select>
-            <Button className="min-h-10" disabled={!eligibleLearners.length}>
-              Add booking
+            <Button className="min-h-10" disabled={!availableLearners.length}>
+              Add learner
             </Button>
           </form>
         </details>
@@ -232,7 +242,7 @@ export function TodayDeliveryBoard({
   eligibleLearnerIds: string[];
 }) {
   const learnerById = new Map(learners.map((learner) => [learner.id, learner]));
-  const eligibleLearners = learners.filter((learner) =>
+  const availableLearners = learners.filter((learner) =>
     eligibleLearnerIds.includes(learner.id),
   );
   const teachingTables = tables
@@ -243,10 +253,9 @@ export function TodayDeliveryBoard({
   ].sort();
   if (!startTimes.length)
     return (
-      <Card className="border-dashed">
-        <CardContent className="p-6 text-muted-foreground">
-          No delivery sessions are open for this day. A paid placement creates the dated seats teachers need here.
-        </CardContent>
+      <Card className="border-indigo-100">
+        <CardHeader><CardTitle>Delivery room</CardTitle><p className="text-sm text-muted-foreground">Both teaching tables stay visible, even when there are no bookings.</p></CardHeader>
+        <CardContent className="grid gap-4 lg:grid-cols-2">{teachingTables.map((table) => <TeachingTable attendance={attendance} availableLearners={availableLearners} date={date} key={table.id} learnerById={learnerById} seats={seats} table={table} />)}</CardContent>
       </Card>
     );
   return (
@@ -277,7 +286,7 @@ export function TodayDeliveryBoard({
                   <TeachingTable
                     attendance={attendance}
                     date={date}
-                    eligibleLearners={eligibleLearners}
+                    availableLearners={availableLearners}
                     key={table.id}
                     learnerById={learnerById}
                     seats={seats}

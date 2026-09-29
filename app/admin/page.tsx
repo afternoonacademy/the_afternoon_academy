@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -28,7 +27,6 @@ export default async function AdminPage({
     { data: learners },
     { data: attendance },
     { data: tables },
-    { data: paidEntitlements },
   ] = await Promise.all([
     supabaseAdmin
       .from("delivery_sessions")
@@ -55,28 +53,12 @@ export default async function AdminPage({
       .select("id, table_number, name, seat_capacity")
       .eq("status", "active")
       .order("table_number"),
-    supabaseAdmin
-      .from("child_payment_entitlements")
-      .select("learner_id")
-      .eq("status", "paid")
-      .lte("period_start", date)
-      .gte("period_end", date),
   ]);
 
   const sessionIds = new Set((sessions || []).map((session) => session.id));
   const visibleSeats = (seats || []).filter((seat) =>
     sessionIds.has(seat.delivery_session_id),
   );
-  const paidLearnerIds = new Set(
-    (paidEntitlements || []).map((item) => item.learner_id),
-  );
-  const attendanceSessionIds = new Set(
-    (attendance || []).map((item) => item.delivery_session_id),
-  );
-  const attendanceOutstanding = (sessions || []).filter(
-    (session) => !attendanceSessionIds.has(session.id),
-  ).length;
-  const totalCapacity = 24;
   const link = (next: Record<string, string>) =>
     `/admin?${new URLSearchParams({ date, ...next })}`;
 
@@ -114,49 +96,10 @@ export default async function AdminPage({
           Next →
         </Link>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="border-indigo-100 bg-[#fffdf5]">
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Dated sessions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{sessions?.length || 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-indigo-100 bg-[#fffdf5]">
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Learners expected
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {visibleSeats.length}/{totalCapacity}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-indigo-100 bg-[#fffdf5]">
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
-              Attendance to complete
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{attendanceOutstanding}</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <Link className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/admin/leads"><p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">1 · Family pipeline</p><p className="mt-1 font-bold">Capture, contact, offer and enrol</p><p className="mt-1 text-sm text-muted-foreground">Keep every child in the same family conversation.</p></Link>
-        <Link className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/admin/renewals"><p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">2 · Continuity</p><p className="mt-1 font-bold">Review upcoming renewals</p><p className="mt-1 text-sm text-muted-foreground">Prompt a personal conversation before paid coverage ends.</p></Link>
-        <Link className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/admin/learners"><p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">3 · Human record</p><p className="mt-1 font-bold">Open learner profiles</p><p className="mt-1 text-sm text-muted-foreground">Keep progress, strategies and relationships visible to staff.</p></Link>
-      </div>
       <TodayDeliveryBoard
         attendance={attendance || []}
         date={date}
-        eligibleLearnerIds={[...paidLearnerIds]}
+        eligibleLearnerIds={learners?.map((learner) => learner.id) || []}
         learners={learners || []}
         seats={visibleSeats}
         sessions={sessions || []}

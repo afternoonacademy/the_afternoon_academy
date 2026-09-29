@@ -1,10 +1,8 @@
+import Link from "next/link"
+
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { LeadActions } from "@/components/admin/lead-actions"
 import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
-import { createManualLead } from "@/actions/update-lead-status"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -120,33 +118,26 @@ export default async function AdminLeadsPage() {
     current.push(child)
     childrenByParent.set(child.parent_lead_id, current)
   }
+  const awaitingPaymentFamilies = (familyLeads || []).filter((lead) => lead.status === "accepted_awaiting_payment")
 
   return (
     <div className="space-y-8">
-      <div className="rounded-3xl bg-[#26345f] p-6 text-white shadow-lg shadow-indigo-950/10">
-        <p className="text-sm font-semibold text-yellow-200">From first message to a confirmed place</p>
-        <h2 className="mt-1 text-3xl font-bold tracking-tight text-white">Family pipeline</h2>
-        <p className="mt-2 max-w-2xl text-sm text-indigo-100">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-[#26345f] p-6 text-white shadow-lg shadow-indigo-950/10">
+        <div><p className="text-sm font-semibold text-yellow-200">From first message to a confirmed place</p><h2 className="mt-1 text-3xl font-bold tracking-tight text-white">Family pipeline</h2><p className="mt-2 max-w-2xl text-sm text-indigo-100">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p></div>
+        <Link className="rounded-xl bg-[#ffde59] px-4 py-2.5 text-sm font-bold text-[#26345f] shadow-sm hover:bg-[#ffe987]" href="/admin/leads/new">Add family lead</Link>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{pipeline.map(([label, status]) => <Card className="border-indigo-100 bg-white" key={status}><CardHeader><CardTitle className="text-sm text-muted-foreground">{label}</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></CardContent></Card>)}</div>
 
-      <Card>
+      <Card className="border-indigo-100">
         <CardHeader><CardTitle>3 · Confirm payment, then activate a dated place</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Communicate with the family personally first. When the bank transfer is confirmed, record the paid recurring seat and its service dates here.</p>
-          {familyLeads?.length ? familyLeads.map((lead) => {
+          <p className="text-sm text-muted-foreground">Only families with an accepted place appear here. Expand a row after you have personally confirmed the transfer.</p>
+          {awaitingPaymentFamilies.length ? <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Family</TableHead><TableHead>Children</TableHead><TableHead>Stage</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{awaitingPaymentFamilies.map((lead) => {
             const children = childrenByParent.get(lead.id) || []
-            return <div className="space-y-3 rounded-lg border p-4" key={lead.id}>
-              <div><p className="font-semibold">{lead.parent_name}</p><p className="text-sm text-muted-foreground">{lead.email}</p></div>
-              <ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/>
-            </div>
-          }) : <p className="text-sm text-muted-foreground">No family leads are awaiting acceptance or payment.</p>}
+            return <TableRow key={lead.id}><TableCell><p className="font-semibold">{lead.parent_name}</p><p className="text-xs text-muted-foreground">{lead.email}</p></TableCell><TableCell>{children.map((child) => child.first_name || "Child").join(", ") || "No children recorded"}</TableCell><TableCell>Awaiting payment</TableCell><TableCell className="relative text-right"><details className="inline-block text-left"><summary className="cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Enter payment</summary><div className="absolute right-0 z-10 mt-2 w-[min(42rem,calc(100vw-3rem))] rounded-2xl border bg-white p-4 shadow-xl"><ManualEnrolmentForm parentLeadId={lead.id} childOptions={children} slots={bookableSlots || []} takenSeats={takenSeats} seatCapacities={seatCapacities}/></div></details></TableCell></TableRow>
+          })}</TableBody></Table></div> : <p className="text-sm text-muted-foreground">No family leads are awaiting payment.</p>}
         </CardContent>
-      </Card>
-      <Card className="border-indigo-100">
-        <CardHeader><CardTitle>1 · Add a family lead received outside the website</CardTitle></CardHeader>
-        <CardContent><form action={createManualLead} className="grid gap-3 md:grid-cols-3"><div><Label>Parent name</Label><Input name="parentName" required/></div><div><Label>Email</Label><Input name="email" type="email" required/></div><div><Label>Phone</Label><Input name="phone"/></div><div><Label>Child first name</Label><Input name="childFirstName" required/></div><div><Label>Child age</Label><Input name="childAge" type="number" min="4" max="18" required/></div><div><Label>School year</Label><Input name="schoolYear"/></div><div><Label>Source</Label><select name="source" className="h-10 w-full rounded-md border bg-background px-3" defaultValue="phone"><option value="phone">Phone</option><option value="email">Email</option><option value="referral">Referral</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></div><Button className="w-fit self-end">Add as new lead</Button></form></CardContent>
       </Card>
       <Card className="border-indigo-100">
         <CardHeader>

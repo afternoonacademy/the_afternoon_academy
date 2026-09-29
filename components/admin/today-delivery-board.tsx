@@ -19,10 +19,10 @@ const standardTimes = ["17:00", "18:00"];
 const finishTime = (start: string, minutes: number) => { const [hour, minute] = start.slice(0, 5).split(":").map(Number); return new Date(2000, 0, 1, hour, minute + minutes).toTimeString().slice(0, 5); };
 
 function TableCard({ date, table, sessions, templates, seats, learners, attendance }: { date: string; table: AcademyTable; sessions: Session[]; templates: WeeklyTemplate[]; seats: Seat[]; learners: Learner[]; attendance: Attendance[] }) {
-  const times = useMemo(() => [...new Set([...standardTimes, ...sessions.map((session) => session.starts_at), ...templates.map((template) => template.starts_at)])].sort(), [sessions, templates]);
+  const times = useMemo(() => [...new Set([...standardTimes, ...sessions.map((session) => session.starts_at.slice(0, 5)), ...templates.map((template) => template.starts_at.slice(0, 5))])].sort(), [sessions, templates]);
   const [time, setTime] = useState(times[0]);
-  const session = sessions.find((item) => item.starts_at === time);
-  const template = templates.find((item) => item.starts_at === time);
+  const session = sessions.find((item) => item.starts_at.slice(0, 5) === time);
+  const template = templates.find((item) => item.starts_at.slice(0, 5) === time);
   const capacity = table.seat_capacity || 6;
   const sessionSeats = session ? seats.filter((seat) => seat.delivery_session_id === session.id) : [];
   const learnerById = new Map(learners.map((learner) => [learner.id, learner]));

@@ -1306,10 +1306,12 @@ export async function openWeeklyTableForDate(formData: FormData) {
     .object({
       serviceDate: z.string().date(),
       tableNumber: z.coerce.number().int().min(1).max(2),
+      startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     })
     .safeParse({
       serviceDate: formData.get("serviceDate"),
       tableNumber: formData.get("tableNumber"),
+      startsAt: formData.get("startsAt"),
     });
   if (!parsed.success) throw new Error("Invalid table date");
   const day = new Date(`${parsed.data.serviceDate}T12:00:00`).getDay();
@@ -1319,15 +1321,17 @@ export async function openWeeklyTableForDate(formData: FormData) {
     .select("id")
     .eq("service_date", parsed.data.serviceDate)
     .eq("table_number", parsed.data.tableNumber)
+    .eq("starts_at", parsed.data.startsAt)
     .maybeSingle();
   if (existingError) throw new Error("Could not check this table");
   let sessionId = existing?.id;
   if (!sessionId) {
     const { data: template, error: templateError } = await supabase
       .from("weekly_table_templates")
-      .select("starts_at, duration_minutes, teacher_name, focus")
+      .select("academy_table_id, starts_at, duration_minutes, teacher_name, focus")
       .eq("weekday", day)
       .eq("table_number", parsed.data.tableNumber)
+      .eq("starts_at", parsed.data.startsAt)
       .eq("status", "active")
       .lte("effective_from", parsed.data.serviceDate)
       .or(`effective_to.is.null,effective_to.gte.${parsed.data.serviceDate}`)
@@ -1341,6 +1345,7 @@ export async function openWeeklyTableForDate(formData: FormData) {
       .insert({
         service_date: parsed.data.serviceDate,
         table_number: parsed.data.tableNumber,
+        academy_table_id: template.academy_table_id,
         starts_at: template.starts_at,
         duration_minutes: template.duration_minutes,
         teacher_name: template.teacher_name,
@@ -1397,6 +1402,7 @@ export async function openWeeklyTableForDate(formData: FormData) {
     }
   }
   revalidatePath("/admin/sessions");
+  revalidatePath("/admin");
 }
 
 export async function savePaidWeeklyPlace(formData: FormData) {

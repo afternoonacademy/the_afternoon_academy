@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { addDeliverySeat, recordAttendance, updateDailyDeliverySession } from "@/actions/learners";
+import { addDeliverySeat, openWeeklyTableForDate, recordAttendance, updateDailyDeliverySession } from "@/actions/learners";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -32,6 +32,17 @@ type AcademyTable = {
   name: string;
   seat_capacity: number;
 };
+type WeeklyTemplate = {
+  weekday: number;
+  academy_table_id: string;
+  table_number: number;
+  starts_at: string;
+  duration_minutes: number;
+  teacher_name: string | null;
+  focus: string | null;
+  effective_from: string;
+  effective_to: string | null;
+};
 
 const finishTime = (startsAt: string, minutes: number) => {
   const [hours, minutesPart] = startsAt.slice(0, 5).split(":").map(Number);
@@ -48,6 +59,7 @@ function TeachingTable({
   learnerById,
   attendance,
   availableLearners,
+  weeklyTemplate,
 }: {
   date: string;
   table: AcademyTable;
@@ -56,6 +68,7 @@ function TeachingTable({
   learnerById: Map<string, Learner>;
   attendance: Attendance[];
   availableLearners: Learner[];
+  weeklyTemplate?: WeeklyTemplate;
 }) {
   const capacity = table.seat_capacity || 6;
   const sessionSeats = session
@@ -78,15 +91,11 @@ function TeachingTable({
             {table.name || `Table ${table.table_number}`}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {session
-              ? `${session.teacher_name || "Teacher to assign"} · ${session.focus || "General support"}`
-              : "No dated session opened"}
+            {session ? `${session.teacher_name || "Teacher to assign"} · ${session.focus || "General homework support"}` : weeklyTemplate ? `${weeklyTemplate.teacher_name || "Teacher to assign"} · ${weeklyTemplate.focus || "General homework support"}` : "Session details to confirm"}
           </p>
         </div>
         <span className="rounded-full bg-background px-2 py-1 text-xs font-medium">
-          {session
-            ? `${sessionSeats.length}/${capacity} learners`
-            : "Not running"}
+          {session ? `${sessionSeats.length}/${capacity} learners` : `0/${capacity} learners`}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -140,7 +149,7 @@ function TeachingTable({
                           <input name="status" type="hidden" value={value} />
                           <Button
                             aria-label={`${value} ${learner.first_name}`}
-                            className="h-7 min-w-7 px-1 text-[10px]"
+                            className="h-7 min-w-12 border-white/70 bg-white px-1 text-[10px] text-[#26345f] hover:bg-[#ffde59]"
                             size="sm"
                             variant={status === value ? "secondary" : "outline"}
                           >
@@ -163,22 +172,13 @@ function TeachingTable({
           },
         )}
       </div>
-      {session ? <form action={updateDailyDeliverySession} className="mt-3 grid gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 sm:grid-cols-[1fr_auto]">
-        <input name="deliverySessionId" type="hidden" value={session.id} />
-        <input name="serviceDate" type="hidden" value={date} />
-        <input name="tableNumber" type="hidden" value={table.table_number} />
-        <input name="startsAt" type="hidden" value={session.starts_at.slice(0, 5)} />
-        <input name="durationMinutes" type="hidden" value={session.duration_minutes} />
-        <input name="teacherName" type="hidden" value={session.teacher_name || ""} />
-        <label className="text-sm font-medium">Session type<select className="mt-1 h-10 w-full rounded-md border bg-white px-3" defaultValue={session.focus || "General homework support"} name="focus"><option>General homework support</option><option>English support</option><option>Spanish support</option><option>Maths support</option><option>Study skills</option><option>Creative learning</option><option>Other</option></select></label>
-        <Button className="self-end" size="sm">Save type</Button>
-      </form> : null}
+      {!session && weeklyTemplate ? <form action={openWeeklyTableForDate} className="mt-3"><input name="serviceDate" type="hidden" value={date} /><input name="tableNumber" type="hidden" value={table.table_number} /><input name="startsAt" type="hidden" value={weeklyTemplate.starts_at.slice(0, 5)} /><Button className="w-full" variant="outline">Open this session and add learners</Button></form> : null}
       {session &&
       session.status !== "cancelled" &&
       sessionSeats.length < capacity ? (
         <details className="mt-3 rounded-xl border bg-[#fffdf5] p-3">
           <summary className="cursor-pointer text-sm font-medium">
-            Admin: add last-minute paid booking
+            Add an ad-hoc learner
           </summary>
           <form
             action={addDeliverySeat}
@@ -232,6 +232,7 @@ export function TodayDeliveryBoard({
   attendance,
   tables,
   eligibleLearnerIds,
+  weeklyTemplates,
 }: {
   date: string;
   sessions: Session[];
@@ -240,6 +241,7 @@ export function TodayDeliveryBoard({
   attendance: Attendance[];
   tables: AcademyTable[];
   eligibleLearnerIds: string[];
+  weeklyTemplates: WeeklyTemplate[];
 }) {
   const learnerById = new Map(learners.map((learner) => [learner.id, learner]));
   const availableLearners = learners.filter((learner) =>
@@ -248,9 +250,7 @@ export function TodayDeliveryBoard({
   const teachingTables = tables
     .filter((table) => table.table_number === 1 || table.table_number === 2)
     .sort((a, b) => a.table_number - b.table_number);
-  const startTimes = [
-    ...new Set(sessions.map((session) => session.starts_at)),
-  ].sort();
+  const startTimes = [...new Set([...sessions.map((session) => session.starts_at), ...weeklyTemplates.map((template) => template.starts_at)])].sort();
   if (!startTimes.length)
     return (
       <Card className="border-indigo-100">
@@ -264,9 +264,9 @@ export function TodayDeliveryBoard({
         const timeSessions = sessions.filter(
           (session) => session.starts_at === startsAt,
         );
-        const endAt = timeSessions[0]
-          ? finishTime(startsAt, timeSessions[0].duration_minutes)
-          : "";
+        const templatesAtTime = weeklyTemplates.filter((template) => template.starts_at === startsAt);
+        const duration = timeSessions[0]?.duration_minutes || templatesAtTime[0]?.duration_minutes || 50;
+        const endAt = finishTime(startsAt, duration);
         return (
           <Card className="overflow-hidden border-indigo-100" key={startsAt}>
             <CardHeader>
@@ -274,12 +274,13 @@ export function TodayDeliveryBoard({
                 {startsAt.slice(0, 5)}–{endAt} · delivery room
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Stable table cards show each learner’s place and attendance. Only teaching seats are bookable.
+                Stable table cards show each learner’s place and attendance. Empty scheduled sessions remain ready at 0/6.
               </p>
+              <div className="mt-3 grid gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 sm:grid-cols-2">{timeSessions.map((session) => <form action={updateDailyDeliverySession} className="grid gap-2 sm:grid-cols-[1fr_auto]" key={session.id}><input name="deliverySessionId" type="hidden" value={session.id} /><input name="serviceDate" type="hidden" value={date} /><input name="tableNumber" type="hidden" value={session.table_number} /><input name="startsAt" type="hidden" value={session.starts_at.slice(0, 5)} /><input name="durationMinutes" type="hidden" value={session.duration_minutes} /><input name="teacherName" type="hidden" value={session.teacher_name || ""} /><label className="text-sm font-semibold">Session type · Table {session.table_number}<select className="mt-1 h-10 w-full rounded-md border bg-white px-3" defaultValue={session.focus || "General homework support"} name="focus"><option>General homework support</option><option>English support</option><option>Spanish support</option><option>Maths support</option><option>Study skills</option><option>Creative learning</option><option>Other</option></select></label><Button className="self-end" size="sm">Save</Button></form>)}</div>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/50 p-3 text-sm text-indigo-900">
-                <span className="font-semibold">Unassigned today:</span> use the paid-learner control on the relevant table to place a last-minute learner. Waiting and handover space is deliberately not counted as a teaching seat.
+                <span className="font-semibold">Ad-hoc learners:</span> use the control on the relevant table to add any active learner. Waiting and handover space is deliberately not counted as a teaching seat.
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 {teachingTables.map((table) => (
@@ -294,6 +295,7 @@ export function TodayDeliveryBoard({
                       (session) => session.academy_table_id === table.id,
                     )}
                     table={table}
+                    weeklyTemplate={templatesAtTime.find((template) => template.academy_table_id === table.id)}
                   />
                 ))}
               </div>

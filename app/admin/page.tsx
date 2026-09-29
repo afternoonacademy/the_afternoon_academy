@@ -27,6 +27,7 @@ export default async function AdminPage({
     { data: learners },
     { data: attendance },
     { data: tables },
+    { data: weeklyTemplates },
   ] = await Promise.all([
     supabaseAdmin
       .from("delivery_sessions")
@@ -53,6 +54,13 @@ export default async function AdminPage({
       .select("id, table_number, name, seat_capacity")
       .eq("status", "active")
       .order("table_number"),
+    supabaseAdmin
+      .from("weekly_table_templates")
+      .select("weekday, academy_table_id, table_number, starts_at, duration_minutes, teacher_name, focus, effective_from, effective_to")
+      .eq("status", "active")
+      .eq("weekday", new Date(`${date}T12:00:00`).getDay())
+      .lte("effective_from", date)
+      .or(`effective_to.is.null,effective_to.gte.${date}`),
   ]);
 
   const sessionIds = new Set((sessions || []).map((session) => session.id));
@@ -104,6 +112,7 @@ export default async function AdminPage({
         seats={visibleSeats}
         sessions={sessions || []}
         tables={tables || []}
+        weeklyTemplates={weeklyTemplates || []}
       />
     </div>
   );

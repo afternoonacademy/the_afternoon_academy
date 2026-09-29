@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
+import { SaveActionForm } from "@/components/admin/save-action-form"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -45,7 +46,7 @@ export default async function LearnerPage({ params }: PageProps) {
         <Card>
           <CardHeader><CardTitle>Personal profile</CardTitle></CardHeader>
           <CardContent>
-            <form action={updateLearnerPersonalProfile} className="space-y-4">
+            <SaveActionForm action={updateLearnerPersonalProfile} successMessage="Personal profile saved" submitLabel="Save personal profile">
               <input type="hidden" name="learnerId" value={id} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2"><Label htmlFor="firstName">First name</Label><Input id="firstName" name="firstName" maxLength={80} defaultValue={learner.first_name} required /></div>
@@ -56,8 +57,7 @@ export default async function LearnerPage({ params }: PageProps) {
               <div className="space-y-2"><Label htmlFor="teacherPhone">Teacher/contact phone</Label><Input id="teacherPhone" name="teacherPhone" maxLength={50} defaultValue={learner.teacher_phone || ""} /></div>
               <label className="flex gap-3 rounded-md border p-3 text-sm"><input type="checkbox" name="schoolContactPermissionConfirmed" defaultChecked={learner.school_contact_permission_confirmed} /><span>I have confirmed it is appropriate to retain these school contact details for TAA&apos;s educational service.</span></label>
               <p className="text-xs text-muted-foreground">Only record a school contact where it is necessary for the child&apos;s support. Do not add sensitive information to contact fields.</p>
-              <Button type="submit">Save personal profile</Button>
-            </form>
+            </SaveActionForm>
           </CardContent>
         </Card>
         <Card><CardHeader><CardTitle>Learner details and lifecycle</CardTitle></CardHeader><CardContent><form action={updateLearnerDetails} className="space-y-4"><input type="hidden" name="learnerId" value={id} /><input type="hidden" name="currentSchoolName" value="" /><input type="hidden" name="teacherName" value="" /><input type="hidden" name="teacherEmail" value="" /><input type="hidden" name="teacherPhone" value="" /><div className="space-y-2"><Label htmlFor="learnerStatus">Learner status</Label><select id="learnerStatus" name="status" className="h-10 w-full rounded-md border bg-background px-3 text-sm" defaultValue={learner.status}><option value="active">Active</option><option value="paused">Paused</option><option value="left">Left the academy</option></select></div><p className="text-sm text-muted-foreground">Changing status preserves the learner’s attendance and progress history.</p><Button type="submit">Save status</Button></form></CardContent></Card>

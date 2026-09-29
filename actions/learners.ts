@@ -909,6 +909,41 @@ export async function addDeliverySeat(formData: FormData) {
   revalidatePath("/admin/sessions");
 }
 
+export async function addAdhocDeliverySeat(formData: FormData) {
+  const { user } = await requireAdmin();
+  const parsed = z.object({
+    serviceDate: z.string().date(),
+    academyTableId: z.string().uuid(),
+    tableNumber: z.coerce.number().int().min(1).max(40),
+    startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(360),
+    focus: z.string().trim().min(1).max(500),
+    learnerId: z.string().uuid(),
+    seatNumber: z.coerce.number().int().min(1).max(40),
+  }).safeParse({
+    serviceDate: formData.get("serviceDate"), academyTableId: formData.get("academyTableId"),
+    tableNumber: formData.get("tableNumber"), startsAt: formData.get("startsAt"),
+    durationMinutes: formData.get("durationMinutes"), focus: formData.get("focus"),
+    learnerId: formData.get("learnerId"), seatNumber: formData.get("seatNumber"),
+  });
+  if (!parsed.success) throw new Error("Choose a learner and an available seat");
+  const value = parsed.data;
+  const supabase = supabaseService();
+  const { data: session, error: sessionError } = await supabase.from("delivery_sessions").upsert({
+    service_date: value.serviceDate, academy_table_id: value.academyTableId, table_number: value.tableNumber,
+    starts_at: value.startsAt, duration_minutes: value.durationMinutes, focus: value.focus,
+    status: "scheduled", created_by: user.id, updated_by: user.id,
+  }, { onConflict: "service_date,academy_table_id,starts_at" }).select("id").single();
+  if (sessionError || !session) throw new Error("Could not prepare this session");
+  const { error } = await supabase.from("delivery_seats").insert({
+    delivery_session_id: session.id, learner_id: value.learnerId, seat_number: value.seatNumber,
+    status: "scheduled", updated_by: user.id,
+  });
+  if (error) throw new Error("That learner or seat is already on this table");
+  revalidatePath("/admin");
+  revalidatePath(`/admin/learners/${value.learnerId}`);
+}
+
 export async function removeDeliverySeat(formData: FormData) {
   const { user } = await requireAdmin();
   const parsed = deliverySeatActionSchema.safeParse({
@@ -1359,48 +1394,8 @@ export async function openWeeklyTableForDate(formData: FormData) {
       throw new Error("Could not open this table for the selected date");
     sessionId = created.id;
   }
-  const [
-    { data: placements, error: placementError },
-    { data: paid, error: paidError },
-  ] = await Promise.all([
-    supabase
-      .from("standing_placements")
-      .select("learner_id, seat_number")
-      .eq("weekday", day)
-      .eq("table_number", parsed.data.tableNumber)
-      .eq("status", "active")
-      .lte("effective_from", parsed.data.serviceDate)
-      .or(`effective_to.is.null,effective_to.gte.${parsed.data.serviceDate}`),
-    supabase
-      .from("child_payment_entitlements")
-      .select("learner_id")
-      .eq("status", "paid")
-      .lte("period_start", parsed.data.serviceDate)
-      .gte("period_end", parsed.data.serviceDate),
-  ]);
-  if (placementError || paidError)
-    throw new Error("Could not load paid standing places");
-  const paidIds = new Set((paid || []).map((item) => item.learner_id));
-  for (const placement of placements || []) {
-    if (!placement.seat_number || !paidIds.has(placement.learner_id)) continue;
-    const { data: occupied } = await supabase
-      .from("delivery_seats")
-      .select("id, learner_id")
-      .eq("delivery_session_id", sessionId)
-      .eq("seat_number", placement.seat_number)
-      .eq("status", "scheduled")
-      .maybeSingle();
-    if (!occupied) {
-      const { error } = await supabase.from("delivery_seats").insert({
-        delivery_session_id: sessionId,
-        learner_id: placement.learner_id,
-        seat_number: placement.seat_number,
-        status: "scheduled",
-        updated_by: user.id,
-      });
-      if (error) throw new Error("Could not reserve a paid standing seat");
-    }
-  }
+  // Opening a dated session must never copy learners from another recurring
+  // time slot. Staff add the children actually attending this dated session.
   revalidatePath("/admin/sessions");
   revalidatePath("/admin");
 }

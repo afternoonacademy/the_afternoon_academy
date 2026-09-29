@@ -1,15 +1,7 @@
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
+import { LearnerRecordsTable } from "@/components/admin/learner-records-table";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export default async function LearnersPage() {
@@ -50,48 +42,7 @@ export default async function LearnersPage() {
         </Card>
       ) : null}
       {learners?.length ? (
-        <div className="overflow-x-auto rounded-xl border bg-background">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Learner</TableHead>
-                <TableHead>Year group</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Record</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {learners.map((learner) => (
-                <TableRow key={learner.id}>
-                  <TableCell className="font-medium">
-                    {learner.first_name}
-                  </TableCell>
-                  <TableCell>{learner.year_group || "—"}</TableCell>
-                  <TableCell>{learner.current_school_name || "—"}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className="capitalize"
-                      variant={
-                        learner.status === "active" ? "default" : "secondary"
-                      }
-                    >
-                      {learner.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link
-                      className="text-sm font-medium text-primary hover:underline"
-                      href={`/admin/learners/${learner.id}`}
-                    >
-                      Open
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <LearnerRecordsTable learners={learners} />
       ) : null}
     </div>
   );

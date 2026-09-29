@@ -21,6 +21,10 @@ const navItems = [
     label: "Learner records",
   },
   {
+    href: "/admin/family-updates",
+    label: "Family updates",
+  },
+  {
     href: "/admin/tutor-room",
     label: "One-to-one room",
   },

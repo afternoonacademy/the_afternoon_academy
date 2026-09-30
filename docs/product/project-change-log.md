@@ -2,6 +2,30 @@
 
 This repository copy records material product/engineering decisions that need to travel with the application. The fuller working project source remains the canonical business/product change log until intentionally consolidated.
 
+## 30 September 2026 — Controlled Restart baseline completed
+
+### Decision
+
+The current admin and operations build is closed as the production baseline before any Focus Groups work begins. The release is deliberately operational-first and does not change TAA's public core proposition.
+
+### Included operating workflows
+
+- The dated delivery board keeps scheduled tables visible whether booked or empty, with independent table time and session-type controls, named seats, attendance, and ad-hoc learner assignment.
+- The family pipeline uses responsive data tables and expandable actions for lead follow-up, manually confirmed payment, dated seat activation, and the existing lead-to-learner lifecycle.
+- Learner records provide personal context, goals, attendance, dated internal teacher updates, and visible saving/confirmation feedback for the principal record actions.
+- Teacher session notes are internal operational evidence. Management can create a reviewable monthly family-update draft and an internal teaching plan from the verified timeline; this workspace does not send an email automatically.
+- Renewals now remain within a dedicated renewal workflow: staff can record contact, payment confirmation, continuation, or a non-renewal without treating a family as a new enquiry.
+
+### Operating safeguards
+
+- Payment confirmation remains an explicit staff action. It creates the paid learner, standing place, entitlement and dated seats; it does not send a parent email automatically.
+- AI is limited to human-reviewed drafting from dated teacher evidence. It does not diagnose, make high-stakes learner decisions, or communicate with parents without a separate reviewed send action.
+- The live Supabase schema includes the corresponding learner, delivery, payment, placement and renewal migrations.
+
+### Next boundary
+
+Focus Groups is a separate, planned product build. It will extend the existing enquiry/lead model only after architecture review and approval; it must not introduce a parallel parent, payment, learner or placement system.
+
 ## 17 September 2026 — Safe Agentic Development architecture
 
 ### Decision

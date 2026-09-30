@@ -14,6 +14,7 @@ Focus Groups are an additional, deliberately composed Academy group type. They d
 - The public page states the maximum of six students, 50-minute TAA time blocks and €40 per session.
 - It does not claim a named school affiliation, a specific exam-board guarantee, a confirmed place, or any unapproved teacher credential.
 - Registration records a normal TAA lead labelled `focus_group` and `igcse_chemistry`; group composition and payment confirmation remain deliberate staff decisions.
+- The homepage now gives this single launch offer one compact announcement immediately below the core Homework Club hero, while retaining the fuller comparison within “More ways we can help” further down the page. The primary navigation and core hero remain unchanged.
 
 ### AI and monthly family updates — deferred, gated work
 

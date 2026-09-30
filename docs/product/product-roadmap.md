@@ -114,3 +114,11 @@ TAA will communicate with prospective families personally in the launch phase. T
 - Parent access remains invitation-gated and must be granted deliberately when the evidence-led parent experience is ready.
 
 This keeps launch operations personal, auditable and proportionate while TAA learns what families actually need.
+
+## Controlled Restart baseline — complete 30 September 2026
+
+The administration foundation is complete and becomes the clean production baseline: dated delivery and attendance; manual lead → payment → learner → dated-seat activation; learner history and internal teacher evidence; renewals; and human-reviewed monthly family-update drafting. These workflows support the Homework Club proposition and do not create a new public product category.
+
+### Next discrete build — Focus Groups
+
+Focus Groups will be an additional, deliberately composed Academy group type—not a repositioning of Homework Club. The first candidate product is an IGCSE Chemistry Focus Group for Years 10–11. Architecture discovery must first establish the smallest safe extension to the existing enquiry and lead pipeline, with no duplicate family, learner, payment or placement systems.

@@ -13,7 +13,7 @@ Focus Groups are an additional, deliberately composed Academy group type. They d
 - The only public Focus Group is **IGCSE Chemistry**, for Years 10–11, at Calle Asura / Arturo Soria.
 - The public page states the maximum of six students, 50-minute TAA time blocks and €40 per session.
 - It does not claim a named school affiliation, a specific exam-board guarantee, a confirmed place, or any unapproved teacher credential.
-- The dedicated interest form records a normal TAA lead labelled `focus_group` and `igcse_chemistry`, including school, Year 10/11, session preference, optional course/exam-board and support context; group composition and payment confirmation remain deliberate staff decisions.
+- The dedicated interest form records a normal TAA lead labelled `focus_group` and `igcse_chemistry`, including school, Year 10/11, session preference and support context; group composition and payment confirmation remain deliberate staff decisions.
 - The homepage now gives this single launch offer one compact announcement immediately below the core Homework Club hero, while retaining the fuller comparison within “More ways we can help” further down the page. The primary navigation and core hero remain unchanged.
 
 ### AI and monthly family updates — deferred, gated work

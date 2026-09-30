@@ -15,7 +15,6 @@ const schema = z.object({
   schoolName: z.string().trim().min(1, "Please enter the student's school"),
   schoolYear: z.enum(["Year 10", "Year 11"]),
   preferredSession: z.enum(["17:00-17:50", "18:00-18:50", "either"]),
-  courseOrExamBoard: z.string().trim().max(160).optional(),
   notes: z.string().trim().max(2000).optional(),
   consentContact: z.literal(true, { message: "Please confirm that we may contact you about this enquiry" }),
 })
@@ -27,7 +26,7 @@ export async function submitFocusGroupInterest(
   const parsed = schema.safeParse({
     parentName: formData.get("parentName"), email: formData.get("email"), phone: formData.get("phone"),
     childFirstName: formData.get("childFirstName"), schoolName: formData.get("schoolName"), schoolYear: formData.get("schoolYear"),
-    preferredSession: formData.get("preferredSession"), courseOrExamBoard: formData.get("courseOrExamBoard") || undefined,
+    preferredSession: formData.get("preferredSession"),
     notes: formData.get("notes") || undefined, consentContact: formData.get("consentContact") === "on",
   })
   if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message || "Please check the form." }
@@ -40,7 +39,7 @@ export async function submitFocusGroupInterest(
   const { data: child, error: childError } = await supabaseAdmin.from("child_leads").insert({
     parent_lead_id: parent.id, first_name: data.childFirstName, school_year: data.schoolYear, curriculum: "british",
     support_needs: ["igcse_chemistry"], notes: data.notes || null, focus_group_code: "igcse_chemistry",
-    focus_group_preferred_session: data.preferredSession, course_or_exam_board: data.courseOrExamBoard || null,
+    focus_group_preferred_session: data.preferredSession,
   }).select("id").single()
   if (childError || !child) { await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id); return { success: false, message: "We could not save the student's details. Please try again." } }
   const preferredTimes = data.preferredSession === "either" ? ["17:00-17:50", "18:00-18:50"] : [data.preferredSession]

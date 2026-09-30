@@ -2,6 +2,23 @@
 
 This repository copy records material product/engineering decisions that need to travel with the application. The fuller working project source remains the canonical business/product change log until intentionally consolidated.
 
+## 30 September 2026 — Focus Groups first build
+
+### Decision
+
+Focus Groups are an additional, deliberately composed Academy group type. They do not reposition the core Homework Club proposition or create a separate family, learner, payment or placement system.
+
+### First launch candidate
+
+- The only public Focus Group is **IGCSE Chemistry**, for Years 10–11, at Calle Asura / Arturo Soria.
+- The public page states the maximum of six students, 50-minute TAA time blocks and €40 per session.
+- It does not claim a named school affiliation, a specific exam-board guarantee, a confirmed place, or any unapproved teacher credential.
+- Registration records a normal TAA lead labelled `focus_group` and `igcse_chemistry`; group composition and payment confirmation remain deliberate staff decisions.
+
+### AI and monthly family updates — deferred, gated work
+
+End-to-end testing of monthly family-update drafting will be scheduled only after Vercel AI Gateway is enabled and approved. A later change may add a reviewed Resend sending action and branded email formatting. It must include data-protection/safeguarding review, a confirmed sender configuration, explicit user confirmation immediately before each external send, audit logging and end-to-end verification. No automatic family email is enabled by this work.
+
 ## 30 September 2026 — Controlled Restart baseline completed
 
 ### Decision

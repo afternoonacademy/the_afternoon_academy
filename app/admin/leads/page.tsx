@@ -16,11 +16,15 @@ type LeadOverviewRow = {
   interest_level: string
   status: string
   source: string
+  enquiry_type: string
   child_age: number
   school_year: string | null
   curriculum: string | null
   support_needs: string[] | null
   notes: string | null
+  focus_group_code: string | null
+  focus_group_preferred_session: string | null
+  course_or_exam_board: string | null
   preferred_days: string[] | null
   preferred_times: string[] | null
   preferred_frequency: string | null

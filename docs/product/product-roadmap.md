@@ -39,6 +39,27 @@ Not now: a public live calendar for group places; a full parent app; AI-generate
 - Child reflection.
 - Human support pathway when a pattern needs more than tuition.
 
+## Planned operations foundation — build when staffing or sites require it
+
+- **Buildings and rooms:** a reusable hierarchy for Academy locations, rooms, capacity, room purpose and availability.
+- **Teacher profiles:** staff identity, role, availability, safeguarding/qualification evidence and cover context; access remains least-privilege.
+- **Timetable assignment:** sessions and one-to-one bookings will reference those approved buildings, rooms and staff records rather than free-text names.
+- **Capacity and utilisation:** reliable reporting of available seats, filled seats, attendance, no-shows and utilisation by room, table, session and teacher—after the weekly delivery workflow is proven.
+
+This is deliberately deferred from the launch correction: TAA currently has one location, TAA1 and one Tutor Room, with a small team. The present slice uses simple named teacher assignment and fixed room choices while preserving a clean migration path to the fuller model.
+
+### Operations foundation progress — September 2026
+
+The first Academy configuration layer is now in place: building, room and table records; multi-slot weekly timetable support; and paid recurring-seat generation. The current delivery surface is a mobile-first Today board: teachers see dated sessions in time order, named booked seats, teacher, session type and start/end time; staff record attendance in place; and admins can make a last-minute paid booking. Payment activation remains the source of truth for dated seats.
+
+### Deferred analytics
+
+The launch-demand "timetable fit" dashboard and the separate Trends screen are not active launch operations. Revisit reporting when there is sufficient reliable delivery data:
+
+- lead and conversion trends;
+- paid-seat capacity, utilisation, attendance and no-show reporting;
+- permissioned learner learning-evidence trends.
+
 ## Phase 3 — Scale the trusted network (Year 2 to 3)
 
 - Staff quality system.
@@ -68,6 +89,12 @@ Not now: a public live calendar for group places; a full parent app; AI-generate
 - Weekly TAA founder product review: convert live signals from the previous week into one highest-leverage product, operations or growth decision.
 - Quarterly AI-resilience review: assess changes in AI, education, child safety, parent expectations and TAA results; recommend any roadmap adjustment.
 
+## Experience design standard
+
+- TAA interfaces use the brand palette: coral `#ff5757`, blue `#5170ff`, yellow `#ffde59` and green `#9ddd8d` with a calm light base.
+- Mobile-first admin flows use clear field labels, generous tap targets, light purposeful cards and visible loading/confirmation states.
+- The intended character is young, modern and fun without compromising readability, safeguarding or operational clarity.
+
 ## Current build principle
 
 Do not build a full parent portal at launch. First build/configure the invisible operating foundation: learner profile, group matching, staff notes, consent, attendance and follow-up. The portal should later be a genuine window into a quality service, not a polished but empty interface.
@@ -75,3 +102,23 @@ Do not build a full parent portal at launch. First build/configure the invisible
 ## Engineering architecture decision — 17 September 2026
 
 TAA adopts **Safe Agentic Development** as the delivery architecture for this roadmap. Significant slices move through Discover → Plan → Approve → Build → Test → Independent Review → Preview → Human Acceptance → Release. See `docs/engineering/agentic-development.md` and `docs/security/security-model.md`.
+
+
+## Phase 1 enrolment decision — founder-led, manually communicated
+
+TAA will communicate with prospective families personally in the launch phase. The website is the protected operational record: after staff have agreed the place and reconciled the bank transfer, they record one paid recurring seat, the payment date, and the seat start/end dates. This activates the learner and creates the dated delivery sessions.
+
+- No automated offer or payment email is required to enrol a family.
+- Payment confirmation remains an explicit staff decision; no portal action or AI system may infer that a bank transfer has been received.
+- Automated offer links, transactional messages and magic-link onboarding remain optional infrastructure for a later scale trigger, not the frontline workflow.
+- Parent access remains invitation-gated and must be granted deliberately when the evidence-led parent experience is ready.
+
+This keeps launch operations personal, auditable and proportionate while TAA learns what families actually need.
+
+## Controlled Restart baseline — complete 30 September 2026
+
+The administration foundation is complete and becomes the clean production baseline: dated delivery and attendance; manual lead → payment → learner → dated-seat activation; learner history and internal teacher evidence; renewals; and human-reviewed monthly family-update drafting. These workflows support the Homework Club proposition and do not create a new public product category.
+
+### Next discrete build — Focus Groups
+
+Focus Groups will be an additional, deliberately composed Academy group type—not a repositioning of Homework Club. The first candidate product is an IGCSE Chemistry Focus Group for Years 10–11. Architecture discovery must first establish the smallest safe extension to the existing enquiry and lead pipeline, with no duplicate family, learner, payment or placement systems.

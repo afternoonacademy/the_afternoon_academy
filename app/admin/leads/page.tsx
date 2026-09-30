@@ -1,25 +1,13 @@
+import Link from "next/link"
+
 import { supabaseAdmin } from "@/lib/supabase/admin"
-import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { PaymentActivationTable } from "@/components/admin/payment-activation-table"
+import { FamilyFollowUpTable } from "@/components/admin/family-follow-up-table"
 
 type LeadOverviewRow = {
   parent_lead_id: string
   child_lead_id: string
   timetable_preference_id: string
-
   parent_name: string
   email: string
   phone: string | null
@@ -28,37 +16,15 @@ type LeadOverviewRow = {
   interest_level: string
   status: string
   source: string
-
   child_age: number
   school_year: string | null
   curriculum: string | null
   support_needs: string[] | null
   notes: string | null
-
   preferred_days: string[] | null
   preferred_times: string[] | null
   preferred_frequency: string | null
-
   created_at: string
-}
-
-function formatArray(value: string[] | null) {
-  if (!value || value.length === 0) return "Not provided"
-
-  return value.join(", ")
-}
-
-function formatValue(value: string | null) {
-  if (!value) return "Not provided"
-
-  return value.replaceAll("_", " ")
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value))
 }
 
 export default async function AdminLeadsPage() {
@@ -77,120 +43,73 @@ export default async function AdminLeadsPage() {
   }
 
   const leads = (data || []) as LeadOverviewRow[]
+  const pipeline = [
+    ["New", "new"],
+    ["Contacted", "contacted"],
+    ["Offer sent", "offer_sent"],
+    ["Awaiting payment", "accepted_awaiting_payment"],
+  ] as const
+
+  const { data: familyLeads } = await supabaseAdmin
+    .from("parent_leads")
+    .select("id, parent_name, email, status")
+    .not("status", "in", '("converted","closed")')
+    .order("created_at", { ascending: false })
+  const { data: familyChildren } = await supabaseAdmin
+    .from("child_leads")
+    .select("id, parent_lead_id, first_name, child_age, school_year")
+    .order("created_at")
+  const { data: bookableSlots } = await supabaseAdmin
+    .from("weekly_table_templates")
+    .select("id, weekday, table_number, academy_table_id, starts_at, duration_minutes")
+    .eq("status", "active")
+    .order("weekday")
+    .order("starts_at")
+    .order("table_number")
+  const [{ data: activeBookings }, { data: academyTables }] = await Promise.all([
+    supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number, learner_id").in("status", ["accepted_awaiting_payment", "paid_active"]),
+    supabaseAdmin.from("academy_tables").select("id, seat_capacity").eq("status", "active"),
+  ])
+  const learnerIds = (activeBookings || []).flatMap((booking) => booking.learner_id ? [booking.learner_id] : [])
+  const { data: bookedLearners } = learnerIds.length
+    ? await supabaseAdmin.from("learners").select("id, first_name").in("id", learnerIds)
+    : { data: [] as { id: string; first_name: string | null }[] }
+  const learnerNames = new Map((bookedLearners || []).map((learner) => [learner.id, learner.first_name || "Booked learner"]))
+  const takenSeats = (activeBookings || []).map((booking) => ({
+    key: `${booking.weekday}:${booking.academy_table_id}:${booking.starts_at}:${booking.seat_number}`,
+    childName: booking.learner_id ? learnerNames.get(booking.learner_id) || "Booked learner" : "Held place",
+  }))
+  const seatCapacities = Object.fromEntries((academyTables || []).map((table) => [table.id, table.seat_capacity]))
+
+  const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
+  for (const child of familyChildren || []) {
+    const current = childrenByParent.get(child.parent_lead_id) || []
+    current.push(child)
+    childrenByParent.set(child.parent_lead_id, current)
+  }
+  const paymentFamilies = familyLeads || []
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Parent leads</h2>
-        <p className="text-muted-foreground">
-          Every parent timetable response submitted through the landing page.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div><p className="text-sm font-semibold text-muted-foreground">From first message to a confirmed place</p><h2 className="mt-1 text-3xl font-bold tracking-tight">Family pipeline</h2><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Work at the family level. Keep siblings together, make a thoughtful offer, then only create a learner and dated seat when payment is confirmed.</p></div>
+        <Link className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90" href="/admin/leads/new">Add family lead</Link>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{leads.length} submitted leads</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {leads.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No parent leads have been submitted yet.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Parent</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Child</TableHead>
-                    <TableHead>School / area</TableHead>
-                    <TableHead>Support</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Times</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead>Interest</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                  </TableRow>
-                </TableHeader>
+      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></div>)}</div>
 
-                <TableBody>
-                  {leads.map((lead) => (
-                    <TableRow key={lead.parent_lead_id}>
-                      <TableCell>
-                        <div className="font-medium">{lead.parent_name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Source: {lead.source}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div>{lead.email}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {lead.phone || "No phone"}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div>Age {lead.child_age}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Year {lead.school_year || "not provided"}
-                        </div>
-                        <div className="text-xs capitalize text-muted-foreground">
-                          {formatValue(lead.curriculum)}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div>{lead.school_name || "No school"}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {lead.area || "No area"}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="min-w-[180px] capitalize">
-                        {formatArray(lead.support_needs)}
-                      </TableCell>
-
-                      <TableCell className="capitalize">
-                        {formatArray(lead.preferred_days)}
-                      </TableCell>
-
-                      <TableCell>{formatArray(lead.preferred_times)}</TableCell>
-
-                      <TableCell className="capitalize">
-                        {formatValue(lead.preferred_frequency)}
-                      </TableCell>
-
-                      <TableCell className="capitalize">
-                        {formatValue(lead.interest_level)}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge
-                          variant={
-                            lead.status === "priority"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="capitalize"
-                        >
-                          {lead.status}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                        {formatDate(lead.created_at)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <section className="border-t pt-6">
+        <h3 className="text-xl font-bold tracking-tight">3 · Confirm payment, then activate a dated place</h3>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment, recurring seat and dated service period in one action.</p>
+          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} seatCapacities={seatCapacities} slots={bookableSlots || []} takenSeats={takenSeats} />
+        </div>
+      </section>
+      <section className="border-t pt-6">
+        <h3 className="text-xl font-bold tracking-tight">2 · Family follow-up queue · {leads.length} child responses</h3>
+        <p className="mt-2 text-sm text-muted-foreground">Use the compact table to move a family through follow-up. Open a row only when you need the supporting detail.</p>
+        <div className="mt-5">{leads.length ? <FamilyFollowUpTable leads={leads} /> : <p className="border-y py-5 text-sm text-muted-foreground">No parent leads have been submitted yet.</p>}</div>
+      </section>
     </div>
   )
 }

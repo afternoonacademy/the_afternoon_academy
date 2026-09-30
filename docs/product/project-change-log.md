@@ -8,6 +8,12 @@ This repository copy records material product/engineering decisions that need to
 
 Focus Groups are an additional, deliberately composed Academy group type. They do not reposition the core Homework Club proposition or create a separate family, learner, payment or placement system.
 
+### Interest-registration communication
+
+- A successful IGCSE Chemistry interest registration now uses the established Resend lead-email configuration to send an acknowledgement to the parent and a reply-enabled notification to the internal lead address.
+- Both messages make clear that this is not a confirmed place, does not reserve a seat and does not request payment.
+- The lead remains the source of truth in the existing admin pipeline; email delivery failure is recorded server-side and does not discard a successfully saved enquiry.
+
 ### First launch candidate
 
 - The only public Focus Group is **IGCSE Chemistry**, for Years 10–11, at Calle Asura / Arturo Soria.

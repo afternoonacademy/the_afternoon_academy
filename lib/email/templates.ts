@@ -29,6 +29,17 @@ type ContactEmailData = {
   language?: EmailLanguage
 }
 
+type FocusGroupInterestEmailData = {
+  parentName: string
+  email: string
+  phone: string
+  childFirstName: string
+  schoolName: string
+  schoolYear: "Year 10" | "Year 11"
+  preferredSession: "17:00-17:50" | "18:00-18:50" | "either"
+  notes?: string
+}
+
 function formatValue(value: string) {
   return value.replaceAll("_", " ")
 }
@@ -54,6 +65,107 @@ function formatMessageHtml(value: string) {
 
 function getLanguageLabel(language?: EmailLanguage) {
   return language === "es" ? "Spanish page" : "English page"
+}
+
+function formatFocusGroupSession(session: FocusGroupInterestEmailData["preferredSession"]) {
+  return session === "either" ? "Either 17:00–17:50 or 18:00–18:50" : session.replace("-", "–")
+}
+
+export function focusGroupInterestConfirmationEmailHtml(data: FocusGroupInterestEmailData) {
+  return `
+    <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
+      <h1 style="color: #111827; margin-bottom: 12px;">We received your IGCSE Chemistry interest registration</h1>
+
+      <p>Hi ${escapeHtml(data.parentName)},</p>
+
+      <p>
+        Thank you for registering interest in the <strong>IGCSE Chemistry Focus Group</strong> at The Afternoon Academy.
+        We will review the group fit and get in touch about the appropriate next step.
+      </p>
+
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
+        <h2 style="font-size: 18px; margin-top: 0;">Your registration</h2>
+        <p><strong>Student:</strong> ${escapeHtml(data.childFirstName)}</p>
+        <p><strong>School:</strong> ${escapeHtml(data.schoolName)}</p>
+        <p><strong>Year:</strong> ${escapeHtml(data.schoolYear)}</p>
+        <p><strong>Preferred session:</strong> ${escapeHtml(formatFocusGroupSession(data.preferredSession))}</p>
+      </div>
+
+      <p>
+        This is an interest registration only. It does not reserve or confirm a place, and no payment is required at this stage.
+      </p>
+
+      <p>
+        Best wishes,<br />
+        <strong>The Afternoon Academy</strong>
+      </p>
+    </div>
+  `
+}
+
+export function focusGroupInterestConfirmationEmailText(data: FocusGroupInterestEmailData) {
+  return `
+Hi ${data.parentName},
+
+Thank you for registering interest in the IGCSE Chemistry Focus Group at The Afternoon Academy.
+
+We will review the group fit and get in touch about the appropriate next step.
+
+Your registration:
+Student: ${data.childFirstName}
+School: ${data.schoolName}
+Year: ${data.schoolYear}
+Preferred session: ${formatFocusGroupSession(data.preferredSession)}
+
+This is an interest registration only. It does not reserve or confirm a place, and no payment is required at this stage.
+
+Best wishes,
+The Afternoon Academy
+  `.trim()
+}
+
+export function focusGroupAdminNotificationEmailHtml(data: FocusGroupInterestEmailData) {
+  return `
+    <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 720px; margin: 0 auto;">
+      <h1 style="color: #111827; margin-bottom: 12px;">New IGCSE Chemistry Focus Group enquiry</h1>
+
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
+        <h2 style="font-size: 18px; margin-top: 0;">Parent details</h2>
+        <p><strong>Name:</strong> ${escapeHtml(data.parentName)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>
+      </div>
+
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
+        <h2 style="font-size: 18px; margin-top: 0;">Student and group preference</h2>
+        <p><strong>Focus Group:</strong> IGCSE Chemistry</p>
+        <p><strong>Student:</strong> ${escapeHtml(data.childFirstName)}</p>
+        <p><strong>School:</strong> ${escapeHtml(data.schoolName)}</p>
+        <p><strong>Year:</strong> ${escapeHtml(data.schoolYear)}</p>
+        <p><strong>Preferred session:</strong> ${escapeHtml(formatFocusGroupSession(data.preferredSession))}</p>
+        <p><strong>Support context:</strong> ${formatMessageHtml(data.notes || "None provided")}</p>
+      </div>
+    </div>
+  `
+}
+
+export function focusGroupAdminNotificationEmailText(data: FocusGroupInterestEmailData) {
+  return `
+New IGCSE Chemistry Focus Group enquiry
+
+Parent details:
+Name: ${data.parentName}
+Email: ${data.email}
+Phone: ${data.phone}
+
+Student and group preference:
+Focus Group: IGCSE Chemistry
+Student: ${data.childFirstName}
+School: ${data.schoolName}
+Year: ${data.schoolYear}
+Preferred session: ${formatFocusGroupSession(data.preferredSession)}
+Support context: ${data.notes || "None provided"}
+  `.trim()
 }
 
 export function parentConfirmationEmailHtml(data: LeadEmailData) {

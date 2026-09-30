@@ -123,6 +123,10 @@ The administration foundation is complete and becomes the clean production basel
 
 Focus Groups will be an additional, deliberately composed Academy group type—not a repositioning of Homework Club. The first candidate product is an IGCSE Chemistry Focus Group for Years 10–11. Architecture discovery must first establish the smallest safe extension to the existing enquiry and lead pipeline, with no duplicate family, learner, payment or placement systems.
 
+### Focus Groups launch workflow — September 2026
+
+The first public Focus Group is IGCSE Chemistry for Years 10–11. Interest registrations enter the existing lead pipeline, where staff deliberately compose the group and continue through the existing manual payment and placement workflow where appropriate. The registration acknowledgement and internal notification are transactional only: they do not confirm a place, reserve a seat or request payment.
+
 ### Deferred enabling work — AI family-update delivery
 
 Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.

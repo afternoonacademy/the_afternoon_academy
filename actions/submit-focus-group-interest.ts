@@ -3,6 +3,13 @@
 import { redirect } from "next/navigation"
 import { z } from "zod"
 
+import { adminLeadEmail, resend, resendFromEmail } from "@/lib/email/resend"
+import {
+  focusGroupAdminNotificationEmailHtml,
+  focusGroupAdminNotificationEmailText,
+  focusGroupInterestConfirmationEmailHtml,
+  focusGroupInterestConfirmationEmailText,
+} from "@/lib/email/templates"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 export type FocusGroupInterestState = { success: boolean; message: string }
@@ -45,5 +52,48 @@ export async function submitFocusGroupInterest(
   const preferredTimes = data.preferredSession === "either" ? ["17:00-17:50", "18:00-18:50"] : [data.preferredSession]
   const { error: timingError } = await supabaseAdmin.from("timetable_preferences").insert({ child_lead_id: child.id, preferred_days: [], preferred_times: preferredTimes, preferred_frequency: "not_sure" })
   if (timingError) { await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id); return { success: false, message: "We could not save your session preference. Please try again." } }
+
+  const emailData = {
+    parentName: data.parentName,
+    email: data.email,
+    phone: data.phone,
+    childFirstName: data.childFirstName,
+    schoolName: data.schoolName,
+    schoolYear: data.schoolYear,
+    preferredSession: data.preferredSession,
+    notes: data.notes,
+  }
+
+  if (resend) {
+    const parentEmail = await resend.emails.send({
+      from: resendFromEmail,
+      to: data.email,
+      subject: "We received your IGCSE Chemistry interest registration",
+      html: focusGroupInterestConfirmationEmailHtml(emailData),
+      text: focusGroupInterestConfirmationEmailText(emailData),
+    })
+
+    if (parentEmail.error) {
+      console.error("Focus Group parent confirmation email error:", parentEmail.error)
+    }
+
+    if (adminLeadEmail) {
+      const adminEmail = await resend.emails.send({
+        from: resendFromEmail,
+        to: adminLeadEmail,
+        replyTo: data.email,
+        subject: `New IGCSE Chemistry Focus Group enquiry: ${data.parentName}`,
+        html: focusGroupAdminNotificationEmailHtml(emailData),
+        text: focusGroupAdminNotificationEmailText(emailData),
+      })
+
+      if (adminEmail.error) {
+        console.error("Focus Group admin notification email error:", adminEmail.error)
+      }
+    }
+  } else {
+    console.warn("Resend is not configured. Skipping Focus Group interest emails.")
+  }
+
   redirect("/thank-you?enquiry=igcse-chemistry")
 }

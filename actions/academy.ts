@@ -67,3 +67,12 @@ export async function saveRenewalEmailTemplate(formData: FormData) {
   if (error) throw new Error("Could not save the renewal email template")
   revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
 }
+
+export async function saveSessionPrice(formData: FormData) {
+  await requireAdmin()
+  const parsed = z.object({ id: z.string().uuid(), priceEuros: z.coerce.number().min(0).max(10000) }).safeParse({ id: formData.get("id"), priceEuros: formData.get("priceEuros") })
+  if (!parsed.success) throw new Error("Enter a valid per-session price")
+  const { error } = await supabaseService().from("weekly_table_templates").update({ session_price_cents: Math.round(parsed.data.priceEuros * 100) }).eq("id", parsed.data.id)
+  if (error) throw new Error("Could not save the session price")
+  revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
+}

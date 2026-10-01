@@ -15,6 +15,7 @@ Focus Groups are an additional, deliberately composed Academy group type. They d
 - Staff prepare a renewal with the exact open session dates and amount, edit the populated email, then explicitly send it through the existing Resend delivery log.
 - A late-paying family may continue only through an explicit staff-selected date. These dated seats are visibly labelled **Payment pending** in Operations; they are not treated as paid seats.
 - Closure changes do not silently erase historic attendance, existing payments, or previously prepared delivery records.
+- Academy Setup now separates Academy closures, timetable session prices, the renewal email template, and the physical Academy structure. Renewal quotations are calculated from the timetable rate and selected dated sessions, rather than relying on a manually entered renewal amount. The final dated-session selection is the payment activation source of truth.
 
 ### Interest-registration communication
 

@@ -1560,6 +1560,7 @@ export async function recordRenewalPayment(formData: FormData) {
     { data: learners, error: learnerError },
     { data: placements, error: placementError },
     { data: closures, error: closureError },
+    { data: renewalCase, error: renewalCaseError },
   ] = await Promise.all([
     supabase
       .from("learners")
@@ -1579,8 +1580,11 @@ export async function recordRenewalPayment(formData: FormData) {
       .select("starts_on,ends_on")
       .lte("starts_on", value.periodEnd)
       .gte("ends_on", value.periodStart),
+    renewalCaseId.success
+      ? supabase.from("renewal_cases").select("selected_sessions").eq("id", renewalCaseId.data).eq("parent_lead_id", value.parentLeadId).single()
+      : Promise.resolve({ data: null, error: null }),
   ]);
-  if (learnerError || placementError || closureError)
+  if (learnerError || placementError || closureError || renewalCaseError)
     throw new Error("Could not load the family's active bookings");
   const learnerIds = new Set((learners || []).map((learner) => learner.id));
   const familyPlacements = (placements || []).filter((placement) =>
@@ -1588,6 +1592,9 @@ export async function recordRenewalPayment(formData: FormData) {
   );
   if (!familyPlacements.length)
     throw new Error("This family has no active booked place to renew");
+  const selectedSessionKeys = renewalCaseId.success && Array.isArray(renewalCase?.selected_sessions)
+    ? new Set(renewalCase.selected_sessions.filter((session): session is { date: string; startsAt: string } => Boolean(session && typeof session === "object" && typeof session.date === "string" && typeof session.startsAt === "string")).map((session) => `${session.date}|${session.startsAt}`))
+    : null;
 
   const ledgerNote = [
     value.bankReference ? `Bank reference: ${value.bankReference}` : null,
@@ -1644,6 +1651,10 @@ export async function recordRenewalPayment(formData: FormData) {
       if (dateCursor.getUTCDay() === placement.weekday) {
         const serviceDate = dateCursor.toISOString().slice(0, 10);
         if ((closures || []).some((closure) => closure.starts_on <= serviceDate && closure.ends_on >= serviceDate)) {
+          dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
+          continue;
+        }
+        if (selectedSessionKeys && !selectedSessionKeys.has(`${serviceDate}|${placement.starts_at.slice(0, 5)}`)) {
           dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
           continue;
         }

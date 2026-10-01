@@ -131,6 +131,10 @@ The first public Focus Group is IGCSE Chemistry for Years 10–11. Interest regi
 
 The Academy calendar records planned closures once and excludes them from future renewal service-date calculations. Renewals are a persistent operational queue, not a date-window report: an expired paid period becomes overdue until renewed or closed. Where a family is late but staff elect to continue teaching, the system records a date-bounded **Payment pending** operational seat rather than falsely marking it paid. Parent renewal emails remain human-edited and explicitly sent, with the final message retained in the delivery record.
 
+### Renewal session selection and pricing — October 2026
+
+Renewal amounts are calculated from the active Academy timetable's per-session rates, rather than typed freehand. Staff select a coverage period, receive the eligible dated sessions after Academy closures are excluded, and can remove individual sessions before the editable renewal email is prepared. The resulting selection is retained with the renewal case and is used when cleared funds activate dated seats. A make-up/replacement-session composer remains a later, separate operations slice; it must validate table capacity and avoid silently changing a learner's standing place.
+
 ### Deferred enabling work — AI family-update delivery
 
 Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.

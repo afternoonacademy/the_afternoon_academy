@@ -135,7 +135,7 @@ The Academy calendar records planned closures once and excludes them from future
 
 Renewal amounts are calculated from the active Academy timetable's per-session rates, rather than typed freehand. Staff select a coverage period, receive the eligible dated sessions after Academy closures are excluded, and can remove individual sessions before the editable renewal email is prepared. The resulting selection is retained with the renewal case and is used when cleared funds activate dated seats. A make-up/replacement-session composer remains a later, separate operations slice; it must validate table capacity and avoid silently changing a learner's standing place.
 
-Commercial rates are maintained as named reusable session price plans (for example, General Homework Support and IGCSE Chemistry Focus Group), then assigned to the relevant timetable sessions. The final renewal selection retains the copied price used in its communication and payment record.
+Commercial rates are maintained as named reusable session price plans (for example, General Homework Support and IGCSE Chemistry Focus Group), then selected for the learner's recurring paid place. Tables, days and times are delivery information only. The final renewal selection retains the copied price used in its communication and payment record.
 
 ### Deferred enabling work — AI family-update delivery
 

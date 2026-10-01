@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label"
 type Child = { id: string; first_name: string | null; child_age: number | null }
 type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string }
 type TakenSeat = { key: string; childName: string }
+type PricePlan = { id: string; name: string; price_cents: number }
 const initialState: ManualEnrolmentActionState = {}
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeats, seatCapacities }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeats: TakenSeat[]; seatCapacities: Record<string, number> }) {
+export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeats, seatCapacities, pricePlans }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeats: TakenSeat[]; seatCapacities: Record<string, number>; pricePlans: PricePlan[] }) {
   const today = new Date().toISOString().slice(0, 10)
   const [state, formAction, pending] = useActionState(recordManualEnrolment, initialState)
   const [weekday, setWeekday] = useState("")
@@ -34,6 +35,7 @@ export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSe
       <div><Label>Start time</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={startsAt} onChange={(event) => { setStartsAt(event.target.value); setTableNumber("") }} disabled={!weekday} required><option value="">Choose time</option>{times.map((time) => <option key={time} value={time}>{time}</option>)}</select></div>
       <div><Label>Table</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} disabled={!startsAt} required><option value="">Choose table</option>{tableSlots.map((slot) => <option key={slot.id} value={slot.table_number}>TAA1 Table {slot.table_number}</option>)}</select><input name="templateId" type="hidden" value={templateId} /></div>
       <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" disabled={!selectedSlot} required><option value="">{selectedSlot ? "Choose available seat" : "Choose table first"}</option>{seats.map((seat) => { const held = takenSeat(seat); return <option disabled={Boolean(held)} key={seat} value={seat}>{held ? `Seat ${seat} — ${held.childName}` : `Seat ${seat} — available`}</option> })}</select>{selectedSlot && seats.some((seat) => takenSeat(seat)) ? <p className="mt-1 text-xs text-muted-foreground">Already held: {seats.flatMap((seat) => { const held = takenSeat(seat); return held ? [`Seat ${seat}: ${held.childName}`] : [] }).join(" · ")}</p> : null}</div>
+      <div><Label>Price plan</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="pricePlanId" required><option value="">Choose price plan</option>{pricePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · €{(plan.price_cents / 100).toFixed(2)} per session</option>)}</select><p className="mt-1 text-xs text-muted-foreground">This belongs to the learner’s place, not the timetable.</p></div>
       <div><Label>Payment received on</Label><Input name="receivedOn" defaultValue={today} required type="date" /></div>
       <div><Label>Seat start date</Label><Input name="periodStart" defaultValue={today} required type="date" /></div>
       <div><Label>Seat end date</Label><Input name="periodEnd" required type="date" /></div>

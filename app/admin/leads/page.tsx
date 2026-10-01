@@ -70,9 +70,10 @@ export default async function AdminLeadsPage() {
     .order("weekday")
     .order("starts_at")
     .order("table_number")
-  const [{ data: activeBookings }, { data: academyTables }] = await Promise.all([
+  const [{ data: activeBookings }, { data: academyTables }, { data: pricePlans }] = await Promise.all([
     supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number, learner_id").in("status", ["accepted_awaiting_payment", "paid_active"]),
     supabaseAdmin.from("academy_tables").select("id, seat_capacity").eq("status", "active"),
+    supabaseAdmin.from("session_price_plans").select("id,name,price_cents").eq("status", "active").order("price_cents"),
   ])
   const learnerIds = (activeBookings || []).flatMap((booking) => booking.learner_id ? [booking.learner_id] : [])
   const { data: bookedLearners } = learnerIds.length
@@ -106,7 +107,7 @@ export default async function AdminLeadsPage() {
         <h3 className="text-xl font-bold tracking-tight">3 · Confirm payment, then activate a dated place</h3>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment, recurring seat and dated service period in one action.</p>
-          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} seatCapacities={seatCapacities} slots={bookableSlots || []} takenSeats={takenSeats} />
+          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} pricePlans={pricePlans || []} seatCapacities={seatCapacities} slots={bookableSlots || []} takenSeats={takenSeats} />
         </div>
       </section>
       <section className="border-t pt-6">

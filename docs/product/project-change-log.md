@@ -16,7 +16,7 @@ Focus Groups are an additional, deliberately composed Academy group type. They d
 - A late-paying family may continue only through an explicit staff-selected date. These dated seats are visibly labelled **Payment pending** in Operations; they are not treated as paid seats.
 - Closure changes do not silently erase historic attendance, existing payments, or previously prepared delivery records.
 - Academy Setup now separates Academy closures, timetable session prices, the renewal email template, and the physical Academy structure. Renewal quotations are calculated from the timetable rate and selected dated sessions, rather than relying on a manually entered renewal amount. The final dated-session selection is the payment activation source of truth.
-- Session pricing has moved from repeated per-day rate entry to reusable named price plans. Active timetable sessions select the appropriate plan, including the initial General Homework Support (€25) and IGCSE Chemistry Focus Group (€40) plans; historical renewal selections keep their quoted price.
+- Session pricing has moved from repeated per-day rate entry to reusable named price plans. Staff select the appropriate plan on each learner's recurring paid place, including the initial General Homework Support (€25) and IGCSE Chemistry Focus Group (€40) plans; historical renewal selections keep their quoted price.
 
 ### Interest-registration communication
 

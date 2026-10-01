@@ -1570,7 +1570,7 @@ export async function recordRenewalPayment(formData: FormData) {
     supabase
       .from("standing_placements")
       .select(
-        "learner_id, weekday, table_number, academy_table_id, seat_number, starts_at, duration_minutes, teacher_name, focus",
+        "id, learner_id, weekday, table_number, academy_table_id, seat_number, starts_at, duration_minutes, teacher_name, focus, session_price_plan_id",
       )
       .eq("status", "active")
       .lte("effective_from", value.periodEnd)
@@ -1581,7 +1581,7 @@ export async function recordRenewalPayment(formData: FormData) {
       .lte("starts_on", value.periodEnd)
       .gte("ends_on", value.periodStart),
     renewalCaseId.success
-      ? supabase.from("renewal_cases").select("selected_sessions").eq("id", renewalCaseId.data).eq("parent_lead_id", value.parentLeadId).single()
+      ? supabase.from("renewal_cases").select("selected_sessions,proposed_session_price_plan_id").eq("id", renewalCaseId.data).eq("parent_lead_id", value.parentLeadId).single()
       : Promise.resolve({ data: null, error: null }),
   ]);
   if (learnerError || placementError || closureError || renewalCaseError)
@@ -1592,6 +1592,16 @@ export async function recordRenewalPayment(formData: FormData) {
   );
   if (!familyPlacements.length)
     throw new Error("This family has no active booked place to renew");
+  if (renewalCase?.proposed_session_price_plan_id) {
+    const { data: proposedPlan, error: proposedPlanError } = await supabase
+      .from("session_price_plans")
+      .select("id")
+      .eq("id", renewalCase.proposed_session_price_plan_id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (proposedPlanError || !proposedPlan)
+      throw new Error("The selected price plan is no longer active. Recalculate the renewal before recording payment");
+  }
   const selectedSessionKeys = renewalCaseId.success && Array.isArray(renewalCase?.selected_sessions)
     ? new Set(renewalCase.selected_sessions.filter((session): session is { date: string; startsAt: string } => Boolean(session && typeof session === "object" && typeof session.date === "string" && typeof session.startsAt === "string")).map((session) => `${session.date}|${session.startsAt}`))
     : null;
@@ -1714,6 +1724,13 @@ export async function recordRenewalPayment(formData: FormData) {
   revalidatePath("/admin/payments");
   revalidatePath("/admin/business");
   if (renewalCaseId.success) {
+    if (renewalCase?.proposed_session_price_plan_id) {
+      const { error: pricePlanError } = await supabase
+        .from("standing_placements")
+        .update({ session_price_plan_id: renewalCase.proposed_session_price_plan_id, updated_by: user.id })
+        .in("id", familyPlacements.map((placement) => placement.id));
+      if (pricePlanError) throw new Error("Payment was recorded, but the next-period price plan could not be activated");
+    }
     const { error: renewalError } = await supabase
       .from("renewal_cases")
       .update({

@@ -7,7 +7,7 @@ import { getResend, emailFrom } from "@/lib/resend"
 import { supabaseService } from "@/lib/supabase/service"
 
 const caseSchema = z.object({ caseId: z.string().uuid(), parentLeadId: z.string().uuid() })
-const dateRangeSchema = caseSchema.extend({ periodStart: z.string().date(), periodEnd: z.string().date() }).refine((value) => value.periodEnd >= value.periodStart, { message: "End date must follow start date" })
+const dateRangeSchema = caseSchema.extend({ periodStart: z.string().date(), periodEnd: z.string().date(), pricePlanId: z.string().uuid() }).refine((value) => value.periodEnd >= value.periodStart, { message: "End date must follow start date" })
 const defaultSubject = "Renewal for {{learner_names}} at The Afternoon Academy"
 const defaultBody = "Hello {{parent_name}},\n\nYour next Academy period includes:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer. We will confirm the period once the funds have cleared.\n\nWarmly,\nThe Afternoon Academy"
 const iso = (value: Date) => value.toISOString().slice(0, 10)
@@ -16,18 +16,20 @@ const escapeHtml = (value: string) => value.replaceAll("&", "&amp;").replaceAll(
 const emailHtml = (body: string) => `<main style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:32px;color:#20304a;line-height:1.55">${escapeHtml(body).replaceAll("\n", "<br />")}</main>`
 const formatDate = (value: string) => new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${value}T12:00:00Z`))
 
-async function buildRenewalDates(parentLeadId: string, periodStart: string, periodEnd: string) {
+async function buildRenewalDates(parentLeadId: string, periodStart: string, periodEnd: string, pricePlanId?: string) {
   const supabase = supabaseService()
   const [{ data: learners }, { data: placements }, { data: closures }] = await Promise.all([
     supabase.from("learners").select("id,first_name").eq("parent_lead_id", parentLeadId).eq("status", "active"),
     supabase.from("standing_placements").select("learner_id,weekday,academy_table_id,starts_at,session_price_plans(price_cents)").eq("status", "active").lte("effective_from", periodEnd).or(`effective_to.is.null,effective_to.gte.${periodStart}`),
     supabase.from("academy_closures").select("starts_on,ends_on").lte("starts_on", periodEnd).gte("ends_on", periodStart),
   ])
+  const pricePlan = pricePlanId ? await supabase.from("session_price_plans").select("price_cents").eq("id", pricePlanId).eq("status", "active").maybeSingle() : null
+  if (pricePlanId && (!pricePlan || pricePlan.error || !pricePlan.data)) throw new Error("Choose an active price plan for this renewal")
   const learnerIds = new Set((learners || []).map((learner) => learner.id)); const sessions: { date: string; startsAt: string; priceCents: number | null }[] = []
   for (const placement of (placements || []).filter((item) => learnerIds.has(item.learner_id))) for (let cursor = periodStart; cursor <= periodEnd; cursor = addDays(cursor, 1)) {
     if (new Date(`${cursor}T12:00:00Z`).getUTCDay() !== placement.weekday || (closures || []).some((closure) => closure.starts_on <= cursor && closure.ends_on >= cursor)) continue
     const plan = placement.session_price_plans && (Array.isArray(placement.session_price_plans) ? placement.session_price_plans[0] : placement.session_price_plans)
-    sessions.push({ date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: plan?.price_cents ?? null })
+    sessions.push({ date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: pricePlan?.data?.price_cents ?? plan?.price_cents ?? null })
   }
   return { dates: [...new Set(sessions.map((session) => session.date))].sort(), sessions, learnerNames: (learners || []).map((learner) => learner.first_name).filter(Boolean).join(", ") || "your child" }
 }
@@ -43,13 +45,13 @@ export async function startRenewalCase(formData: FormData) {
 }
 
 export async function prepareRenewalDraft(formData: FormData) {
-  const { user } = await requireAdmin(); const parsed = dateRangeSchema.safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), periodStart: formData.get("periodStart"), periodEnd: formData.get("periodEnd") })
+  const { user } = await requireAdmin(); const parsed = dateRangeSchema.safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), periodStart: formData.get("periodStart"), periodEnd: formData.get("periodEnd"), pricePlanId: formData.get("pricePlanId") })
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || "Check the renewal dates and amount")
   const value = parsed.data; const supabase = supabaseService()
-  const [{ data: parent }, { data: template }, service] = await Promise.all([supabase.from("parent_leads").select("parent_name").eq("id", value.parentLeadId).single(), supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "renewal_reminder").maybeSingle(), buildRenewalDates(value.parentLeadId, value.periodStart, value.periodEnd)])
+  const [{ data: parent }, { data: template }, service] = await Promise.all([supabase.from("parent_leads").select("parent_name").eq("id", value.parentLeadId).single(), supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "renewal_reminder").maybeSingle(), buildRenewalDates(value.parentLeadId, value.periodStart, value.periodEnd, value.pricePlanId)])
   if (!parent) throw new Error("Could not load this family"); if (!service.sessions.length) throw new Error("There are no open Academy session dates in this period"); if (service.sessions.some((session) => session.priceCents === null)) throw new Error("Set the missing session price in Academy Setup before preparing this renewal")
   const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const values = { parent_name: parent.parent_name, learner_names: service.learnerNames, service_dates: service.sessions.map((session) => `${formatDate(session.date)} · ${session.startsAt}`).join("\n"), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100) }
-  const { error } = await supabase.from("renewal_cases").update({ proposed_period_start: value.periodStart, proposed_period_end: value.periodEnd, proposed_amount_cents: amountCents, proposed_service_dates: service.dates, selected_sessions: service.sessions, selected_session_count: service.sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId)
+  const { error } = await supabase.from("renewal_cases").update({ proposed_period_start: value.periodStart, proposed_period_end: value.periodEnd, proposed_session_price_plan_id: value.pricePlanId, proposed_amount_cents: amountCents, proposed_service_dates: service.dates, selected_sessions: service.sessions, selected_session_count: service.sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId)
   if (error) throw new Error("Could not prepare the renewal email"); revalidatePath("/admin/renewals")
 }
 

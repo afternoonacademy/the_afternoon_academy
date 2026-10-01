@@ -137,6 +137,8 @@ Renewal amounts are calculated from the active Academy timetable's per-session r
 
 Commercial rates are maintained as named reusable session price plans (for example, General Homework Support and IGCSE Chemistry Focus Group), then selected for the learner's recurring paid place. Tables, days and times are delivery information only. The final renewal selection retains the copied price used in its communication and payment record.
 
+At renewal, staff may select the price plan for the next paid period. The learner's current plan is the default; a different plan changes the quote but is only applied to the learner's recurring place after cleared payment is recorded. Selecting a specialist plan does not itself create a suitable group or move a seat: staff remain responsible for that deliberate placement decision.
+
 ### Deferred enabling work — AI family-update delivery
 
 Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.

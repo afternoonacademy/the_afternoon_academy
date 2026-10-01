@@ -23,12 +23,13 @@ async function buildRenewalDates(parentLeadId: string, periodStart: string, peri
     supabase.from("standing_placements").select("learner_id,weekday,academy_table_id,starts_at").eq("status", "active").lte("effective_from", periodEnd).or(`effective_to.is.null,effective_to.gte.${periodStart}`),
     supabase.from("academy_closures").select("starts_on,ends_on").lte("starts_on", periodEnd).gte("ends_on", periodStart),
   ])
-  const rates = await supabase.from("weekly_table_templates").select("weekday,academy_table_id,starts_at,session_price_cents").eq("status", "active")
+  const rates = await supabase.from("weekly_table_templates").select("weekday,academy_table_id,starts_at,session_price_cents,session_price_plans(price_cents)").eq("status", "active")
   const learnerIds = new Set((learners || []).map((learner) => learner.id)); const sessions: { date: string; startsAt: string; priceCents: number | null }[] = []
   for (const placement of (placements || []).filter((item) => learnerIds.has(item.learner_id))) for (let cursor = periodStart; cursor <= periodEnd; cursor = addDays(cursor, 1)) {
     if (new Date(`${cursor}T12:00:00Z`).getUTCDay() !== placement.weekday || (closures || []).some((closure) => closure.starts_on <= cursor && closure.ends_on >= cursor)) continue
     const rate = (rates.data || []).find((item) => item.weekday === placement.weekday && item.academy_table_id === placement.academy_table_id && item.starts_at.slice(0, 5) === placement.starts_at.slice(0, 5))
-    sessions.push({ date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: rate?.session_price_cents ?? null })
+    const plan = rate?.session_price_plans && (Array.isArray(rate.session_price_plans) ? rate.session_price_plans[0] : rate.session_price_plans)
+    sessions.push({ date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: plan?.price_cents ?? rate?.session_price_cents ?? null })
   }
   return { dates: [...new Set(sessions.map((session) => session.date))].sort(), sessions, learnerNames: (learners || []).map((learner) => learner.first_name).filter(Boolean).join(", ") || "your child" }
 }

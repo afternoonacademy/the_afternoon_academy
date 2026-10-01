@@ -68,11 +68,31 @@ export async function saveRenewalEmailTemplate(formData: FormData) {
   revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
 }
 
-export async function saveSessionPrice(formData: FormData) {
+const pricePlanSchema = z.object({ name: z.string().trim().min(2).max(120), priceEuros: z.coerce.number().min(0).max(10000), description: z.string().trim().max(300).optional() })
+
+export async function addSessionPricePlan(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = pricePlanSchema.safeParse({ name: formData.get("name"), priceEuros: formData.get("priceEuros"), description: formData.get("description") || undefined })
+  if (!parsed.success) throw new Error("Enter a name and valid per-session price")
+  const { error } = await supabaseService().from("session_price_plans").insert({ name: parsed.data.name, price_cents: Math.round(parsed.data.priceEuros * 100), description: parsed.data.description || null, created_by: user.id, updated_by: user.id })
+  if (error) throw new Error(error.code === "23505" ? "A price plan already has that name" : "Could not add the session price plan")
+  revalidatePath("/admin/setup")
+}
+
+export async function updateSessionPricePlan(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = pricePlanSchema.extend({ id: z.string().uuid() }).safeParse({ id: formData.get("id"), name: formData.get("name"), priceEuros: formData.get("priceEuros"), description: formData.get("description") || undefined })
+  if (!parsed.success) throw new Error("Enter a name and valid per-session price")
+  const { error } = await supabaseService().from("session_price_plans").update({ name: parsed.data.name, price_cents: Math.round(parsed.data.priceEuros * 100), description: parsed.data.description || null, updated_by: user.id }).eq("id", parsed.data.id).eq("status", "active")
+  if (error) throw new Error("Could not update the session price plan")
+  revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
+}
+
+export async function assignSessionPricePlan(formData: FormData) {
   await requireAdmin()
-  const parsed = z.object({ id: z.string().uuid(), priceEuros: z.coerce.number().min(0).max(10000) }).safeParse({ id: formData.get("id"), priceEuros: formData.get("priceEuros") })
-  if (!parsed.success) throw new Error("Enter a valid per-session price")
-  const { error } = await supabaseService().from("weekly_table_templates").update({ session_price_cents: Math.round(parsed.data.priceEuros * 100) }).eq("id", parsed.data.id)
-  if (error) throw new Error("Could not save the session price")
+  const parsed = z.object({ templateId: z.string().uuid(), pricePlanId: z.string().uuid() }).safeParse({ templateId: formData.get("templateId"), pricePlanId: formData.get("pricePlanId") })
+  if (!parsed.success) throw new Error("Choose a price plan")
+  const { error } = await supabaseService().from("weekly_table_templates").update({ session_price_plan_id: parsed.data.pricePlanId }).eq("id", parsed.data.templateId).eq("status", "active")
+  if (error) throw new Error("Could not assign the session price plan")
   revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
 }

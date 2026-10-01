@@ -8,6 +8,14 @@ This repository copy records material product/engineering decisions that need to
 
 Focus Groups are an additional, deliberately composed Academy group type. They do not reposition the core Homework Club proposition or create a separate family, learner, payment or placement system.
 
+## 1 October 2026 — Academy closures and controlled renewal continuity
+
+- Academy-wide closures are now maintained once in Academy Setup and used by Operations and renewal-date calculations.
+- Renewals do not disappear when their previous paid period ends. They remain visible as overdue until staff renew or close the case.
+- Staff prepare a renewal with the exact open session dates and amount, edit the populated email, then explicitly send it through the existing Resend delivery log.
+- A late-paying family may continue only through an explicit staff-selected date. These dated seats are visibly labelled **Payment pending** in Operations; they are not treated as paid seats.
+- Closure changes do not silently erase historic attendance, existing payments, or previously prepared delivery records.
+
 ### Interest-registration communication
 
 - A successful IGCSE Chemistry interest registration now uses the established Resend lead-email configuration to send an acknowledgement to the parent and a reply-enabled notification to the internal lead address.

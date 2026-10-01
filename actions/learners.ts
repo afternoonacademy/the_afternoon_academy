@@ -1559,6 +1559,7 @@ export async function recordRenewalPayment(formData: FormData) {
   const [
     { data: learners, error: learnerError },
     { data: placements, error: placementError },
+    { data: closures, error: closureError },
   ] = await Promise.all([
     supabase
       .from("learners")
@@ -1573,8 +1574,13 @@ export async function recordRenewalPayment(formData: FormData) {
       .eq("status", "active")
       .lte("effective_from", value.periodEnd)
       .or(`effective_to.is.null,effective_to.gte.${value.periodStart}`),
+    supabase
+      .from("academy_closures")
+      .select("starts_on,ends_on")
+      .lte("starts_on", value.periodEnd)
+      .gte("ends_on", value.periodStart),
   ]);
-  if (learnerError || placementError)
+  if (learnerError || placementError || closureError)
     throw new Error("Could not load the family's active bookings");
   const learnerIds = new Set((learners || []).map((learner) => learner.id));
   const familyPlacements = (placements || []).filter((placement) =>
@@ -1637,6 +1643,10 @@ export async function recordRenewalPayment(formData: FormData) {
     while (dateCursor <= end) {
       if (dateCursor.getUTCDay() === placement.weekday) {
         const serviceDate = dateCursor.toISOString().slice(0, 10);
+        if ((closures || []).some((closure) => closure.starts_on <= serviceDate && closure.ends_on >= serviceDate)) {
+          dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
+          continue;
+        }
         const { data: session, error: sessionError } = await supabase
           .from("delivery_sessions")
           .upsert(

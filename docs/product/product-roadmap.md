@@ -127,6 +127,10 @@ Focus Groups will be an additional, deliberately composed Academy group type—n
 
 The first public Focus Group is IGCSE Chemistry for Years 10–11. Interest registrations enter the existing lead pipeline, where staff deliberately compose the group and continue through the existing manual payment and placement workflow where appropriate. The registration acknowledgement and internal notification are transactional only: they do not confirm a place, reserve a seat or request payment.
 
+### Academy closure and renewal control — October 2026
+
+The Academy calendar records planned closures once and excludes them from future renewal service-date calculations. Renewals are a persistent operational queue, not a date-window report: an expired paid period becomes overdue until renewed or closed. Where a family is late but staff elect to continue teaching, the system records a date-bounded **Payment pending** operational seat rather than falsely marking it paid. Parent renewal emails remain human-edited and explicitly sent, with the final message retained in the delivery record.
+
 ### Deferred enabling work — AI family-update delivery
 
 Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.

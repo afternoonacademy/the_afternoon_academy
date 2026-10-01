@@ -34,3 +34,36 @@ export async function archiveAcademyRecord(formData: FormData) {
   const table = p.data.type === "building" ? "academy_buildings" : p.data.type === "room" ? "academy_rooms" : "academy_tables"
   const { error } = await supabaseService().from(table).update({ status: "inactive" }).eq("id", p.data.id); if (error) throw new Error(error.message.includes("archive") ? error.message : "Could not archive this record"); revalidatePath("/admin/setup")
 }
+
+const closureSchema = z.object({
+  startsOn: z.string().date(),
+  endsOn: z.string().date(),
+  reason: z.string().trim().min(2).max(160),
+}).refine((value) => value.endsOn >= value.startsOn, { message: "Closure end date must follow its start date" })
+
+export async function addAcademyClosure(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = closureSchema.safeParse({ startsOn: formData.get("startsOn"), endsOn: formData.get("endsOn"), reason: formData.get("reason") })
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || "Complete the closure details")
+  const { error } = await supabaseService().from("academy_closures").insert({ starts_on: parsed.data.startsOn, ends_on: parsed.data.endsOn, reason: parsed.data.reason, created_by: user.id, updated_by: user.id })
+  if (error) throw new Error("Could not save the Academy closure")
+  revalidatePath("/admin/setup"); revalidatePath("/admin"); revalidatePath("/admin/renewals")
+}
+
+export async function deleteAcademyClosure(formData: FormData) {
+  await requireAdmin()
+  const parsed = z.object({ id: z.string().uuid() }).safeParse({ id: formData.get("id") })
+  if (!parsed.success) throw new Error("Invalid closure")
+  const { error } = await supabaseService().from("academy_closures").delete().eq("id", parsed.data.id)
+  if (error) throw new Error("Could not remove the Academy closure")
+  revalidatePath("/admin/setup"); revalidatePath("/admin"); revalidatePath("/admin/renewals")
+}
+
+export async function saveRenewalEmailTemplate(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z.object({ subject: z.string().trim().min(2).max(200), body: z.string().trim().min(2).max(12000) }).safeParse({ subject: formData.get("subject"), body: formData.get("body") })
+  if (!parsed.success) throw new Error("Enter a subject and email body")
+  const { error } = await supabaseService().from("academy_email_templates").upsert({ template_key: "renewal_reminder", subject_template: parsed.data.subject, body_template: parsed.data.body, updated_by: user.id }, { onConflict: "template_key" })
+  if (error) throw new Error("Could not save the renewal email template")
+  revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
+}

@@ -1720,6 +1720,16 @@ export async function recordRenewalPayment(formData: FormData) {
       dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
     }
   }
+  const replacementSessions = renewalCaseId.success && Array.isArray(renewalCase?.selected_sessions) ? renewalCase.selected_sessions.filter((session): session is { replacement: true; placementId: string; date: string; startsAt: string } => Boolean(session && typeof session === "object" && session.replacement === true && typeof session.placementId === "string" && typeof session.date === "string" && typeof session.startsAt === "string")) : [];
+  for (const replacement of replacementSessions) {
+    const placement = familyPlacements.find((item) => item.id === replacement.placementId); if (!placement) throw new Error("A replacement session no longer has an active learner place");
+    if ((closures || []).some((closure) => closure.starts_on <= replacement.date && closure.ends_on >= replacement.date)) throw new Error("A replacement session is on an Academy closure");
+    const { data: session, error: sessionError } = await supabase.from("delivery_sessions").upsert({ service_date: replacement.date, table_number: placement.table_number, academy_table_id: placement.academy_table_id, starts_at: placement.starts_at, duration_minutes: placement.duration_minutes, teacher_name: placement.teacher_name, focus: placement.focus, status: "scheduled", created_by: user.id, updated_by: user.id }, { onConflict: "service_date,academy_table_id,starts_at" }).select("id").single();
+    if (sessionError || !session) throw new Error("Could not prepare a replacement delivery session");
+    const { data: occupied } = await supabase.from("delivery_seats").select("learner_id").eq("delivery_session_id", session.id).eq("seat_number", placement.seat_number).eq("status", "scheduled").maybeSingle();
+    if (occupied && occupied.learner_id !== placement.learner_id) throw new Error("The replacement seat is already occupied");
+    const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: placement.learner_id, seat_number: placement.seat_number, status: "scheduled", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id" }); if (seatError) throw new Error("Could not prepare the replacement learner seat");
+  }
   revalidatePath("/admin");
   revalidatePath("/admin/payments");
   revalidatePath("/admin/business");

@@ -18,6 +18,7 @@ Focus Groups are an additional, deliberately composed Academy group type. They d
 - Academy Setup now separates Academy closures, timetable session prices, the renewal email template, and the physical Academy structure. Renewal quotations are calculated from the timetable rate and selected dated sessions, rather than relying on a manually entered renewal amount. The final dated-session selection is the payment activation source of truth.
 - Session pricing has moved from repeated per-day rate entry to reusable named price plans. Staff select the appropriate plan on each learner's recurring paid place, including the initial General Homework Support (€25) and IGCSE Chemistry Focus Group (€40) plans; historical renewal selections keep their quoted price.
 - Renewals now preselect each learner's current price plan and allow staff to choose the commercial plan for the next paid period before calculating the exact dates and amount. The proposed plan is applied to the recurring place only when cleared payment is confirmed; specialist plan selection does not automatically compose a group or change a seat.
+- Renewal session lines now retain the learner and usual table/time. Staff can add an explicit open-date replacement session against that learner’s existing place; it is priced, included in the renewal record, and creates the corresponding dated Operations seat when cleared payment is confirmed. Academy closure dates remain unavailable.
 
 ### Interest-registration communication
 

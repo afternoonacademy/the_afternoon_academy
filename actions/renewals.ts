@@ -1,4 +1,5 @@
 "use server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -20,16 +21,16 @@ async function buildRenewalDates(parentLeadId: string, periodStart: string, peri
   const supabase = supabaseService()
   const [{ data: learners }, { data: placements }, { data: closures }] = await Promise.all([
     supabase.from("learners").select("id,first_name").eq("parent_lead_id", parentLeadId).eq("status", "active"),
-    supabase.from("standing_placements").select("learner_id,weekday,academy_table_id,starts_at,session_price_plans(price_cents)").eq("status", "active").lte("effective_from", periodEnd).or(`effective_to.is.null,effective_to.gte.${periodStart}`),
+    supabase.from("standing_placements").select("id,learner_id,weekday,academy_table_id,table_number,seat_number,starts_at,duration_minutes,teacher_name,focus,session_price_plans(price_cents)").eq("status", "active").lte("effective_from", periodEnd).or(`effective_to.is.null,effective_to.gte.${periodStart}`),
     supabase.from("academy_closures").select("starts_on,ends_on").lte("starts_on", periodEnd).gte("ends_on", periodStart),
   ])
   const pricePlan = pricePlanId ? await supabase.from("session_price_plans").select("price_cents").eq("id", pricePlanId).eq("status", "active").maybeSingle() : null
   if (pricePlanId && (!pricePlan || pricePlan.error || !pricePlan.data)) throw new Error("Choose an active price plan for this renewal")
-  const learnerIds = new Set((learners || []).map((learner) => learner.id)); const sessions: { date: string; startsAt: string; priceCents: number | null }[] = []
+  const learnerNamesById = new Map((learners || []).map((learner) => [learner.id, learner.first_name || "Learner"])); const learnerIds = new Set(learnerNamesById.keys()); const sessions: any[] = []
   for (const placement of (placements || []).filter((item) => learnerIds.has(item.learner_id))) for (let cursor = periodStart; cursor <= periodEnd; cursor = addDays(cursor, 1)) {
     if (new Date(`${cursor}T12:00:00Z`).getUTCDay() !== placement.weekday || (closures || []).some((closure) => closure.starts_on <= cursor && closure.ends_on >= cursor)) continue
     const plan = placement.session_price_plans && (Array.isArray(placement.session_price_plans) ? placement.session_price_plans[0] : placement.session_price_plans)
-    sessions.push({ date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: pricePlan?.data?.price_cents ?? plan?.price_cents ?? null })
+    sessions.push({ placementId: placement.id, learnerId: placement.learner_id, learnerName: learnerNamesById.get(placement.learner_id) || "Learner", date: cursor, startsAt: placement.starts_at.slice(0, 5), priceCents: pricePlan?.data?.price_cents ?? plan?.price_cents ?? null, academyTableId: placement.academy_table_id, tableNumber: placement.table_number, seatNumber: placement.seat_number, durationMinutes: placement.duration_minutes, teacherName: placement.teacher_name, focus: placement.focus, replacement: false })
   }
   return { dates: [...new Set(sessions.map((session) => session.date))].sort(), sessions, learnerNames: (learners || []).map((learner) => learner.first_name).filter(Boolean).join(", ") || "your child" }
 }
@@ -67,7 +68,7 @@ export async function updateRenewalSelection(formData: FormData) {
     supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "renewal_reminder").maybeSingle(),
   ])
   if (!renewal || !parent) throw new Error("This renewal is no longer available")
-  const sessions = Array.isArray(renewal.selected_sessions) ? renewal.selected_sessions.filter((session): session is { date: string; startsAt: string; priceCents: number } => Boolean(session && typeof session === "object" && typeof session.date === "string" && typeof session.startsAt === "string" && typeof session.priceCents === "number" && keys.has(`${session.date}|${session.startsAt}`))) : []
+  const sessions = Array.isArray(renewal.selected_sessions) ? renewal.selected_sessions.filter((session): session is { date: string; startsAt: string; priceCents: number; placementId?: string } => Boolean(session && typeof session === "object" && typeof session.date === "string" && typeof session.startsAt === "string" && typeof session.priceCents === "number" && keys.has(`${session.placementId || "legacy"}|${session.date}|${session.startsAt}`))) : []
   if (!sessions.length) throw new Error("Choose at least one session")
   const amountCents = sessions.reduce((total, session) => total + session.priceCents, 0)
   const service = await buildRenewalDates(parsed.data.parentLeadId, renewal.proposed_period_start, renewal.proposed_period_end)
@@ -75,6 +76,16 @@ export async function updateRenewalSelection(formData: FormData) {
   const { error } = await supabase.from("renewal_cases").update({ proposed_amount_cents: amountCents, proposed_service_dates: [...new Set(sessions.map((session) => session.date))].sort(), selected_sessions: sessions, selected_session_count: sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId)
   if (error) throw new Error("Could not update the selected sessions")
   revalidatePath("/admin/renewals")
+}
+
+export async function addRenewalReplacement(formData: FormData) {
+  const { user } = await requireAdmin(); const parsed = caseSchema.extend({ placementId: z.string().uuid(), replacementDate: z.string().date() }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), placementId: formData.get("placementId"), replacementDate: formData.get("replacementDate") }); if (!parsed.success) throw new Error("Choose a learner and an open replacement date")
+  const value = parsed.data; const supabase = supabaseService(); const [{ data: closure }, { data: placement }, { data: renewal }, { data: plan }] = await Promise.all([supabase.from("academy_closures").select("id").lte("starts_on", value.replacementDate).gte("ends_on", value.replacementDate).maybeSingle(), supabase.from("standing_placements").select("id,learner_id,academy_table_id,table_number,seat_number,starts_at,duration_minutes,teacher_name,focus,learners!inner(first_name,parent_lead_id)").eq("id", value.placementId).eq("status", "active").single(), supabase.from("renewal_cases").select("selected_sessions").eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId).single(), supabase.from("renewal_cases").select("proposed_session_price_plan_id").eq("id", value.caseId).single()])
+  if (closure) throw new Error("That date is an Academy closure. Choose an open date instead"); if (!placement || !renewal || !plan || (Array.isArray(placement.learners) ? placement.learners[0] : placement.learners)?.parent_lead_id !== value.parentLeadId) throw new Error("This learner place is no longer available")
+  const { data: pricePlan } = await supabase.from("session_price_plans").select("price_cents").eq("id", plan.proposed_session_price_plan_id).eq("status", "active").single(); if (!pricePlan) throw new Error("Calculate the renewal plan before adding a replacement")
+  const learner = Array.isArray(placement.learners) ? placement.learners[0] : placement.learners; const sessions = Array.isArray(renewal.selected_sessions) ? renewal.selected_sessions : []; if (sessions.some((item: any) => item.placementId === placement.id && item.date === value.replacementDate)) throw new Error("That learner already has this date in the renewal")
+  const next = [...sessions, { placementId: placement.id, learnerId: placement.learner_id, learnerName: learner.first_name || "Learner", date: value.replacementDate, startsAt: placement.starts_at.slice(0, 5), priceCents: pricePlan.price_cents, academyTableId: placement.academy_table_id, tableNumber: placement.table_number, seatNumber: placement.seat_number, durationMinutes: placement.duration_minutes, teacherName: placement.teacher_name, focus: placement.focus, replacement: true }]; const amount = next.reduce((sum: number, item: any) => sum + item.priceCents, 0)
+  const { error } = await supabase.from("renewal_cases").update({ selected_sessions: next, selected_session_count: next.length, proposed_amount_cents: amount, proposed_service_dates: [...new Set(next.map((item: any) => item.date))].sort(), updated_by: user.id }).eq("id", value.caseId); if (error) throw new Error("Could not add the replacement session"); revalidatePath("/admin/renewals")
 }
 
 export async function sendRenewalEmail(formData: FormData) {

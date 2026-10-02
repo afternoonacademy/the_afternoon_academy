@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
+import { renderRenewalEmail } from "@/lib/email/renewal-email"
 import { allocateDatedOperationsSeat, assertPaidPeriodCapacity } from "@/lib/delivery-capacity"
 import {
   paidPeriodSummary,
@@ -650,32 +651,12 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   if (!summary.periodStart || !summary.periodEnd)
     throw new Error("Choose at least one service date")
 
-  const learnerNames = [...new Set(serverSessions.map((session) => session.learnerName))]
-  const serviceDates = serverSessions
-    .map(
-      (session) =>
-        `${session.learnerName} · ${formatDate(session.date)} · ${session.startsAt} · Table ${session.tableNumber} · ${session.pricePlanName} · ${new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(session.priceCents / 100)}${session.replacement ? " · replacement" : ""}`,
-    )
-    .join("\n")
-  const amountDue = new Intl.NumberFormat("en-IE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(summary.amountCents / 100)
-  const values: Record<string, string> = {
-    parent_name: parent.parent_name,
-    learner_names: learnerNames.join(", "),
-    service_dates: serviceDates,
-    session_count: String(serverSessions.length),
-    amount_due: amountDue,
-  }
-  const applyTemplate = (source: string) =>
-    Object.entries(values).reduce(
-      (result, [key, value]) => result.replaceAll(`{{${key}}}`, value),
-      source,
-    )
-  const defaultSubject = "Renewal for {{learner_names}} at The Afternoon Academy"
-  const defaultBody =
-    "Hello {{parent_name}},\n\nYour next Academy period includes:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer. We will confirm the period once the funds have cleared.\n\nWarmly,\nThe Afternoon Academy"
+  const emailDraft = renderRenewalEmail({
+    parentName: parent.parent_name,
+    sessions: serverSessions,
+    subjectTemplate: template?.subject_template,
+    bodyTemplate: template?.body_template,
+  })
 
   const uniquePlanIds = [...new Set(serverSessions.map((session) => session.pricePlanId))]
   const { error } = await supabase
@@ -688,8 +669,8 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       proposed_service_dates: [...new Set(serverSessions.map((session) => session.date))].sort(),
       selected_sessions: serverSessions,
       selected_session_count: serverSessions.length,
-      draft_subject: applyTemplate(template?.subject_template || defaultSubject),
-      draft_body: applyTemplate(template?.body_template || defaultBody),
+      draft_subject: emailDraft.subject,
+      draft_body: emailDraft.body,
       updated_by: user.id,
     })
     .eq("id", parsed.data.caseId)

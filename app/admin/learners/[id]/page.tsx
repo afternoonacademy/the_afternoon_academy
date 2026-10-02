@@ -71,16 +71,14 @@ export default async function LearnerPage({ params }: PageProps) {
 
   const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
     ? latestEntitlement.selected_sessions
-        .filter(
-          (session): session is { date: string } =>
-            Boolean(
-              session &&
-                typeof session === "object" &&
-                "date" in session &&
-                typeof session.date === "string",
-            ),
-        )
-        .map((session) => session.date)
+        .map((session) => {
+          if (!session || typeof session !== "object" || Array.isArray(session)) {
+            return null
+          }
+          const date = (session as Record<string, unknown>).date
+          return typeof date === "string" ? date : null
+        })
+        .filter((date): date is string => Boolean(date))
         .sort()
     : []
 

@@ -274,3 +274,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Renewals shows active learners whose paid period is due/overdue and preserves their recurring capacity until paid or explicitly released.
 - Closed / archived preserves closed lead history plus learners whose renewal place was explicitly released/cancelled; historical learner records remain accessible.
 - Renewal discovery now includes all overdue active learners, not only those whose previous paid period ended within the prior 120 days.
+
+<!-- Preview rebuild trigger: 2026-10-02 -->

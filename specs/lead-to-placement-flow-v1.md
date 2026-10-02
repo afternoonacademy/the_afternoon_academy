@@ -221,3 +221,16 @@ The email used for **Session planned → Contacted — awaiting payment** is sto
 ### Compact cleared-payment confirmation
 
 Once a child is **Contacted — awaiting payment**, the initial activation flow no longer reopens the paid-period date picker. The saved planned-place snapshot is displayed read-only: child, table/time, price plan, planned service dates, session count and total. Admin records the payment received date, confirms that the planned amount has cleared, and clicks **Confirm payment & activate N dates**. The server still revalidates the saved plan, closures and dated capacity before creating the paid entitlement and Operations places.
+
+
+## Unified child renewal workflow — 2 October 2026
+
+Renewal is now surfaced in Family Pipeline rather than operated as a separate parallel screen.
+
+For an existing learner:
+1. **Needs renewal** — the most recent paid period is ending/ended. The existing recurring capacity remains reserved.
+2. **Renewal planned** — admin reviews the next exact service dates using the learner's active standing place and price-plan default.
+3. **Contacted — awaiting payment** — the renewal email generated from the Academy Setup renewal template has been sent successfully.
+4. **Paid** — cleared payment is confirmed from a compact saved-plan summary; the next child/payment entitlement and exact dated Operations seats are created.
+
+Renewal cases are learner-specific so siblings can be at different stages. Existing recurring capacity is not released merely because the paid period expires. The explicit **Release recurring place** action requires a reason, cancels the active recurring booking capacity and ends the learner's standing placement. Historical family-level renewal records are not rewritten.

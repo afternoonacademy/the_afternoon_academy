@@ -462,7 +462,8 @@ function RenewalActions({
               className={
                 "mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm " +
                 (row.emailDeliveryStatus === "bounced" ||
-                row.emailDeliveryStatus === "failed"
+                row.emailDeliveryStatus === "failed" ||
+                row.emailDeliveryStatus === "suppressed"
                   ? "border-destructive/40 bg-destructive/10"
                   : row.emailDeliveryStatus === "delivered"
                     ? "border-emerald-300 bg-emerald-50"
@@ -478,6 +479,8 @@ function RenewalActions({
                       ? "Bounced"
                       : row.emailDeliveryStatus === "failed"
                         ? "Failed"
+                        : row.emailDeliveryStatus === "suppressed"
+                          ? "Suppressed"
                         : row.emailDeliveryStatus === "delayed"
                           ? "Delivery delayed"
                           : "Sent"}

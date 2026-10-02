@@ -277,6 +277,7 @@ function RenewalActions({
           <input name="caseId" type="hidden" value={row.caseId} />
           <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
           <PaidPeriodBuilder
+            key={`${row.caseId}:${JSON.stringify(row.selectedSessions)}:${suggestionStart}:${suggestionEnd}`}
             allowPricePlanChange
             closures={row.closures}
             initialSessions={row.selectedSessions}

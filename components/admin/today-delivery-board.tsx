@@ -11,6 +11,7 @@ import {
   saveAdhocDeliverySession,
   updateDailyDeliverySession,
 } from "@/actions/learners";
+import { InfoTip } from "@/components/admin/info-tip";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -489,12 +490,14 @@ export function TodayDeliveryBoard({
   return (
     <Card className="overflow-hidden border-indigo-100">
       <CardHeader>
-        <CardTitle>Delivery room</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Paid learners and renewal-due recurring learners both appear in the
-          room plan. Renewal-due places count against capacity until an admin
-          releases the recurring place.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <CardTitle>Delivery room</CardTitle>
+          <InfoTip label="About the Delivery room">
+            Paid learners and renewal-due recurring learners both appear in the
+            room plan. Renewal-due places count against capacity until an admin
+            releases the recurring place.
+          </InfoTip>
+        </div>
       </CardHeader>
       <CardContent className="grid gap-4 lg:grid-cols-2">
         {teachingTables.map((table) => (

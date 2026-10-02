@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { FamilyFollowUpTable } from "@/components/admin/family-follow-up-table"
+import { InfoTip } from "@/components/admin/info-tip"
 import {
   FamilyArchiveTable,
   FamilyCustomersTable,
@@ -312,14 +313,17 @@ export default async function AdminLeadsPage() {
           <p className="text-sm font-semibold text-muted-foreground">
             One lifecycle view for every family
           </p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight">
-            Family pipeline
-          </h2>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            A child appears in one operational queue at a time: Lead, Customer,
-            Renewal or Closed / Archived. Renewals reuse the same staged booking
-            process while preserving the learner’s recurring capacity.
-          </p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Family pipeline
+            </h2>
+            <InfoTip label="About the Family pipeline">
+              A child appears in one operational queue at a time: Lead,
+              Customer, Renewal or Closed / Archived. Renewals reuse the same
+              staged booking process while preserving the learner’s recurring
+              capacity.
+            </InfoTip>
+          </div>
         </div>
         <Link
           className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
@@ -346,15 +350,17 @@ export default async function AdminLeadsPage() {
       </div>
 
       <section className="border-t pt-6" id="leads">
-        <h3 className="text-xl font-bold tracking-tight">
-          1 · Leads · {followUpLeads.length} child response
-          {followUpLeads.length === 1 ? "" : "s"}
-        </h3>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          New enquiries only. Open Details, plan the child’s recurring place,
-          contact the parent, then confirm cleared payment. Once paid, the child
-          leaves this queue and becomes a Customer.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xl font-bold tracking-tight">
+            1 · Leads · {followUpLeads.length} child response
+            {followUpLeads.length === 1 ? "" : "s"}
+          </h3>
+          <InfoTip label="About Leads">
+            New enquiries only. Open Details, plan the child’s recurring place,
+            contact the parent, then confirm cleared payment. Once paid, the
+            child leaves this queue and becomes a Customer.
+          </InfoTip>
+        </div>
         <div className="mt-5">
           {followUpLeads.length ? (
             <FamilyFollowUpTable
@@ -375,15 +381,17 @@ export default async function AdminLeadsPage() {
       </section>
 
       <section className="border-t pt-6" id="customers">
-        <h3 className="text-xl font-bold tracking-tight">
-          2 · Customers · {customerRows.length} active learner
-          {customerRows.length === 1 ? "" : "s"}
-        </h3>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Active paid learners who do not currently need renewal. Learners move
-          out of this table automatically when their paid period reaches the
-          renewal window.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xl font-bold tracking-tight">
+            2 · Customers · {customerRows.length} active learner
+            {customerRows.length === 1 ? "" : "s"}
+          </h3>
+          <InfoTip label="About Customers">
+            Active paid learners who do not currently need renewal. Learners
+            move out of this table automatically when their paid period reaches
+            the renewal window.
+          </InfoTip>
+        </div>
         <div className="mt-5">
           {customerRows.length ? (
             <FamilyCustomersTable rows={customerRows} />
@@ -396,15 +404,17 @@ export default async function AdminLeadsPage() {
       </section>
 
       <section className="border-t pt-6" id="renewals">
-        <h3 className="text-xl font-bold tracking-tight">
-          3 · Renewals · {renewalRows.length} learner
-          {renewalRows.length === 1 ? "" : "s"}
-        </h3>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          These learners are removed from Leads and Customers while renewal is
-          due. Their existing recurring capacity stays reserved until renewal is
-          paid or an admin explicitly releases the place.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xl font-bold tracking-tight">
+            3 · Renewals · {renewalRows.length} learner
+            {renewalRows.length === 1 ? "" : "s"}
+          </h3>
+          <InfoTip label="About Renewals">
+            These learners are removed from Leads and Customers while renewal
+            is due. Their existing recurring capacity stays reserved until
+            renewal is paid or an admin explicitly releases the place.
+          </InfoTip>
+        </div>
         <div className="mt-5">
           {renewalRows.length ? (
             <RenewalWorkflowTable
@@ -420,15 +430,17 @@ export default async function AdminLeadsPage() {
       </section>
 
       <section className="border-t pt-6" id="archive">
-        <h3 className="text-xl font-bold tracking-tight">
-          4 · Closed / archived · {archiveRows.length} record
-          {archiveRows.length === 1 ? "" : "s"}
-        </h3>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Historical outcomes stay here rather than disappearing. This includes
-          closed leads and learners whose recurring place was released after
-          cancellation or non-payment.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xl font-bold tracking-tight">
+            4 · Closed / archived · {archiveRows.length} record
+            {archiveRows.length === 1 ? "" : "s"}
+          </h3>
+          <InfoTip label="About Closed and archived">
+            Historical outcomes stay here rather than disappearing. This
+            includes closed leads and learners whose recurring place was
+            released after cancellation or non-payment.
+          </InfoTip>
+        </div>
         <div className="mt-5">
           {archiveRows.length ? (
             <FamilyArchiveTable rows={archiveRows} />

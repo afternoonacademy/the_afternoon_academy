@@ -192,7 +192,7 @@ export default async function AdminLeadsPage() {
     ? await supabaseAdmin
         .from("email_delivery_log")
         .select(
-          "id,parent_lead_id,child_lead_id,learner_id,renewal_case_id,email_kind,recipient_email,status,subject,body_text,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,created_at",
+          "id,parent_lead_id,child_lead_id,learner_id,renewal_case_id,email_kind,recipient_email,status,subject,body_text,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,created_at,child_leads(first_name),learners(first_name)",
         )
         .in("parent_lead_id", communicationParentIds)
         .order("created_at", { ascending: false })

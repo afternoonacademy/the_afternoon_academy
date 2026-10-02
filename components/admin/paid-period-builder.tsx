@@ -161,8 +161,7 @@ export function PaidPeriodBuilder({
   if (!placements.length) {
     return (
       <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-        Choose the learner, table, time, seat and price plan to load the paid
-        service dates.
+        Choose the learner, table, time and price plan to load the paid service dates.
       </div>
     )
   }
@@ -230,8 +229,7 @@ export function PaidPeriodBuilder({
                 <div>
                   <h4 className="text-lg font-bold">{placement.learnerName}</h4>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Table {placement.tableNumber} · {placement.startsAt.slice(0, 5)} ·
-                    Seat {placement.seatNumber}
+                    Table {placement.tableNumber} · {placement.startsAt.slice(0, 5)} · seat assigned when payment clears
                   </p>
                   <p className="mt-1 text-sm">
                     {selected[0]?.pricePlanName || placement.pricePlanName} ·{" "}
@@ -267,8 +265,7 @@ export function PaidPeriodBuilder({
                     ))}
                   </select>
                   <span className="text-xs font-normal text-muted-foreground">
-                    Changing the price plan does not move this learner’s table,
-                    time or seat.
+                    Changing the price plan does not move this learner’s table or time. Dated seats are assigned from available capacity when payment clears.
                   </span>
                 </label>
               ) : null}
@@ -325,8 +322,10 @@ export function PaidPeriodBuilder({
                                 {dateLabel(session.date)}
                               </td>
                               <td className="px-3 py-2 text-muted-foreground">
-                                Table {session.tableNumber} · {session.startsAt} ·
-                                Seat {session.seatNumber}
+                                Table {session.tableNumber} · {session.startsAt} ·{" "}
+                                {session.seatNumber
+                                  ? `Seat ${session.seatNumber}`
+                                  : "Seat assigned on payment"}
                               </td>
                               <td className="px-3 py-2">
                                 {session.replacement ? (

@@ -360,3 +360,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Admin can choose **Edit email** to change the subject or body for that individual send. Cancelling the edit restores the current template-generated version.
 - Per-send edits do not overwrite the Academy Setup template.
 - The send action receives exactly the subject/body displayed in the preview, reducing the chance of silently sending an older draft.
+
+<!-- Retry preview after renewal email parser fix -->

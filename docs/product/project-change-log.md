@@ -343,3 +343,9 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Desktop users can reveal explanatory helper copy by hovering the icon; touch/mobile users can tap the icon to open the same explanation.
 - Removed persistent descriptive paragraphs from the main Operations room header, Family Pipeline section headers, renewal workflow steps, initial booking next-step panels and the shared paid-period calendar introduction.
 - Operational state labels, warnings, errors, empty states and data required to make a decision remain visible rather than being hidden in tooltips.
+
+
+## 2 October 2026 — Learner workspace seat and year labels
+
+- The learner workspace now displays the retained recurring **Seat N** alongside each weekday, time and table in Current booking & payment.
+- Year groups in the learner workspace are rendered explicitly as **Year N** rather than a bare number, matching the clarified Operations convention.

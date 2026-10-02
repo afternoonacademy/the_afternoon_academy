@@ -1,12 +1,12 @@
 import Link from "next/link"
 
 import { supabaseAdmin } from "@/lib/supabase/admin"
-import { PaymentActivationTable } from "@/components/admin/payment-activation-table"
 import { FamilyFollowUpTable } from "@/components/admin/family-follow-up-table"
 
 type LeadOverviewRow = {
   parent_lead_id: string
   child_lead_id: string
+  child_first_name: string | null
   timetable_preference_id: string
   parent_name: string
   email: string
@@ -54,14 +54,9 @@ export default async function AdminLeadsPage() {
     ["Awaiting payment", "accepted_awaiting_payment"],
   ] as const
 
-  const { data: familyLeads } = await supabaseAdmin
-    .from("parent_leads")
-    .select("id, parent_name, email, status")
-    .not("status", "in", '("converted","closed")')
-    .order("created_at", { ascending: false })
   const { data: familyChildren } = await supabaseAdmin
     .from("child_leads")
-    .select("id, parent_lead_id, first_name, child_age, school_year")
+    .select("id, parent_lead_id, first_name, child_age, school_year, school_name")
     .order("created_at")
   const { data: bookableSlots } = await supabaseAdmin
     .from("weekly_table_templates")
@@ -76,13 +71,17 @@ export default async function AdminLeadsPage() {
   ])
   const closures = (academyClosures || []).map((closure) => ({ startsOn: closure.starts_on, endsOn: closure.ends_on, reason: closure.reason }))
 
-  const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
-  for (const child of familyChildren || []) {
-    const current = childrenByParent.get(child.parent_lead_id) || []
-    current.push(child)
-    childrenByParent.set(child.parent_lead_id, current)
-  }
-  const paymentFamilies = familyLeads || []
+  const childById = new Map(
+    (familyChildren || []).map((child) => [child.id, child]),
+  )
+  const followUpLeads = leads.map((lead) => {
+    const child = childById.get(lead.child_lead_id)
+    return {
+      ...lead,
+      child_first_name: child?.first_name || null,
+      school_name: child?.school_name || lead.school_name,
+    }
+  })
 
   return (
     <div className="space-y-8">
@@ -94,16 +93,9 @@ export default async function AdminLeadsPage() {
       <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></div>)}</div>
 
       <section className="border-t pt-6">
-        <h3 className="text-xl font-bold tracking-tight">3 · Confirm payment, then activate a dated place</h3>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment and exact service dates in one action. Capacity is checked per dated table/time, and an Operations seat is assigned only after payment is confirmed.</p>
-          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} pricePlans={pricePlans || []} slots={bookableSlots || []} closures={closures} />
-        </div>
-      </section>
-      <section className="border-t pt-6">
-        <h3 className="text-xl font-bold tracking-tight">2 · Family follow-up queue · {leads.length} child responses</h3>
-        <p className="mt-2 text-sm text-muted-foreground">Use the compact table to move a family through follow-up. Open a row only when you need the supporting detail.</p>
-        <div className="mt-5">{leads.length ? <FamilyFollowUpTable leads={leads} /> : <p className="border-y py-5 text-sm text-muted-foreground">No parent leads have been submitted yet.</p>}</div>
+        <h3 className="text-xl font-bold tracking-tight">2 · Family follow-up queue · {followUpLeads.length} child responses</h3>
+        <p className="mt-2 text-sm text-muted-foreground">Review each child independently before taking payment. The requested sessions per week and availability are visible in the queue; when one child can be offered a place, use Add payment & dates on that child only.</p>
+        <div className="mt-5">{followUpLeads.length ? <FamilyFollowUpTable leads={followUpLeads} pricePlans={pricePlans || []} slots={bookableSlots || []} closures={closures} /> : <p className="border-y py-5 text-sm text-muted-foreground">No parent leads have been submitted yet.</p>}</div>
       </section>
     </div>
   )

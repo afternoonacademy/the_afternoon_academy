@@ -192,3 +192,8 @@ Operations now combines exact dated paid seats with active recurring learners wh
 ### Multi-day learner booking consistency — October 2026
 
 For both first-time offers and renewals, one learner now has one combined exact-date planner regardless of whether they attend one, two or five recurring days per week. The learner's recurring places remain distinct capacity records, but their expected dates are shown in one calendar and one selected-session summary. Initial offers can hold multiple recurring places before contact; one parent email and one cleared-payment confirmation cover the combined exact dates. Renewal planning follows the same interaction and email language.
+
+
+### Family communications and delivery outcomes — October 2026
+
+Parent communications use one family-centric history anchored to `parent_lead_id`, so enquiry-stage messages exist before learner activation and remain visible after conversion. Optional child/learner/renewal references preserve context without creating a parallel lead-vs-learner communications system. Resend delivery webhooks update operational status as Sent, Delivered, Delivery delayed, Bounced or Failed. TAA intentionally does not use open or click tracking. Family Pipeline lead details and Learner Workspace both surface the retained parent communication history.

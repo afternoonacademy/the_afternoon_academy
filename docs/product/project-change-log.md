@@ -403,3 +403,24 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 <!-- Retry family communications preview after Resend integration -->
 
 - Suppressed delivery is also tracked as an actionable failure state, alongside bounce/failed/delayed outcomes.
+
+
+## 2 October 2026 — Controlled Restart release closure
+
+### Release decision
+
+Founder acceptance has been given for the unified Family Pipeline / renewal / communications work as one completed release slice. The release baseline is the unified family operations and communications implementation now on `main`.
+
+### Production preparation
+
+- The connected production Supabase project has been advanced through the remaining additive 2 October migrations for child place planning, planned-place email templates, child-level renewal capacity, multi-day offer wording and family communication delivery tracking.
+- Those migrations preserve the existing manual payment-confirmation boundary and historical records.
+- The newest Vercel build for `main` is currently blocked by the account build-rate limit rather than an application build error.
+- The latest READY preview at runtime commit `8ead2a5` contains the same application code as the release baseline; later differences were documentation-only at the time of release review.
+- Production application promotion therefore remains a release-operation step once Vercel permits the promotion/rebuild. Do not describe the application release as live until the production alias/deployment is confirmed.
+
+### Documentation close-out
+
+- Restored `AGENTS.md` as the permanent repository engineering/agent rules file.
+- Marked the controlled-restart launch-operations work as completed in the roadmap.
+- Left the next Phase 1 work explicit rather than treating the whole product roadmap as complete.

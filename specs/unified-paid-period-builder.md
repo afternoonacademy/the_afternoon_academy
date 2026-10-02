@@ -94,3 +94,15 @@ Seats are operational capacity markers, not learner-owned recurring reservations
 - Unpaid renewal cases reserve no Operations capacity.
 - The existing explicit, date-bounded `payment_pending` continuation remains the only unpaid exception and dynamically allocates an available dated seat.
 - Existing historical standing-placement seat numbers remain readable for compatibility but are not used as a reservation by the unified paid-period flow.
+
+
+## Renewal capacity continuity — 2 October 2026
+
+The earlier rule that an unpaid renewal reserves no recurring capacity has been superseded for existing recurring learners.
+
+- A paid learner's explicit recurring capacity hold persists after their last paid service date while the standing placement remains active.
+- The expiry of a payment entitlement does not by itself free the recurring place.
+- A renewal uses the same exact-date planning, email and cleared-payment pattern as an initial booking, but starts from the already-reserved recurring place.
+- New-family place planning must treat those recurring holds as occupied capacity.
+- Capacity is returned only when an admin explicitly releases the recurring place for cancellation/non-payment/timetable exit. The release reason is retained on the renewal case.
+- Dated Operations attendance is still created only for paid dates (or the existing explicit date-bounded payment-pending continuation exception). Recurring capacity reservation and dated paid attendance remain distinct concepts.

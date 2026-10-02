@@ -151,3 +151,8 @@ Family Pipeline payment activation and Renewals use the same exact-date paid-per
 ### Dated capacity, not recurring seat ownership — October 2026
 
 Treat numbered seats as an Operations/capacity mechanism only. Families keep a recurring table/time arrangement, not a permanent seat number. Unpaid renewals do not reserve capacity. Exact paid dates allocate the first available dated seat when cleared payment is confirmed; explicit payment-pending continuation remains the only date-bounded unpaid exception.
+
+
+### Repeatable family enquiry form — October 2026
+
+The public place-enquiry form now treats each child as an independent learning requirement inside one family submission. Parent/contact details are entered once; staff receive one child record and one timetable-preference record per child, including independent support type, school/curriculum context and availability. This supports siblings needing different services such as general homework support, IGCSE Chemistry or 1-to-1 tuition.

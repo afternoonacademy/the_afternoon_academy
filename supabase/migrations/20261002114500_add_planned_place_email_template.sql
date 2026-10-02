@@ -12,23 +12,24 @@ insert into public.academy_email_templates (
 )
 values (
   'planned_place_offer',
-  'Planned Academy place for {{child_name}}',
-  'Dear {{parent_name}},
+  'Academy place for {{child_name}}',
+  'Hello {{parent_name}},
 
-We can offer {{child_name}} the following place at The Afternoon Academy:
+We can offer {{child_name}} the following Academy place:
+
 {{recurring_place}}
-{{price_plan_name}} · {{session_price}} per session
 
-Planned service dates:
+Your first Academy period includes:
+
 {{service_dates}}
 
 That is {{session_count}} session(s), totalling {{amount_due}}.
 
+If you would like to take the place, please make a bank transfer using the details below.
+
 {{payment_details}}
 
 Payment reference: {{payment_reference}}
-
-Once the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.
 
 Warmly,
 The Afternoon Academy'

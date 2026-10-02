@@ -370,3 +370,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Renewal parent emails now render bank-transfer details from server-side Vercel environment variables: `TAA_BUSINESS_NAME`, `TAA_BANK_ACCOUNT_NAME` and `TAA_BANK_IBAN`.
 - The payment reference is the learner name shown on the renewal.
 - Academy Setup's renewal template now includes the `{{payment_details}}` placeholder, so admins see the exact bank details in the Contact parent preview before sending.
+
+<!-- Trigger preview build for renewal bank-details email review -->

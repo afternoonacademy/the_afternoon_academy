@@ -248,3 +248,6 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 
 - Added the initial planned-place/payment-request email to Academy Setup → Email templates. The Family Pipeline now renders the actual outgoing subject/body from the stored `planned_place_offer` template; a successful send still advances only that child from **Session planned** to **Contacted — awaiting payment**.
+
+
+- Simplified the cleared-payment step for initial child activation. After the place has been planned and the parent contacted, the admin now sees a read-only summary of child, table/time, price plan, planned dates, session count and total, plus payment received date and one cleared-payment confirmation checkbox. The planning calendar/selectors are no longer repeated at payment confirmation.

@@ -208,10 +208,7 @@ export default async function LearnerPage({ params }: PageProps) {
       </section>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Family communications</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <FamilyCommunications
             communications={communications || []}
             emptyLabel="No parent communications have been recorded for this family yet."

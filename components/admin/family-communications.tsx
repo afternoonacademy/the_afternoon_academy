@@ -17,6 +17,8 @@ export type FamilyCommunication = {
   failed_at: string | null
   delivery_detail: string | null
   created_at: string
+  child_leads?: { first_name: string | null } | { first_name: string | null }[] | null
+  learners?: { first_name: string | null } | { first_name: string | null }[] | null
 }
 
 const kindLabel: Record<string, string> = {
@@ -42,6 +44,16 @@ function statusVariant(status: string) {
   if (status === "delivered") return "default" as const
   if (status === "bounced" || status === "failed") return "destructive" as const
   return "secondary" as const
+}
+
+function relatedName(item: FamilyCommunication) {
+  const learner = Array.isArray(item.learners)
+    ? item.learners[0]
+    : item.learners
+  const child = Array.isArray(item.child_leads)
+    ? item.child_leads[0]
+    : item.child_leads
+  return learner?.first_name || child?.first_name || null
 }
 
 function formatTimestamp(value: string | null | undefined) {
@@ -98,6 +110,7 @@ export function FamilyCommunications({
                       </p>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
                         {item.subject || "No subject"} · {item.recipient_email}
+                        {relatedName(item) ? ` · regarding ${relatedName(item)}` : " · family-wide"}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">

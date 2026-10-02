@@ -184,3 +184,6 @@ Family Pipeline is the single operational family/customer lifecycle surface. It 
 ### Renewal-due learners in Operations — October 2026
 
 Operations now combines exact dated paid seats with active recurring learners whose paid period has expired but whose standing place has not been released. Those learners appear in the correct dated table/time as **Renewal due · place held**, count against capacity, and remain available for teacher attendance. Recording attendance materialises a date-bounded `payment_pending` Operations seat without creating a paid entitlement. When the renewal payment clears, the dated seat is upgraded to paid/scheduled; when staff release the recurring place, future renewal-due Operations seats are cancelled and the capacity becomes available.
+
+
+- Learner Workspace now opens with a compact current booking/payment summary so staff can immediately see recurring place, price plan, paid-through date, exact paid dates and whether the learner is Paid, Renewal due, Payment pending or has no active place.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { CalendarDays, CircleAlert, RotateCcw } from "lucide-react"
 
 import { Calendar } from "@/components/ui/calendar"
@@ -60,65 +60,23 @@ export function PaidPeriodBuilder({
   pricePlans?: PricePlan[]
   allowPricePlanChange?: boolean
 }) {
-  const signature = useMemo(
-    () =>
-      JSON.stringify({
-        placements: placements.map((placement) => [
-          placement.placementId,
-          placement.learnerId,
-          placement.childLeadId,
-          placement.weekday,
-          placement.academyTableId,
-          placement.tableNumber,
-          placement.seatNumber,
-          placement.startsAt,
-          placement.pricePlanId,
-          placement.priceCents,
-        ]),
-        suggestionStart,
-        suggestionEnd,
-        initial: initialSessions.map((session) => [
-          session.placementId,
-          session.date,
-          session.pricePlanId,
-          session.priceCents,
-          session.replacement,
-        ]),
+  const initialSelection = () =>
+    sortPaidPeriodSessions(
+      placements.flatMap((placement) => {
+        const existing = initialSessions.filter(
+          (session) => session.placementId === placement.placementId,
+        )
+        if (existing.length) return existing
+        return expectedDatesForPlacement(
+          placement,
+          suggestionStart,
+          suggestionEnd,
+          closures,
+        ).map((date) => sessionFromPlacement(placement, date, false))
       }),
-    [placements, suggestionStart, suggestionEnd, initialSessions],
-  )
+    )
 
-  const [sessions, setSessions] = useState<PaidPeriodSession[]>([])
-  const [readySignature, setReadySignature] = useState("")
-
-  useEffect(() => {
-    if (readySignature === signature) return
-
-    const next = placements.flatMap((placement) => {
-      const existing = initialSessions.filter(
-        (session) => session.placementId === placement.placementId,
-      )
-      if (existing.length) return existing
-
-      return expectedDatesForPlacement(
-        placement,
-        suggestionStart,
-        suggestionEnd,
-        closures,
-      ).map((date) => sessionFromPlacement(placement, date, false))
-    })
-
-    setSessions(sortPaidPeriodSessions(next))
-    setReadySignature(signature)
-  }, [
-    closures,
-    initialSessions,
-    placements,
-    readySignature,
-    signature,
-    suggestionEnd,
-    suggestionStart,
-  ])
+  const [sessions, setSessions] = useState<PaidPeriodSession[]>(initialSelection)
 
   const summary = paidPeriodSummary(sessions)
   const orderedPlacements = useMemo(

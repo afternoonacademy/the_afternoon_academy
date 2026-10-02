@@ -394,11 +394,35 @@ export async function recordExactManualEnrolment(
       )
       .select("id")
       .single()
-    if (paymentError || !payment)
+    if (paymentError || !payment) {
+      const { error: rollbackBookingError } = await supabase
+        .from("accepted_bookings")
+        .delete()
+        .eq("id", booking.id)
+        .eq("status", "accepted_awaiting_payment")
+        .is("payment_entitlement_id", null)
+
+      if (rollbackBookingError) {
+        console.error("Manual enrolment payment failed and booking rollback failed", {
+          paymentError,
+          rollbackBookingError,
+          bookingId: booking.id,
+        })
+        return {
+          error:
+            "The payment record could not be created, and the temporary recurring-seat hold could not be cleared automatically. Check this family before retrying.",
+        }
+      }
+
+      console.error("Manual enrolment payment record failed; temporary booking rolled back", {
+        paymentError,
+        bookingId: booking.id,
+      })
       return {
         error:
-          "The recurring seat was saved, but the payment record could not be created. Check the record before retrying.",
+          "The payment record could not be created. The temporary recurring-seat hold was cleared, so you can safely retry after checking the payment details.",
       }
+    }
 
     let { data: learner } = await supabase
       .from("learners")

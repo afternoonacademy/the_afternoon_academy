@@ -251,3 +251,15 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 
 - Simplified the cleared-payment step for initial child activation. After the place has been planned and the parent contacted, the admin now sees a read-only summary of child, table/time, price plan, planned dates, session count and total, plus payment received date and one cleared-payment confirmation checkbox. The planning calendar/selectors are no longer repeated at payment confirmation.
+
+
+## 2 October 2026 — Renewals unified into Family Pipeline
+
+- Added **3 · Needs renewal** to Family Pipeline and moved the active renewal workflow there; `/admin/renewals` now routes to that section instead of maintaining a parallel admin process.
+- Renewals are now child/learner-specific rather than family-wide, so siblings can renew independently.
+- Renewal stages mirror initial booking: **Needs renewal → Renewal planned → Contacted — awaiting payment → Paid**.
+- The learner's recurring capacity remains reserved after the final paid date through the existing paid-active recurring booking/standing placement. Expiry of the paid period alone does not free capacity.
+- Added an explicit **Release recurring place** action with a required reason. It cancels the recurring capacity booking and ends the active standing placement; this is the only normal route for returning that recurring capacity to availability after cancellation or non-payment.
+- Renewal planning reuses the current table/time and price plan by default, applies Academy closures, saves exact proposed dates, and prepares the existing Academy Setup renewal email template.
+- Renewal email success advances the case to awaiting payment; cleared payment uses a compact summary/confirmation and activates the exact dated Operations seats.
+- Existing historical family-level renewal rows remain readable in the database; new renewal cases are learner-scoped using additive learner_id / standing_placement_id metadata.

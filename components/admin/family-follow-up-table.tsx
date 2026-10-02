@@ -13,6 +13,10 @@ import {
   type PlannedBooking,
   type RecurringSeatHold,
 } from "@/components/admin/child-place-workflow"
+import {
+  FamilyCommunications,
+  type FamilyCommunication,
+} from "@/components/admin/family-communications"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -107,6 +111,7 @@ export function FamilyFollowUpTable({
   seatCapacities,
   seatHolds,
   plannedBookings,
+  communications,
 }: {
   leads: FollowUpLead[]
   slots: Slot[]
@@ -115,6 +120,7 @@ export function FamilyFollowUpTable({
   seatCapacities: Record<string, number>
   seatHolds: RecurringSeatHold[]
   plannedBookings: PlannedBooking[]
+  communications: FamilyCommunication[]
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
 
@@ -257,6 +263,15 @@ export function FamilyFollowUpTable({
             {lead.notes || "No notes"}
           </p>
         </div>
+      </div>
+
+      <div className="border-t pt-5">
+        <FamilyCommunications
+          communications={communications.filter(
+            (item) => item.parent_lead_id === lead.parent_lead_id,
+          )}
+          emptyLabel="No parent communications have been sent for this family yet."
+        />
       </div>
 
       <div className="border-t pt-5">

@@ -297,7 +297,7 @@ function RenewalActions({
                       session.startsAt
                     }
                   >
-                    {date(session.date)} · {session.startsAt}
+                    {date(session.date)} · Table {session.tableNumber} · {session.startsAt} · Table {session.tableNumber} · {session.startsAt}
                   </span>
                 ))}
               </div>

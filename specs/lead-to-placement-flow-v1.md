@@ -129,3 +129,14 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Recording a family payment records both the received date and the covered service period. It activates all the parent’s held child bookings, creates/activates their learner records and assigns their paid recurring seats.
 - The parent lead becomes **Enrolled / paid** only after staff records payment.
 - One-off trials and genuine exceptions are added on the dated room board; they do not overwrite the normal booking.
+
+
+## Repeatable child-specific public enquiry — 2 October 2026
+
+- Parent/contact details are captured once per family enquiry.
+- The public form contains one reusable child block and an explicit **Add another child** action.
+- Each child independently records first name, age, school, school year, curriculum, support needs, optional IGCSE course/exam-board context, preferred days, preferred times, preferred frequency and child-specific notes.
+- Adding another child does not submit the enquiry; the family submits once after all children have been added.
+- Each submitted child creates its own `child_leads` row and its own `timetable_preferences` row under the shared parent lead.
+- Support choices are never copied automatically from one sibling to another.
+- The legacy abbreviated “another child” name/age/year section is retired.

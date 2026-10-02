@@ -328,3 +328,10 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - **Edit renewal plan** reopens the planner explicitly; saving again collapses it back to the summary.
 - Initial Family Pipeline place planning follows the same save → collapse → summary → next-action interaction.
 - Shared save actions now refresh server data after success while preserving visible success feedback and duplicate-submit protection.
+
+
+## 2 October 2026 — Operations seat labels clarified
+
+- Occupied Operations tiles now show the actual capacity marker explicitly as **Seat N**.
+- Learner year group is labelled as **Year N** (or “Year group not recorded”) instead of appearing as a bare number underneath the learner name.
+- This removes the ambiguity where a year-group value such as `3` or `4` could be mistaken for the learner's seat number, while available tiles continue to show the same Seat N numbering.

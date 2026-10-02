@@ -65,7 +65,7 @@ const defaultPlannedPlaceSubject =
   "Planned Academy place for {{child_name}}"
 
 const defaultPlannedPlaceBody =
-  "Dear {{parent_name}},\n\nWe can offer {{child_name}} the following place at The Afternoon Academy:\n{{recurring_place}}\n{{price_plan_name}} · {{session_price}} per session\n\nPlanned service dates:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\n{{payment_details}}\n\nPayment reference: {{payment_reference}}\n\nOnce the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.\n\nWarmly,\nThe Afternoon Academy"
+  "Dear {{parent_name}},\n\nWe can offer {{child_name}} the following recurring Academy place(s):\n{{recurring_place}}\n\nPrice plan(s): {{price_plan_name}} · {{session_price}} per session\n\nPlanned service dates:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\n{{payment_details}}\n\nPayment reference: {{payment_reference}}\n\nOnce the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.\n\nWarmly,\nThe Afternoon Academy"
 
 function applyTemplate(source: string, values: Record<string, string>) {
   return Object.entries(values).reduce(

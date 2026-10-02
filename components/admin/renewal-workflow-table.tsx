@@ -113,7 +113,11 @@ export function RenewalWorkflowTable({
                   {open ? (
                     <tr key={row.learnerId + "-details"}>
                       <td className="bg-muted/20 px-4 py-5" colSpan={5}>
-                        <RenewalActions pricePlans={pricePlans} row={row} />
+                        <RenewalActions
+                          onComplete={() => setExpanded(null)}
+                          pricePlans={pricePlans}
+                          row={row}
+                        />
                       </td>
                     </tr>
                   ) : null}
@@ -155,7 +159,11 @@ export function RenewalWorkflowTable({
               </button>
               {open ? (
                 <div className="mt-4 border-t pt-4">
-                  <RenewalActions pricePlans={pricePlans} row={row} />
+                  <RenewalActions
+                    onComplete={() => setExpanded(null)}
+                    pricePlans={pricePlans}
+                    row={row}
+                  />
                 </div>
               ) : null}
             </div>
@@ -169,9 +177,11 @@ export function RenewalWorkflowTable({
 function RenewalActions({
   row,
   pricePlans,
+  onComplete,
 }: {
   row: FamilyRenewalRow
   pricePlans: PricePlan[]
+  onComplete: () => void
 }) {
   const [editing, setEditing] = useState(row.status === "needs_renewal")
   const [emailEditing, setEmailEditing] = useState(false)
@@ -441,6 +451,7 @@ function RenewalActions({
 
             <SaveActionForm
               action={sendRenewalEmail}
+              onSuccess={onComplete}
               submitLabel="Email renewal to parent"
               successMessage="Renewal sent — awaiting payment"
             >

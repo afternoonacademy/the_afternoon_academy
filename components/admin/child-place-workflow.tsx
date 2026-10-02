@@ -8,6 +8,7 @@ import {
   releasePlannedChildPlace,
   sendPlannedPlaceEmail,
 } from "@/actions/child-place-planning"
+import { InfoTip } from "@/components/admin/info-tip"
 import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { SaveActionForm } from "@/components/admin/save-action-form"
@@ -538,12 +539,14 @@ export function ChildPlaceWorkflow({
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 size-5 text-primary" />
             <div>
-              <p className="font-semibold">Next step · contact parent</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                All recurring days and the combined date list will be included
-                in one planned-place email. No payment or dated Operations
-                attendance exists yet.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold">Next step · contact parent</p>
+                <InfoTip label="About contacting the parent">
+                  All recurring days and the combined date list will be included
+                  in one planned-place email. No payment or dated Operations
+                  attendance exists yet.
+                </InfoTip>
+              </div>
             </div>
           </div>
           <div className="mt-4">
@@ -561,11 +564,13 @@ export function ChildPlaceWorkflow({
 
       {plannedBookings.length && canConfirmPayment && !editing ? (
         <div className="rounded-xl border p-4">
-          <p className="font-semibold">Next step · confirm cleared payment</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Confirm the combined planned amount and dates. Only this step
-            creates the paid entitlement and dated Operations places.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold">Next step · confirm cleared payment</p>
+            <InfoTip label="About confirming cleared payment">
+              Confirm the combined planned amount and dates. Only this step
+              creates the paid entitlement and dated Operations places.
+            </InfoTip>
+          </div>
           <div className="mt-4">
             <ManualEnrolmentForm
               childOptions={[child]}

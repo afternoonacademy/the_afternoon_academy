@@ -156,3 +156,46 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 ### Compact follow-up row
 
 The visible follow-up row is intentionally limited to essential triage information: family/contact email, child name/age and requested support. Availability, requested weekly frequency, school/curriculum, notes, contact phone/area, follow-up actions and the child-scoped **Add payment & dates** action live inside the expanded **Details** row. This keeps the desktop table within the page width and ensures staff review the child detail before recording payment.
+
+
+## Planned-place → contact → payment lifecycle — implementation plan (2 October 2026)
+
+### Goal
+Separate child-level place planning, parent contact and payment confirmation. A planned place consumes one recurring capacity position and shows the child's name in the seat map; it does not create dated Operations attendance or a paid entitlement.
+
+### Non-goals
+- No automatic email at plan time.
+- No dated Operations seats before confirmed payment, except the existing explicit date-bounded payment-pending continuation workflow.
+- No sibling-wide activation.
+- No reintroduction of historical standing-seat ownership into renewals.
+
+### Files / schema
+- Add child-level pipeline status to \`child_leads\`.
+- Extend \`accepted_bookings\` to represent \`session_planned\` and \`contacted\` recurring capacity holds with a price plan and source weekly template.
+- Update \`lead_overview_view\` to expose the child-level status.
+- Add server actions/components for place planning, parent email and payment confirmation.
+- Reuse the exact-date paid-period builder only at the payment stage.
+
+### Authorization / privacy / safeguarding
+All mutations remain admin-only server actions using \`requireAdmin()\` and the service-role server client. No new browser write access is introduced. Emails contain only the minimum place/payment information already visible to the admin.
+
+### Failure modes
+- Planned seat already held: reject with an actionable capacity error.
+- Price plan/template archived between view and save: reject.
+- Email send failure: retain \`session_planned\`, do not advance to contacted.
+- Payment confirmation without a contacted/planned place: reject.
+- Dated capacity unavailable at payment time: reject before creating paid Operations seats.
+- Sibling status remains independent.
+
+### Acceptance criteria
+1. New child response starts as **Lead received**.
+2. Admin can open Details, choose recurring table/time, price plan and one visible available seat, then click **Record planned place**.
+3. Planned seat map shows names for paid/planned/contacted places and clearly marks available positions.
+4. Planning changes only that child to **Session planned** and creates no payment or dated Operations records.
+5. Admin can then send the planned-place email; successful send changes that child to **Contacted — awaiting payment**.
+6. Payment confirmation is a separate step that reviews exact paid dates and records payment; successful confirmation changes the child to **Paid** and creates dated Operations seats.
+7. Siblings may be at different statuses simultaneously.
+8. Releasing a planned/contacted place returns that recurring capacity position to available.
+
+### Tests / rollback
+Run lint, typecheck/build, targeted lifecycle checks and Supabase security advisors. Schema changes are additive/status-compatible and can be rolled back by reverting code while leaving the added nullable columns unused.

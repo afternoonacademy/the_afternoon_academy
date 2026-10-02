@@ -351,3 +351,12 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Year groups in the learner workspace are rendered explicitly as **Year N** rather than a bare number, matching the clarified Operations convention.
 
 <!-- Combined admin UX preview retry after rate-limit window -->
+
+
+## 2 October 2026 — Renewal email review before send
+
+- The Renewal **Contact parent** step now shows the exact current email that will be sent, including recipient, subject and fully rendered message.
+- The preview is generated from the current Academy Setup renewal template plus the learner's saved exact renewal sessions, so stale previously generated draft wording is not shown to staff.
+- Admin can choose **Edit email** to change the subject or body for that individual send. Cancelling the edit restores the current template-generated version.
+- Per-send edits do not overwrite the Academy Setup template.
+- The send action receives exactly the subject/body displayed in the preview, reducing the chance of silently sending an older draft.

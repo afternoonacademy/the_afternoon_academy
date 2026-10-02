@@ -65,10 +65,26 @@ function parseSessions(raw: string): PaidPeriodSession[] {
   const parsed = z.array(selectedSessionSchema).min(1).safeParse(value)
   if (!parsed.success) throw new Error("Choose at least one valid paid service date")
   const unique = new Set<string>()
+  const learnerAllocations = new Set<string>()
+  const seatAllocations = new Set<string>()
   for (const session of parsed.data) {
     const key = `${session.placementId}|${session.date}|${session.startsAt}`
     if (unique.has(key)) throw new Error("A service date is selected more than once")
     unique.add(key)
+
+    if (session.learnerId) {
+      const learnerKey = `${session.learnerId}|${session.date}|${session.academyTableId}|${session.startsAt}`
+      if (learnerAllocations.has(learnerKey)) {
+        throw new Error(`${session.learnerName} is selected more than once for the same dated session`)
+      }
+      learnerAllocations.add(learnerKey)
+    }
+
+    const seatKey = `${session.date}|${session.academyTableId}|${session.startsAt}|${session.seatNumber}`
+    if (seatAllocations.has(seatKey)) {
+      throw new Error(`Seat ${session.seatNumber} is selected twice for the same dated session`)
+    }
+    seatAllocations.add(seatKey)
   }
   return sortPaidPeriodSessions(parsed.data)
 }

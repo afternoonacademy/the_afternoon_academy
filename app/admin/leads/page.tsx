@@ -54,6 +54,10 @@ export default async function AdminLeadsPage() {
     ["Awaiting payment", "accepted_awaiting_payment"],
   ] as const
 
+  const familyStatuses = new Map(
+    leads.map((lead) => [lead.parent_lead_id, lead.status]),
+  )
+
   const { data: familyChildren } = await supabaseAdmin
     .from("child_leads")
     .select("id, parent_lead_id, first_name, child_age, school_year, school_name")
@@ -90,7 +94,7 @@ export default async function AdminLeadsPage() {
         <Link className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90" href="/admin/leads/new">Add family lead</Link>
       </div>
 
-      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{familyLeads?.filter((lead) => lead.status === status).length || 0}</p></div>)}</div>
+      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{[...familyStatuses.values()].filter((value) => value === status).length}</p></div>)}</div>
 
       <section className="border-t pt-6">
         <h3 className="text-xl font-bold tracking-tight">2 · Family follow-up queue · {followUpLeads.length} child responses</h3>

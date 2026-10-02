@@ -51,12 +51,14 @@ export function ManualEnrolmentForm({
   slots,
   pricePlans,
   closures,
+  fixedChild,
 }: {
   parentLeadId: string
   childOptions: Child[]
   slots: Slot[]
   pricePlans: PricePlan[]
   closures: AcademyClosure[]
+  fixedChild?: Child
 }) {
   const today = iso(new Date())
   const suggestionEndDate = new Date()
@@ -67,7 +69,7 @@ export function ManualEnrolmentForm({
     recordExactManualEnrolment,
     initialState,
   )
-  const [childLeadId, setChildLeadId] = useState("")
+  const [childLeadId, setChildLeadId] = useState(fixedChild?.id || "")
   const [templateId, setTemplateId] = useState("")
   const [pricePlanId, setPricePlanId] = useState("")
 
@@ -113,21 +115,29 @@ export function ManualEnrolmentForm({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div>
           <Label>Child</Label>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3"
-            name="childLeadId"
-            onChange={(event) => setChildLeadId(event.target.value)}
-            required
-            value={childLeadId}
-          >
-            <option value="">Choose child</option>
-            {childOptions.map((child) => (
-              <option key={child.id} value={child.id}>
-                {child.first_name || "Child"}
-                {child.child_age ? ` · age ${child.child_age}` : ""}
-              </option>
-            ))}
-          </select>
+          {fixedChild ? (
+            <div className="flex h-10 items-center rounded-md border bg-muted/30 px-3 text-sm font-medium">
+              {fixedChild.first_name || "Child"}
+              {fixedChild.child_age ? ` · age ${fixedChild.child_age}` : ""}
+            </div>
+          ) : (
+            <select
+              className="h-10 w-full rounded-md border bg-background px-3"
+              name="childLeadId"
+              onChange={(event) => setChildLeadId(event.target.value)}
+              required
+              value={childLeadId}
+            >
+              <option value="">Choose child</option>
+              {childOptions.map((child) => (
+                <option key={child.id} value={child.id}>
+                  {child.first_name || "Child"}
+                  {child.child_age ? ` · age ${child.child_age}` : ""}
+                </option>
+              ))}
+            </select>
+          )}
+          {fixedChild ? <input name="childLeadId" type="hidden" value={fixedChild.id} /> : null}
         </div>
 
         <div>

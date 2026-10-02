@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Mail, RotateCcw, Users } from "lucide-react"
+import { Mail, Users } from "lucide-react"
 
 import {
   recordPlannedChildPlace,
@@ -363,13 +363,14 @@ export function ChildPlaceWorkflow({
                 : []
             }
             placements={builderPlacements}
+            purpose="plan"
             suggestionEnd={plannedBooking?.planned_period_end || suggestionEnd}
             suggestionStart={plannedBooking?.planned_period_start || today}
           />
         </SaveActionForm>
       ) : null}
 
-      {plannedBooking && canEmail ? (
+      {plannedBooking && canEmail && !editing ? (
         <div className="rounded-xl border p-4">
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 size-5 text-primary" />
@@ -395,7 +396,7 @@ export function ChildPlaceWorkflow({
         </div>
       ) : null}
 
-      {plannedBooking && canConfirmPayment ? (
+      {plannedBooking && canConfirmPayment && !editing ? (
         <div className="rounded-xl border p-4">
           <p className="font-semibold">Next step · confirm cleared payment</p>
           <p className="mt-1 text-sm text-muted-foreground">

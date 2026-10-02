@@ -11,7 +11,7 @@ import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { AcademyClosure, PaidPeriodPlacement } from "@/lib/paid-period"
+import type { AcademyClosure, PaidPeriodPlacement, PaidPeriodSession } from "@/lib/paid-period"
 
 type Child = {
   id: string
@@ -52,6 +52,7 @@ export function ManualEnrolmentForm({
   pricePlans,
   closures,
   fixedChild,
+  plannedPlace,
 }: {
   parentLeadId: string
   childOptions: Child[]
@@ -59,6 +60,12 @@ export function ManualEnrolmentForm({
   pricePlans: PricePlan[]
   closures: AcademyClosure[]
   fixedChild?: Child
+  plannedPlace?: {
+    templateId: string
+    pricePlanId: string
+    seatNumber: number
+    sessions: PaidPeriodSession[]
+  }
 }) {
   const today = iso(new Date())
   const suggestionEndDate = new Date()
@@ -70,8 +77,8 @@ export function ManualEnrolmentForm({
     initialState,
   )
   const [childLeadId, setChildLeadId] = useState(fixedChild?.id || "")
-  const [templateId, setTemplateId] = useState("")
-  const [pricePlanId, setPricePlanId] = useState("")
+  const [templateId, setTemplateId] = useState(plannedPlace?.templateId || "")
+  const [pricePlanId, setPricePlanId] = useState(plannedPlace?.pricePlanId || "")
 
   const selectedChild = childOptions.find((child) => child.id === childLeadId)
   const selectedSlot = slots.find((slot) => slot.id === templateId)
@@ -89,7 +96,7 @@ export function ManualEnrolmentForm({
         weekday: selectedSlot.weekday,
         academyTableId: selectedSlot.academy_table_id,
         tableNumber: selectedSlot.table_number,
-        seatNumber: null,
+        seatNumber: plannedPlace?.seatNumber ?? null,
         startsAt: selectedSlot.starts_at.slice(0, 5),
         durationMinutes: selectedSlot.duration_minutes,
         teacherName: selectedSlot.teacher_name,
@@ -99,7 +106,7 @@ export function ManualEnrolmentForm({
         priceCents: selectedPlan.price_cents,
       },
     ]
-  }, [pricePlanId, selectedChild, selectedPlan, selectedSlot])
+  }, [plannedPlace?.seatNumber, pricePlanId, selectedChild, selectedPlan, selectedSlot])
 
   return (
     <form action={formAction} className="space-y-5">
@@ -108,8 +115,9 @@ export function ManualEnrolmentForm({
       <input name="pricePlanId" type="hidden" value={pricePlanId} />
 
       <p className="text-sm text-muted-foreground">
-        Use this only after you have personally checked the bank transfer. The
-        exact dates below become the paid entitlement. Operations seats are assigned automatically from available table capacity only after payment is confirmed. No parent email is sent automatically.
+        Confirm this only after the bank transfer has cleared. The planned place
+        already holds recurring capacity; this step records the payment and turns
+        the reviewed exact dates into paid Operations places.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -140,51 +148,57 @@ export function ManualEnrolmentForm({
           {fixedChild ? <input name="childLeadId" type="hidden" value={fixedChild.id} /> : null}
         </div>
 
-        <div>
-          <Label>Recurring delivery place</Label>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3"
-            disabled={!childLeadId}
-            onChange={(event) => {
-              setTemplateId(event.target.value)
-            }}
-            required
-            value={templateId}
-          >
-            <option value="">Choose table and time</option>
-            {slots.map((slot) => (
-              <option key={slot.id} value={slot.id}>
-                {days[slot.weekday]} · {slot.starts_at.slice(0, 5)} · Table{" "}
-                {slot.table_number}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            The weekday comes from the actual recurring Academy place; it is not
-            a separate billing field.
-          </p>
-        </div>
+        {plannedPlace ? (
+          <div className="sm:col-span-2">
+            <Label>Planned recurring place</Label>
+            <div className="mt-1 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+              {selectedSlot
+                ? `${days[selectedSlot.weekday]} · ${selectedSlot.starts_at.slice(0, 5)} · Table ${selectedSlot.table_number} · Capacity seat ${plannedPlace.seatNumber}`
+                : "Planned place"}
+              {selectedPlan
+                ? ` · ${selectedPlan.name} · €${(selectedPlan.price_cents / 100).toFixed(2)} / session`
+                : ""}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <Label>Recurring delivery place</Label>
+              <select
+                className="h-10 w-full rounded-md border bg-background px-3"
+                disabled={!childLeadId}
+                onChange={(event) => setTemplateId(event.target.value)}
+                required
+                value={templateId}
+              >
+                <option value="">Choose table and time</option>
+                {slots.map((slot) => (
+                  <option key={slot.id} value={slot.id}>
+                    {days[slot.weekday]} · {slot.starts_at.slice(0, 5)} · Table{" "}
+                    {slot.table_number}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div>
-          <Label>Price plan</Label>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3"
-            onChange={(event) => setPricePlanId(event.target.value)}
-            required
-            value={pricePlanId}
-          >
-            <option value="">Choose price plan</option>
-            {pricePlans.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name} · €{(plan.price_cents / 100).toFixed(2)} per session
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            The plan belongs to this learner’s recurring place. It does not
-            automatically move the learner to another group.
-          </p>
-        </div>
+            <div>
+              <Label>Price plan</Label>
+              <select
+                className="h-10 w-full rounded-md border bg-background px-3"
+                onChange={(event) => setPricePlanId(event.target.value)}
+                required
+                value={pricePlanId}
+              >
+                <option value="">Choose price plan</option>
+                {pricePlans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} · €{(plan.price_cents / 100).toFixed(2)} per session
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
 
         <div>
           <Label>Payment received on</Label>
@@ -195,6 +209,7 @@ export function ManualEnrolmentForm({
       <PaidPeriodBuilder
         key={`${childLeadId}:${templateId}:${pricePlanId}`}
         closures={closures}
+        initialSessions={plannedPlace?.sessions || []}
         placements={builderPlacements}
         suggestionEnd={suggestionEnd}
         suggestionStart={today}
@@ -207,17 +222,17 @@ export function ManualEnrolmentForm({
           type="checkbox"
           value="yes"
         />
-        I have manually confirmed the payment and reviewed the exact paid dates.
+        I have checked that the payment has cleared and reviewed the exact paid dates.
       </label>
 
       <Button className="w-full" disabled={pending || !builderPlacements.length}>
         {pending ? (
           <>
             <LoaderCircle className="size-4 animate-spin" />
-            Recording payment and allocating dated places…
+            Confirming payment and activating dated places…
           </>
         ) : (
-          "Record payment and activate exact dated places"
+          "Confirm payment & activate paid dates"
         )}
       </Button>
 

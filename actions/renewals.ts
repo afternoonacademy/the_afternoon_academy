@@ -116,15 +116,17 @@ export async function releaseRenewalPlace(formData: FormData) {
   const { user } = await requireAdmin()
   const parsed = z
     .object({
-      caseId: z.string().uuid(),
+      caseId: z.string().uuid().optional(),
       parentLeadId: z.string().uuid(),
       learnerId: z.string().uuid(),
+      sourcePaymentEntitlementId: z.string().uuid(),
       reason: z.string().trim().min(2).max(500),
     })
     .safeParse({
-      caseId: formData.get("caseId"),
+      caseId: formData.get("caseId") || undefined,
       parentLeadId: formData.get("parentLeadId"),
       learnerId: formData.get("learnerId"),
+      sourcePaymentEntitlementId: formData.get("sourcePaymentEntitlementId"),
       reason: formData.get("reason"),
     })
 
@@ -134,18 +136,55 @@ export async function releaseRenewalPlace(formData: FormData) {
 
   const value = parsed.data
   const supabase = supabaseService()
-  const { data: renewal } = await supabase
-    .from("renewal_cases")
-    .select("id,learner_id,status")
-    .eq("id", value.caseId)
-    .eq("parent_lead_id", value.parentLeadId)
-    .maybeSingle()
 
-  if (!renewal || renewal.learner_id !== value.learnerId) {
-    throw new Error("This renewal is no longer available")
-  }
-  if (renewal.status === "renewed") {
-    throw new Error("This renewal has already been paid")
+  let renewalId = value.caseId || null
+  if (renewalId) {
+    const { data: renewal } = await supabase
+      .from("renewal_cases")
+      .select("id,learner_id,status")
+      .eq("id", renewalId)
+      .eq("parent_lead_id", value.parentLeadId)
+      .maybeSingle()
+
+    if (!renewal || renewal.learner_id !== value.learnerId) {
+      throw new Error("This renewal is no longer available")
+    }
+    if (renewal.status === "renewed") {
+      throw new Error("This renewal has already been paid")
+    }
+  } else {
+    const { data: existing } = await supabase
+      .from("renewal_cases")
+      .select("id,status")
+      .eq("learner_id", value.learnerId)
+      .eq("source_payment_entitlement_id", value.sourcePaymentEntitlementId)
+      .maybeSingle()
+
+    if (existing?.status === "renewed") {
+      throw new Error("This renewal has already been paid")
+    }
+
+    if (existing) {
+      renewalId = existing.id
+    } else {
+      const { data: created, error: createError } = await supabase
+        .from("renewal_cases")
+        .insert({
+          parent_lead_id: value.parentLeadId,
+          learner_id: value.learnerId,
+          source_payment_entitlement_id: value.sourcePaymentEntitlementId,
+          due_on: iso(new Date()),
+          status: "not_renewing",
+          updated_by: user.id,
+        })
+        .select("id")
+        .single()
+
+      if (createError || !created) {
+        throw new Error("Could not create the renewal release record")
+      }
+      renewalId = created.id
+    }
   }
 
   const releasedAt = new Date().toISOString()
@@ -180,7 +219,7 @@ export async function releaseRenewalPlace(formData: FormData) {
         closed_at: releasedAt,
         updated_by: user.id,
       })
-      .eq("id", value.caseId),
+      .eq("id", renewalId),
   ])
 
   if (bookingResult.error || placementResult.error || renewalResult.error) {
@@ -195,8 +234,8 @@ export async function releaseRenewalPlace(formData: FormData) {
   revalidatePath("/admin")
   revalidatePath("/admin/leads")
   revalidatePath("/admin/renewals")
-  revalidatePath("/admin/leads")
 }
+
 
 export async function startRenewalCase(formData: FormData) {
   const { user } = await requireAdmin()

@@ -1,15 +1,15 @@
 import Link from "next/link"
 
-import { supabaseAdmin } from "@/lib/supabase/admin"
 import { FamilyFollowUpTable } from "@/components/admin/family-follow-up-table"
-import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import {
   FamilyArchiveTable,
   FamilyCustomersTable,
   type FamilyArchiveRow,
   type FamilyCustomerRow,
 } from "@/components/admin/family-lifecycle-tables"
+import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
+import { supabaseAdmin } from "@/lib/supabase/admin"
 
 type LeadOverviewRow = {
   parent_lead_id: string
@@ -39,6 +39,11 @@ type LeadOverviewRow = {
   created_at: string
 }
 
+function relation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] || null
+  return value || null
+}
+
 export default async function AdminLeadsPage() {
   const { data, error } = await supabaseAdmin
     .from("lead_overview_view")
@@ -47,6 +52,255 @@ export default async function AdminLeadsPage() {
 
   if (error) {
     return (
+      <div className="rounded-lg border bg-background p-6">
+        <h2 className="text-lg font-semibold">Could not load family pipeline</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      </div>
+    )
+  }
+
+  const leads = (data || []) as LeadOverviewRow[]
+  const renewalRows = await loadFamilyRenewals()
+
+  const [
+    { data: familyChildren },
+    { data: bookableSlots },
+    { data: pricePlans },
+    { data: academyClosures },
+    { data: academyTables },
+    { data: activeBookings },
+    { data: lifecycleLearners },
+    { data: lifecyclePlacements },
+    { data: lifecycleEntitlements },
+    { data: closedRenewals },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("child_leads")
+      .select(
+        "id,parent_lead_id,first_name,child_age,school_year,school_name,pipeline_status",
+      )
+      .order("created_at"),
+    supabaseAdmin
+      .from("weekly_table_templates")
+      .select(
+        "id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus",
+      )
+      .eq("status", "active")
+      .order("weekday")
+      .order("starts_at")
+      .order("table_number"),
+    supabaseAdmin
+      .from("session_price_plans")
+      .select("id,name,price_cents")
+      .eq("status", "active")
+      .order("price_cents"),
+    supabaseAdmin
+      .from("academy_closures")
+      .select("starts_on,ends_on,reason")
+      .order("starts_on"),
+    supabaseAdmin
+      .from("academy_tables")
+      .select("id,seat_capacity")
+      .eq("status", "active"),
+    supabaseAdmin
+      .from("accepted_bookings")
+      .select(
+        "id,child_lead_id,weekly_table_template_id,session_price_plan_id,weekday,table_number,academy_table_id,seat_number,starts_at,duration_minutes,status,planned_sessions,planned_amount_cents,planned_period_start,planned_period_end,child_leads(first_name)",
+      )
+      .in("status", [
+        "session_planned",
+        "contacted",
+        "accepted_awaiting_payment",
+        "paid_active",
+      ]),
+    supabaseAdmin
+      .from("learners")
+      .select(
+        "id,first_name,year_group,status,child_lead_id,parent_lead_id,parent_leads(parent_name,email)",
+      )
+      .order("first_name"),
+    supabaseAdmin
+      .from("standing_placements")
+      .select("learner_id,weekday,table_number,starts_at,status")
+      .eq("status", "active"),
+    supabaseAdmin
+      .from("child_payment_entitlements")
+      .select("learner_id,period_end,status")
+      .eq("status", "paid")
+      .order("period_end", { ascending: false }),
+    supabaseAdmin
+      .from("renewal_cases")
+      .select(
+        "id,learner_id,parent_lead_id,status,capacity_release_reason,outcome_note,closed_at",
+      )
+      .eq("status", "not_renewing")
+      .order("closed_at", { ascending: false }),
+  ])
+
+  const closures = (academyClosures || []).map((closure) => ({
+    startsOn: closure.starts_on,
+    endsOn: closure.ends_on,
+    reason: closure.reason,
+  }))
+
+  const seatCapacities = Object.fromEntries(
+    (academyTables || []).map((table) => [table.id, table.seat_capacity]),
+  )
+
+  const childById = new Map(
+    (familyChildren || []).map((child) => [child.id, child]),
+  )
+
+  const childPipelineRows = leads.map((lead) => {
+    const child = childById.get(lead.child_lead_id)
+    return {
+      ...lead,
+      child_first_name: child?.first_name || null,
+      school_name: child?.school_name || lead.school_name,
+      status: child?.pipeline_status || "new",
+    }
+  })
+
+  const renewalLearnerIds = new Set(renewalRows.map((row) => row.learnerId))
+  const renewalChildLeadIds = new Set(
+    renewalRows.flatMap((row) => (row.childLeadId ? [row.childLeadId] : [])),
+  )
+
+  const activeLearnerChildLeadIds = new Set(
+    (lifecycleLearners || [])
+      .filter((learner) => learner.status === "active" && learner.child_lead_id)
+      .map((learner) => learner.child_lead_id as string),
+  )
+
+  const followUpLeads = childPipelineRows.filter(
+    (lead) =>
+      !["paid", "closed"].includes(lead.status) &&
+      !renewalChildLeadIds.has(lead.child_lead_id) &&
+      !activeLearnerChildLeadIds.has(lead.child_lead_id),
+  )
+
+  const seatHolds = (activeBookings || []).map((booking) => {
+    const relatedChild = relation(booking.child_leads)
+    return {
+      childLeadId: booking.child_lead_id,
+      childName: relatedChild?.first_name || "Child",
+      weekday: booking.weekday,
+      academyTableId: booking.academy_table_id,
+      startsAt: booking.starts_at,
+      seatNumber: booking.seat_number,
+      status: booking.status,
+    }
+  })
+
+  const plannedBookings = (activeBookings || []).map((booking) => ({
+    id: booking.id,
+    child_lead_id: booking.child_lead_id,
+    weekly_table_template_id: booking.weekly_table_template_id,
+    session_price_plan_id: booking.session_price_plan_id,
+    weekday: booking.weekday,
+    table_number: booking.table_number,
+    academy_table_id: booking.academy_table_id,
+    seat_number: booking.seat_number,
+    starts_at: booking.starts_at,
+    duration_minutes: booking.duration_minutes,
+    status: booking.status,
+    planned_sessions: Array.isArray(booking.planned_sessions)
+      ? booking.planned_sessions
+      : [],
+    planned_amount_cents: booking.planned_amount_cents,
+    planned_period_start: booking.planned_period_start,
+    planned_period_end: booking.planned_period_end,
+  }))
+
+  const paidThroughByLearner = new Map<string, string>()
+  for (const entitlement of lifecycleEntitlements || []) {
+    const current = paidThroughByLearner.get(entitlement.learner_id)
+    if (!current || entitlement.period_end > current) {
+      paidThroughByLearner.set(entitlement.learner_id, entitlement.period_end)
+    }
+  }
+
+  const placesByLearner = new Map<string, string[]>()
+  for (const placement of lifecyclePlacements || []) {
+    const current = placesByLearner.get(placement.learner_id) || []
+    const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+      placement.weekday
+    ]
+    current.push(
+      day +
+        " · " +
+        String(placement.starts_at).slice(0, 5) +
+        " · Table " +
+        placement.table_number,
+    )
+    placesByLearner.set(placement.learner_id, current)
+  }
+
+  const closedRenewalByLearner = new Map(
+    (closedRenewals || [])
+      .filter((item) => Boolean(item.learner_id))
+      .map((item) => [item.learner_id as string, item]),
+  )
+
+  const customerRows: FamilyCustomerRow[] = (lifecycleLearners || [])
+    .filter(
+      (learner) =>
+        learner.status === "active" &&
+        !renewalLearnerIds.has(learner.id) &&
+        !closedRenewalByLearner.has(learner.id) &&
+        (placesByLearner.get(learner.id)?.length || 0) > 0,
+    )
+    .map((learner) => {
+      const parent = relation(learner.parent_leads)
+      return {
+        learnerId: learner.id,
+        learnerName: learner.first_name,
+        parentName: parent?.parent_name || "Family",
+        email: parent?.email || "—",
+        yearGroup: learner.year_group,
+        paidThrough: paidThroughByLearner.get(learner.id) || null,
+        placeSummary:
+          placesByLearner.get(learner.id)?.join(" · ") || "Recurring place",
+      }
+    })
+
+  const archiveRowsByKey = new Map<string, FamilyArchiveRow>()
+
+  for (const learner of lifecycleLearners || []) {
+    const closedRenewal = closedRenewalByLearner.get(learner.id)
+    if (learner.status !== "left" && !closedRenewal) continue
+    const parent = relation(learner.parent_leads)
+    archiveRowsByKey.set("learner:" + learner.id, {
+      key: "learner:" + learner.id,
+      learnerId: learner.id,
+      childName: learner.first_name,
+      parentName: parent?.parent_name || "Family",
+      email: parent?.email || "—",
+      reason:
+        closedRenewal?.capacity_release_reason ||
+        closedRenewal?.outcome_note ||
+        (learner.status === "left" ? "Learner left" : "Closed"),
+      closedAt: closedRenewal?.closed_at || null,
+    })
+  }
+
+  for (const lead of childPipelineRows) {
+    if (lead.status !== "closed") continue
+    if (activeLearnerChildLeadIds.has(lead.child_lead_id)) continue
+    archiveRowsByKey.set("lead:" + lead.child_lead_id, {
+      key: "lead:" + lead.child_lead_id,
+      learnerId: null,
+      childName: lead.child_first_name || "Child",
+      parentName: lead.parent_name,
+      email: lead.email,
+      reason: "Lead closed",
+      closedAt: null,
+    })
+  }
+
+  const archiveRows = [...archiveRowsByKey.values()]
+
+  return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div>

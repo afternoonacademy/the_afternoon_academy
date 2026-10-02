@@ -234,6 +234,7 @@ export function ManualEnrolmentForm({
       </div>
 
       <PaidPeriodBuilder
+        key={`${childLeadId}:${templateId}:${seatNumber}:${pricePlanId}`}
         closures={closures}
         placements={builderPlacements}
         suggestionEnd={suggestionEnd}

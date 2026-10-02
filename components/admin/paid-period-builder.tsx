@@ -88,6 +88,8 @@ export function PaidPeriodBuilder({
   const [sessions, setSessions] = useState<PaidPeriodSession[]>(initialSelection)
   const [replacementPlacementByLearner, setReplacementPlacementByLearner] =
     useState<Record<string, string>>({})
+  const [replacementDateByLearner, setReplacementDateByLearner] =
+    useState<Record<string, string>>({})
 
   const summary = paidPeriodSummary(sessions)
 
@@ -210,6 +212,39 @@ export function PaidPeriodBuilder({
     }
 
     setSessions(sortPaidPeriodSessions([...otherLearners, ...next]))
+  }
+
+  function addReplacement(
+    key: string,
+    groupPlacements: PaidPeriodPlacement[],
+  ) {
+    const date = replacementDateByLearner[key]
+    const placementId =
+      replacementPlacementByLearner[key] ||
+      groupPlacements[0]?.placementId
+    const placement = groupPlacements.find(
+      (item) => item.placementId === placementId,
+    )
+    if (!date || !placement || closureForDate(date, closures)) return
+    if (
+      sessions.some(
+        (session) =>
+          session.placementId === placement.placementId &&
+          session.date === date,
+      )
+    ) {
+      return
+    }
+    setSessions((current) =>
+      sortPaidPeriodSessions([
+        ...current,
+        sessionFromPlacement(placement, date, true),
+      ]),
+    )
+    setReplacementDateByLearner((current) => ({
+      ...current,
+      [key]: "",
+    }))
   }
 
   function resetLearner(groupPlacements: PaidPeriodPlacement[]) {
@@ -400,9 +435,9 @@ export function PaidPeriodBuilder({
                 })}
               </div>
 
-              {group.placements.length > 1 ? (
-                <label className="mt-4 grid max-w-xl gap-1 text-sm font-medium">
-                  Replacement session applies to
+              <div className="mt-4 grid gap-3 rounded-lg border bg-muted/10 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <label className="grid gap-1 text-sm font-medium">
+                  Replacement for
                   <select
                     className="h-10 rounded-md border bg-background px-3 font-normal"
                     onChange={(event) =>
@@ -424,12 +459,47 @@ export function PaidPeriodBuilder({
                       </option>
                     ))}
                   </select>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    Only used when you select an open date that is not already
-                    one of the learner’s normal recurring days.
-                  </span>
                 </label>
-              ) : null}
+                <label className="grid gap-1 text-sm font-medium">
+                  Open replacement date
+                  <input
+                    className="h-10 rounded-md border bg-background px-3 font-normal"
+                    min={suggestionStart}
+                    max={suggestionEnd}
+                    onChange={(event) =>
+                      setReplacementDateByLearner((current) => ({
+                        ...current,
+                        [group.key]: event.target.value,
+                      }))
+                    }
+                    type="date"
+                    value={replacementDateByLearner[group.key] || ""}
+                  />
+                </label>
+                <Button
+                  disabled={
+                    !replacementDateByLearner[group.key] ||
+                    Boolean(
+                      closureForDate(
+                        replacementDateByLearner[group.key] || "",
+                        closures,
+                      ),
+                    )
+                  }
+                  onClick={() =>
+                    addReplacement(group.key, group.placements)
+                  }
+                  type="button"
+                  variant="outline"
+                >
+                  Add replacement
+                </Button>
+                <p className="text-xs text-muted-foreground sm:col-span-3">
+                  Use this when the replacement falls on a date already selected
+                  for another recurring day, or when you want to make the
+                  replaced place explicit.
+                </p>
+              </div>
 
               <div className="mt-4 grid gap-5 xl:grid-cols-[auto_1fr]">
                 <div className="overflow-x-auto">

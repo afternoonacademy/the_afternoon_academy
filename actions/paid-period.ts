@@ -543,13 +543,24 @@ export async function prepareExactRenewalDraft(formData: FormData) {
 
   const submitted = parseSessions(parsed.data.selectedSessions)
   const supabase = supabaseService()
-  const [{ data: parent }, { data: placements }, { data: plans }, { data: template }] =
-    await Promise.all([
+  const [
+    { data: parent },
+    { data: renewalCase },
+    { data: placements },
+    { data: plans },
+    { data: template },
+  ] = await Promise.all([
       supabase
         .from("parent_leads")
         .select("parent_name")
         .eq("id", parsed.data.parentLeadId)
         .single(),
+      supabase
+        .from("renewal_cases")
+        .select("id,learner_id,standing_placement_id,status")
+        .eq("id", parsed.data.caseId)
+        .eq("parent_lead_id", parsed.data.parentLeadId)
+        .maybeSingle(),
       supabase
         .from("standing_placements")
         .select(
@@ -567,7 +578,12 @@ export async function prepareExactRenewalDraft(formData: FormData) {
         .maybeSingle(),
     ])
 
-  if (!parent) throw new Error("This renewal family is no longer available")
+  if (!parent || !renewalCase)
+    throw new Error("This renewal is no longer available")
+  if (renewalCase.status === "renewed" || renewalCase.status === "not_renewing")
+    throw new Error("This renewal is already complete")
+  if (!renewalCase.learner_id)
+    throw new Error("This historical family renewal must be completed from the legacy renewal screen")
 
   const placementById = new Map(
     (placements || [])
@@ -575,7 +591,10 @@ export async function prepareExactRenewalDraft(formData: FormData) {
         const learner = Array.isArray(placement.learners)
           ? placement.learners[0]
           : placement.learners
-        return learner?.parent_lead_id === parsed.data.parentLeadId
+        return (
+          learner?.parent_lead_id === parsed.data.parentLeadId &&
+          placement.learner_id === renewalCase.learner_id
+        )
       })
       .map((placement) => [placement.id, placement]),
   )
@@ -669,9 +688,11 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     })
     .eq("id", parsed.data.caseId)
     .eq("parent_lead_id", parsed.data.parentLeadId)
+    .eq("learner_id", renewalCase.learner_id)
   if (error) throw new Error("Could not save the exact renewal selection")
 
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function recordExactRenewalPayment(formData: FormData) {
@@ -690,7 +711,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
   const supabase = supabaseService()
   const { data: renewal, error: renewalError } = await supabase
     .from("renewal_cases")
-    .select("selected_sessions,status")
+    .select("selected_sessions,status,learner_id,standing_placement_id")
     .eq("id", parsed.data.caseId)
     .eq("parent_lead_id", parsed.data.parentLeadId)
     .single()
@@ -698,6 +719,8 @@ export async function recordExactRenewalPayment(formData: FormData) {
     throw new Error("This renewal is no longer available")
   if (renewal.status === "renewed" || renewal.status === "not_renewing")
     throw new Error("This renewal is already complete")
+  if (!renewal.learner_id)
+    throw new Error("This historical family renewal must be completed from the legacy renewal screen")
 
   const saved = parseSessions(JSON.stringify(renewal.selected_sessions || []))
   if (JSON.stringify(saved) !== JSON.stringify(submitted))
@@ -710,6 +733,9 @@ export async function recordExactRenewalPayment(formData: FormData) {
     throw new Error("This renewal has no selected service dates")
 
   const learnerIds = [...new Set(saved.map((session) => session.learnerId).filter(Boolean))] as string[]
+  if (learnerIds.length !== 1 || learnerIds[0] !== renewal.learner_id) {
+    throw new Error("This renewal must contain only the selected learner’s sessions")
+  }
   const ledgerNote = [
     parsed.data.bankReference ? `Bank reference: ${parsed.data.bankReference}` : null,
     parsed.data.note || null,
@@ -809,6 +835,12 @@ export async function recordExactRenewalPayment(formData: FormData) {
       )
   }
 
+  await supabase
+    .from("accepted_bookings")
+    .update({ status: "paid_active" })
+    .eq("learner_id", renewal.learner_id)
+    .in("status", ["paid_active", "contacted", "accepted_awaiting_payment"])
+
   const { error: completeError } = await supabase
     .from("renewal_cases")
     .update({
@@ -825,6 +857,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
 
   revalidatePath("/admin")
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
   revalidatePath("/admin/payments")
   revalidatePath("/admin/business")
 }

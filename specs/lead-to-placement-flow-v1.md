@@ -234,3 +234,15 @@ For an existing learner:
 4. **Paid** — cleared payment is confirmed from a compact saved-plan summary; the next child/payment entitlement and exact dated Operations seats are created.
 
 Renewal cases are learner-specific so siblings can be at different stages. Existing recurring capacity is not released merely because the paid period expires. The explicit **Release recurring place** action requires a reason, cancels the active recurring booking capacity and ends the learner's standing placement. Historical family-level renewal records are not rewritten.
+
+
+## Family Pipeline lifecycle queues — 2 October 2026
+
+The Family Pipeline is the canonical admin lifecycle view and contains four mutually exclusive sections:
+
+1. **Leads** — child enquiries before paid learner activation. A child with an active learner or an active renewal must not also appear here.
+2. **Customers** — active paid learners with an active recurring place who are outside the renewal window.
+3. **Renewals** — active learners whose next paid period needs action. Their recurring capacity remains reserved until renewed or explicitly released.
+4. **Closed / archived** — closed leads and historical learner records whose recurring place was released after cancellation/non-payment/exit.
+
+Movement is lifecycle-driven rather than copy-based: **Lead → Customer → Renewal → Customer**, or **Lead / Customer / Renewal → Closed / archived**. The four UI tables are filtered views of the existing underlying records, not four separate enquiry/customer/payment systems.

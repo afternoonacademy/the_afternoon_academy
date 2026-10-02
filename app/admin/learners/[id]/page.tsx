@@ -36,7 +36,7 @@ export default async function LearnerPage({ params }: PageProps) {
     supabaseAdmin.from("learner_goals").select("*").eq("learner_id", id).order("created_at", { ascending: false }),
     supabaseAdmin
       .from("standing_placements")
-      .select("id,weekday,table_number,starts_at,status,session_price_plans(name,price_cents)")
+      .select("id,weekday,table_number,seat_number,starts_at,status,session_price_plans(name,price_cents)")
       .eq("learner_id", id)
       .eq("status", "active")
       .order("weekday")
@@ -100,6 +100,10 @@ export default async function LearnerPage({ params }: PageProps) {
             ? "Renewal due"
             : "No active place"
 
+  const yearLabel = learner.year_group
+    ? `Year ${String(learner.year_group).replace(/^Year\s*/i, "")}`
+    : "Year group not recorded"
+
   const paymentBadgeVariant =
     paymentStatus === "Paid"
       ? "default"
@@ -113,7 +117,7 @@ export default async function LearnerPage({ params }: PageProps) {
         <div>
           <p className="text-sm text-muted-foreground">Learner workspace · teacher-reviewed AI drafting</p>
           <h2 className="text-3xl font-bold tracking-tight">{learner.first_name}</h2>
-          <p className="text-muted-foreground">{learner.year_group || "Year group not recorded"}</p>
+          <p className="text-muted-foreground">{yearLabel}</p>
         </div>
         <span className="rounded-full border px-3 py-1 text-sm capitalize">{learner.status}</span>
       </div>
@@ -126,7 +130,7 @@ export default async function LearnerPage({ params }: PageProps) {
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-bold">
-                {learner.first_name} · {learner.year_group || "Year group not recorded"}
+                {learner.first_name} · {yearLabel}
               </h3>
               <Badge variant={paymentBadgeVariant}>{paymentStatus}</Badge>
             </div>
@@ -150,7 +154,8 @@ export default async function LearnerPage({ params }: PageProps) {
                       : place.session_price_plans
                     return (
                       <p key={place.id}>
-                        {weekdayNames[place.weekday]} · {place.starts_at.slice(0, 5)} · Table {place.table_number}
+                        {weekdayNames[place.weekday]} · {place.starts_at.slice(0, 5)} · Table {place.table_number} ·{" "}
+                        {place.seat_number ? `Seat ${place.seat_number}` : "Seat not assigned"}
                         {plan
                           ? ` · ${plan.name} · €${(plan.price_cents / 100).toFixed(2)}/session`
                           : ""}

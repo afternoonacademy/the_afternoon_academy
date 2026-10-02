@@ -220,3 +220,12 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Added IGCSE Chemistry as a child-specific support option with optional course/exam-board context.
 - Added child-level `school_name` storage while retaining parent-level `school_name` only for legacy compatibility.
 - Confirmation/admin enquiry emails now summarise every child separately instead of copying the first child’s requirements across siblings.
+
+
+## 2 October 2026 — Child-first Family Pipeline
+
+- Moved the Family follow-up queue ahead of payment activation so staff review the child request before recording funds.
+- Added child name, support requirement and requested sessions-per-week directly to the follow-up table.
+- Added **Add payment & dates** beside **Details** on each child row and removed the separate active family-level payment table.
+- Initial payment activation is now explicitly child-scoped; siblings can be offered and activated separately.
+- Recording payment for one child no longer marks the whole family converted. The parent lead converts only after all children on that family enquiry have at least one paid child entitlement.

@@ -320,3 +320,11 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Replacement dates are automatically assigned to the active recurring place, eliminating the separate “replacement applies to” selector.
 - The complete selected-date table remains visible across all recurring places and supports explicit removal of individual dates.
 - The same interaction is used by initial Family Pipeline offers and renewals through the shared paid-period builder.
+
+
+## 2 October 2026 — Saved plan collapses to next-step summary
+
+- After **Record renewal plan** succeeds, the date editor now collapses automatically and the saved renewal summary remains visible with the next action to contact the parent.
+- **Edit renewal plan** reopens the planner explicitly; saving again collapses it back to the summary.
+- Initial Family Pipeline place planning follows the same save → collapse → summary → next-action interaction.
+- Shared save actions now refresh server data after success while preserving visible success feedback and duplicate-submit protection.

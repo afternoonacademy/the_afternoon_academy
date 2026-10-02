@@ -257,6 +257,7 @@ function RenewalActions({
           </div>
           <SaveActionForm
             action={prepareExactRenewalDraft}
+            onSuccess={() => setEditing(false)}
             submitLabel="Record renewal plan"
             successMessage="Renewal plan saved"
           >
@@ -297,7 +298,7 @@ function RenewalActions({
                       session.startsAt
                     }
                   >
-                    {date(session.date)} · Table {session.tableNumber} · {session.startsAt} · Table {session.tableNumber} · {session.startsAt}
+                    {date(session.date)} · Table {session.tableNumber} · {session.startsAt}
                   </span>
                 ))}
               </div>

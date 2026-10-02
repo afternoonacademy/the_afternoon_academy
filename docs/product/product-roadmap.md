@@ -156,3 +156,8 @@ Treat numbered seats as an Operations/capacity mechanism only. Families keep a r
 ### Repeatable family enquiry form — October 2026
 
 The public place-enquiry form now treats each child as an independent learning requirement inside one family submission. Parent/contact details are entered once; staff receive one child record and one timetable-preference record per child, including independent support type, school/curriculum context and availability. This supports siblings needing different services such as general homework support, IGCSE Chemistry or 1-to-1 tuition.
+
+
+### Child-first follow-up and payment activation — October 2026
+
+The Family Pipeline now reviews and activates each child independently. The follow-up table is shown before payment actions, displays requested sessions per week, and exposes **Add payment & dates** on each child row. A payment for one sibling does not reserve, enrol or convert the others; the family reaches converted only after every child in that enquiry has its own paid activation.

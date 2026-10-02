@@ -338,12 +338,12 @@ function RenewalActions({
               <input
                 name="subject"
                 type="hidden"
-                value={(row as FamilyRenewalRow & { draftSubject?: string | null }).draftSubject || ""}
+                value={row.draftSubject || ""}
               />
               <input
                 name="body"
                 type="hidden"
-                value={(row as FamilyRenewalRow & { draftBody?: string | null }).draftBody || ""}
+                value={row.draftBody || ""}
               />
             </SaveActionForm>
           </div>

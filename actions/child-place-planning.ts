@@ -46,6 +46,30 @@ const childActionSchema = z.object({
   childLeadId: z.string().uuid(),
 })
 
+
+const weekdayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+]
+
+const defaultPlannedPlaceSubject =
+  "Planned Academy place for {{child_name}}"
+
+const defaultPlannedPlaceBody =
+  "Dear {{parent_name}},\n\nWe can offer {{child_name}} the following place at The Afternoon Academy:\n{{recurring_place}}\n{{price_plan_name}} · {{session_price}} per session\n\nPlanned service dates:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\n{{payment_details}}\n\nPayment reference: {{payment_reference}}\n\nOnce the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.\n\nWarmly,\nThe Afternoon Academy"
+
+function applyTemplate(source: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll("{{" + key + "}}", value),
+    source,
+  )
+}
+
 function parseSessions(raw: string): PaidPeriodSession[] {
   let value: unknown
   try {
@@ -278,7 +302,12 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
   if (!resend) throw new Error("Email sending is not configured")
 
   const supabase = supabaseService()
-  const [{ data: parent }, { data: child }, { data: booking }] = await Promise.all([
+  const [
+    { data: parent },
+    { data: child },
+    { data: booking },
+    { data: emailTemplate },
+  ] = await Promise.all([
     supabase
       .from("parent_leads")
       .select("parent_name,email")
@@ -295,6 +324,11 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
       .eq("parent_lead_id", parsed.data.parentLeadId)
       .eq("child_lead_id", parsed.data.childLeadId)
       .in("status", ["session_planned", "contacted"])
+      .maybeSingle(),
+    supabase
+      .from("academy_email_templates")
+      .select("subject_template,body_template")
+      .eq("template_key", "planned_place_offer")
       .maybeSingle(),
   ])
 
@@ -314,30 +348,39 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
     .join("\n")
   const bankName = process.env.TAA_BANK_ACCOUNT_NAME || ""
   const iban = process.env.TAA_BANK_IBAN || ""
-
-  const subject = "Planned Academy place for " + (child.first_name || "your child")
-  const lines = [
-    "Dear " + parent.parent_name + ",",
-    "",
-    "We can offer " + (child.first_name || "your child") + " the following place at The Afternoon Academy:",
-    "Table " + booking.table_number + " · " + String(booking.starts_at).slice(0, 5),
-    planName + " · " + money(sessionPrice) + " per session",
-    "",
-    "Planned service dates:",
-    datesText,
-    "",
-    "Planned total: " + money(total),
-    "",
+  const childName = child.first_name || "your child"
+  const paymentReference = child.first_name || parent.parent_name
+  const paymentDetails =
     bankName && iban
-      ? "Payment details:\nAccount name: " + bankName + "\nIBAN: " + iban + "\nReference: " + (child.first_name || parent.parent_name)
-      : "Please use the usual Academy bank-transfer details.",
-    "",
-    "Once the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.",
-    "",
-    "Warmly,",
-    "The Afternoon Academy",
-  ]
-  const body = lines.join("\n")
+      ? "Payment details:\nAccount name: " + bankName + "\nIBAN: " + iban
+      : "Please use the usual Academy bank-transfer details."
+
+  const values: Record<string, string> = {
+    parent_name: parent.parent_name,
+    child_name: childName,
+    recurring_place:
+      weekdayNames[booking.weekday] +
+      " · " +
+      String(booking.starts_at).slice(0, 5) +
+      " · Table " +
+      booking.table_number,
+    price_plan_name: planName,
+    session_price: money(sessionPrice),
+    service_dates: datesText,
+    session_count: String(sessions.length),
+    amount_due: money(total),
+    payment_details: paymentDetails,
+    payment_reference: paymentReference,
+  }
+
+  const subject = applyTemplate(
+    emailTemplate?.subject_template || defaultPlannedPlaceSubject,
+    values,
+  )
+  const body = applyTemplate(
+    emailTemplate?.body_template || defaultPlannedPlaceBody,
+    values,
+  )
   const safeHtml = body
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

@@ -119,3 +119,17 @@ Recurring capacity continuity also governs the dated Operations view:
 - When payment later clears, the existing dated learner seat is upgraded to `scheduled` rather than duplicated.
 - Capacity validation for any new paid/planned learner must include active standing placements, not only already-created dated seats.
 - Releasing the recurring place removes future renewal-due expectations and cancels future `payment_pending` seats, while preserving historical attendance.
+
+
+## Multi-day learner interaction — 2 October 2026
+
+A learner with more than one recurring place must not receive one independent date picker per weekday.
+
+- The paid-period builder groups all active/agreed recurring places for the learner into one calendar.
+- Expected dates from every recurring place are preselected.
+- Each selected session retains its own placement ID, date, table, time, price plan, copied price and recurring/replacement flag.
+- The selected-session list must identify the exact table/time for every date.
+- An open-date replacement must identify which recurring place it replaces. The UI must also support a replacement on a date already selected for another recurring place.
+- Initial offers and renewals use the same calendar behavior.
+- A first-time child may have multiple planned recurring bookings before contact. Those bookings are emailed as one combined offer and activated together only after cleared payment is confirmed.
+- Renewal email date lines include the exact table/time so parents and staff can distinguish different recurring days.

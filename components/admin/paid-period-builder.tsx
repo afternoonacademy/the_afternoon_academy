@@ -53,6 +53,7 @@ export function PaidPeriodBuilder({
   inputName = "selectedSessions",
   pricePlans = [],
   allowPricePlanChange = false,
+  purpose = "payment",
 }: {
   placements: PaidPeriodPlacement[]
   closures: AcademyClosure[]
@@ -62,6 +63,7 @@ export function PaidPeriodBuilder({
   inputName?: string
   pricePlans?: PricePlan[]
   allowPricePlanChange?: boolean
+  purpose?: "plan" | "payment"
 }) {
   const initialSelection = () =>
     sortPaidPeriodSessions(
@@ -178,11 +180,13 @@ export function PaidPeriodBuilder({
         <div className="flex items-start gap-3">
           <CalendarDays className="mt-0.5 size-5 text-primary" />
           <div>
-            <p className="font-semibold">Exact paid service dates</p>
+            <p className="font-semibold">
+              {purpose === "plan" ? "Planned service dates" : "Exact paid service dates"}
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Expected recurring dates are preselected. Deselect any date the
-              family is not paying for. Selecting an open date on another
-              weekday records it as a replacement session.
+              {purpose === "plan"
+                ? "Expected recurring dates are preselected for the offer. Deselect dates you do not plan to offer, or select an open date on another weekday as a replacement."
+                : "Expected recurring dates are preselected. Deselect any date the family is not paying for. Selecting an open date on another weekday records it as a replacement session."}
             </p>
             <p className="mt-2 text-xs font-medium text-muted-foreground">
               Suggested period: {dateLabel(suggestionStart)} –{" "}
@@ -384,8 +388,9 @@ export function PaidPeriodBuilder({
       </div>
 
       <p className="text-sm font-medium text-muted-foreground">
-        After manual payment confirmation, these exact dates are the dates that
-        will create dated Operations sessions and seats.
+        {purpose === "plan"
+          ? "Saving this plan holds recurring capacity and prepares the parent quote. It does not create payment or dated Operations attendance."
+          : "After manual payment confirmation, these exact dates are the dates that will create dated Operations sessions and seats."}
       </p>
     </div>
   )

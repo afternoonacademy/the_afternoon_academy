@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
+import { FamilyCommunications } from "@/components/admin/family-communications"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 
 type PageProps = { params: Promise<{ id: string }> }
@@ -63,6 +64,14 @@ export default async function LearnerPage({ params }: PageProps) {
   const learner = learnerResult.data
   const profile = profileResult.data
   const today = new Date().toISOString().slice(0, 10)
+
+  const { data: communications } = await supabaseAdmin
+    .from("email_delivery_log")
+    .select(
+      "id,parent_lead_id,child_lead_id,learner_id,renewal_case_id,email_kind,recipient_email,status,subject,body_text,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,created_at",
+    )
+    .eq("parent_lead_id", learner.parent_lead_id)
+    .order("created_at", { ascending: false })
 
   const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   const activePlaces = standingResult.data || []
@@ -197,6 +206,18 @@ export default async function LearnerPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Family communications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FamilyCommunications
+            communications={communications || []}
+            emptyLabel="No parent communications have been recorded for this family yet."
+          />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

@@ -39,8 +39,7 @@ TAA listens only to operational delivery outcomes:
 - `email.delivered` → Delivered
 - `email.delivery_delayed` → Delivery delayed
 - `email.bounced` → Bounced
-- `email.failed`
-- `email.suppressed` → Failed
+- `email.failed` → Failed
 - `email.suppressed` → Suppressed
 
 Open/click events are intentionally ignored even if Resend sends them.

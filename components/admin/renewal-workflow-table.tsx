@@ -414,8 +414,7 @@ function RenewalActions({
         </section>
       ) : null}
 
-      {row.caseId ? (
-        <section className="rounded-xl border border-destructive/20 bg-background p-4">
+      <section className="rounded-xl border border-destructive/20 bg-background p-4">
           <p className="font-semibold">Release recurring place</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Use this only when the parent cancels or staff decide to release the
@@ -428,9 +427,14 @@ function RenewalActions({
               submitLabel="Release recurring place"
               successMessage="Recurring place released"
             >
-              <input name="caseId" type="hidden" value={row.caseId} />
+              <input name="caseId" type="hidden" value={row.caseId || ""} />
               <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
               <input name="learnerId" type="hidden" value={row.learnerId} />
+              <input
+                name="sourcePaymentEntitlementId"
+                type="hidden"
+                value={row.sourcePaymentEntitlementId}
+              />
               <Input
                 name="reason"
                 placeholder="Required reason — e.g. parent cancelled or non-payment"
@@ -439,7 +443,6 @@ function RenewalActions({
             </SaveActionForm>
           </div>
         </section>
-      ) : null}
     </div>
   )
 }

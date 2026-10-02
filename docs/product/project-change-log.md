@@ -378,3 +378,7 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 - The renewal capacity summary now includes the learner's recurring weekday(s) directly in the **Recurring place remains reserved** heading, for example **Recurring place remains reserved · Tuesday & Thursday**.
 - Each recurring-place card also includes its weekday alongside table and time so the held capacity is immediately identifiable.
+
+## 2 October 2026 — Saved renewal weekday recall
+
+- Saved renewal-plan date chips now include the weekday before each date, alongside table and start time, matching the recurring-place summary for faster admin recall.

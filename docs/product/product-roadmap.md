@@ -161,3 +161,8 @@ The public place-enquiry form now treats each child as an independent learning r
 ### Child-first follow-up and payment activation — October 2026
 
 The Family Pipeline now reviews and activates each child independently. The follow-up table is shown before payment actions, displays requested sessions per week, and exposes **Add payment & dates** on each child row. A payment for one sibling does not reserve, enrol or convert the others; the family reaches converted only after every child in that enquiry has its own paid activation.
+
+
+### Planned place → contact → paid child lifecycle — October 2026
+
+Family Pipeline initial activation is now explicitly staged per child: **Lead received → Session planned → Contacted / awaiting payment → Paid**. Planning records the recurring table/time, price plan, visible capacity seat and proposed exact dates without creating payment or dated Operations attendance. The planned recurring seat is an explicit temporary capacity hold and shows the child’s name in the seat map. Sending the parent’s planned-place email advances only that child to contacted. Cleared payment is confirmed later in a separate exact-date step, at which point paid entitlements and dated Operations places are created. Siblings may remain at different stages.

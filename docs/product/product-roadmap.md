@@ -148,9 +148,9 @@ Enable and approve Vercel AI Gateway before treating family-update drafting as a
 Family Pipeline payment activation and Renewals use the same exact-date paid-period builder. Staff choose the learner's recurring place and then the precise paid service dates; expected recurring dates preload, Academy closures are visibly blocked, and open-date replacements are explicit. The selected-session structure is the source for the quote, editable renewal email, payment entitlement metadata and dated Operations seats. Period start/end remain derived compatibility fields. Price plans stay attached to the learner's recurring place and never move a learner between groups automatically.
 
 
-### Dated capacity, not recurring seat ownership — October 2026
+### Dated seats and recurring capacity — October 2026
 
-Treat numbered seats as an Operations/capacity mechanism only. Families keep a recurring table/time arrangement, not a permanent seat number. Unpaid renewals do not reserve capacity. Exact paid dates allocate the first available dated seat when cleared payment is confirmed; explicit payment-pending continuation remains the only date-bounded unpaid exception.
+Treat numbered seats as an Operations/capacity mechanism only; they are not fixed physical chairs. Families keep a recurring table/time arrangement and an explicit recurring capacity hold while that standing placement remains active. For existing recurring learners, payment expiry does **not** release capacity. Renewal-due learners remain expected in Operations and count against capacity until staff explicitly release the recurring place. Exact paid dates remain the source of truth for payment entitlement; renewal-due Operations appearances are visibly labelled and do not create a paid entitlement.
 
 
 ### Repeatable family enquiry form — October 2026
@@ -179,3 +179,8 @@ Renewals now use the same staged admin pattern as a new child booking and are su
 ### Family Pipeline lifecycle queues — October 2026
 
 Family Pipeline is the single operational family/customer lifecycle surface. It is split into four mutually exclusive queues: **1 · Leads**, **2 · Customers**, **3 · Renewals**, and **4 · Closed / archived**. A child/learner appears in only one operational queue at a time. Paid active learners are removed from Leads; learners in the renewal window are removed from both Leads and Customers; completed renewal returns the learner to Customers; cancellation/non-payment release moves the historical record to Closed / archived. Renewals are no longer a sidebar destination.
+
+
+### Renewal-due learners in Operations — October 2026
+
+Operations now combines exact dated paid seats with active recurring learners whose paid period has expired but whose standing place has not been released. Those learners appear in the correct dated table/time as **Renewal due · place held**, count against capacity, and remain available for teacher attendance. Recording attendance materialises a date-bounded `payment_pending` Operations seat without creating a paid entitlement. When the renewal payment clears, the dated seat is upgraded to paid/scheduled; when staff release the recurring place, future renewal-due Operations seats are cancelled and the capacity becomes available.

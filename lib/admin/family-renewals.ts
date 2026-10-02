@@ -49,6 +49,8 @@ export type FamilyRenewalRow = {
   proposedPeriodStart: string | null
   proposedPeriodEnd: string | null
   emailSentAt: string | null
+  draftSubject: string | null
+  draftBody: string | null
   placements: PaidPeriodPlacement[]
   closures: AcademyClosure[]
   recurringCapacityHeld: boolean
@@ -81,7 +83,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     supabaseAdmin
       .from("renewal_cases")
       .select(
-        "id,learner_id,parent_lead_id,source_payment_entitlement_id,status,email_sent_at,proposed_period_start,proposed_period_end,proposed_amount_cents,selected_sessions",
+        "id,learner_id,parent_lead_id,source_payment_entitlement_id,status,email_sent_at,proposed_period_start,proposed_period_end,proposed_amount_cents,selected_sessions,draft_subject,draft_body",
       )
       .not("learner_id", "is", null)
       .in("status", ["ready_to_send", "awaiting_payment", "overdue"]),
@@ -216,6 +218,8 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       proposedPeriodStart: renewal?.proposed_period_start || null,
       proposedPeriodEnd: renewal?.proposed_period_end || null,
       emailSentAt: renewal?.email_sent_at || null,
+      draftSubject: renewal?.draft_subject || null,
+      draftBody: renewal?.draft_body || null,
       placements: learnerPlacements,
       closures: academyClosures,
       recurringCapacityHeld: capacityHeldLearners.has(learner.id),

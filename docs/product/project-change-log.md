@@ -192,3 +192,7 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Cleared-payment activation revalidates closures and dated seat availability before creating Operations seats; the existing explicit date-bounded `payment_pending` continuation remains the only unpaid exception.
 - Existing renewal JSON remains readable; historical payment and attendance records are not rewritten.
 - Payment entitlement exact-session storage is introduced additively; period start/end remain derived audit/compatibility fields.
+
+- Applied the additive exact-paid-period entitlement migration to the connected Supabase project so `payment_entitlements` and `child_payment_entitlements` can store the selected-session payload used by the preview.
+- Removed the single orphan `accepted_awaiting_payment` booking created by the failed preview submission.
+- Hardened manual payment activation so a temporary recurring-seat hold is automatically rolled back if the payment entitlement write fails, preventing the same partial-record state from being left behind.

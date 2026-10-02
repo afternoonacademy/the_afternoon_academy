@@ -156,3 +156,8 @@ A successful planning submit must visibly advance the workflow.
 - **Edit renewal plan** is the explicit way to reopen the builder.
 - Initial-offer planning uses the same save → collapse → saved summary → next-action pattern.
 - Failed saves leave the editor open and show the actionable error.
+
+
+## Parent renewal email review — 2 October 2026
+
+Before a renewal email can be sent, the Contact parent step must display the fully rendered recipient, subject and body generated from the current Academy Setup renewal template and the saved exact selected sessions. Staff may edit the subject/body for that individual email before sending. Individual edits must not modify the reusable Academy Setup template. The exact displayed/edited content is the content submitted to the email send action.

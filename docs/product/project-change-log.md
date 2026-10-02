@@ -399,3 +399,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Delivery webhook verification requires server-only `RESEND_WEBHOOK_SECRET`; the endpoint does not process unsigned events.
 
 <!-- Trigger family communications preview build -->
+
+<!-- Retry family communications preview after Resend integration -->

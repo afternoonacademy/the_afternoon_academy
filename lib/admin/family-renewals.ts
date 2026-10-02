@@ -52,6 +52,9 @@ export type FamilyRenewalRow = {
   emailSentAt: string | null
   draftSubject: string | null
   draftBody: string | null
+  emailDeliveryStatus: string | null
+  emailDeliveryDetail: string | null
+  emailDeliveryAt: string | null
   placements: PaidPeriodPlacement[]
   closures: AcademyClosure[]
   recurringCapacityHeld: boolean
@@ -69,6 +72,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     { data: datedSeats },
     { data: bookings },
     { data: renewalTemplate },
+    { data: renewalDeliveryLogs },
   ] = await Promise.all([
     supabaseAdmin
       .from("child_payment_entitlements")
@@ -108,6 +112,13 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       .select("subject_template,body_template")
       .eq("template_key", "renewal_reminder")
       .maybeSingle(),
+    supabaseAdmin
+      .from("email_delivery_log")
+      .select(
+        "renewal_case_id,status,delivery_detail,sent_at,delivered_at,bounced_at,failed_at,created_at",
+      )
+      .eq("email_kind", "renewal_reminder")
+      .order("created_at", { ascending: false }),
   ])
 
   const academyClosures: AcademyClosure[] = (closures || []).map((closure) => ({
@@ -164,6 +175,16 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       item,
     ]),
   )
+
+  const latestDeliveryByRenewal = new Map<string, NonNullable<typeof renewalDeliveryLogs>[number]>()
+  for (const delivery of renewalDeliveryLogs || []) {
+    if (
+      delivery.renewal_case_id &&
+      !latestDeliveryByRenewal.has(delivery.renewal_case_id)
+    ) {
+      latestDeliveryByRenewal.set(delivery.renewal_case_id, delivery)
+    }
+  }
 
   // One renewal row per learner, using only that learner's latest paid entitlement.
   const latestByLearner = new Map<string, NonNullable<typeof entitlements>[number]>()
@@ -232,6 +253,19 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       emailSentAt: renewal?.email_sent_at || null,
       draftSubject: currentEmailDraft?.subject || renewal?.draft_subject || null,
       draftBody: currentEmailDraft?.body || renewal?.draft_body || null,
+      emailDeliveryStatus: renewal?.id
+        ? latestDeliveryByRenewal.get(renewal.id)?.status || null
+        : null,
+      emailDeliveryDetail: renewal?.id
+        ? latestDeliveryByRenewal.get(renewal.id)?.delivery_detail || null
+        : null,
+      emailDeliveryAt: renewal?.id
+        ? latestDeliveryByRenewal.get(renewal.id)?.delivered_at ||
+          latestDeliveryByRenewal.get(renewal.id)?.bounced_at ||
+          latestDeliveryByRenewal.get(renewal.id)?.failed_at ||
+          latestDeliveryByRenewal.get(renewal.id)?.sent_at ||
+          null
+        : null,
       placements: learnerPlacements,
       closures: academyClosures,
       recurringCapacityHeld: capacityHeldLearners.has(learner.id),

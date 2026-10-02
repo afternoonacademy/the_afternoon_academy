@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 import { CalendarDays, CircleAlert, RotateCcw, X } from "lucide-react"
 
+import { InfoTip } from "@/components/admin/info-tip"
+
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import {
@@ -299,16 +301,18 @@ export function PaidPeriodBuilder({
         <div className="flex items-start gap-3">
           <CalendarDays className="mt-0.5 size-5 text-primary" />
           <div>
-            <p className="font-semibold">
-              {purpose === "plan"
-                ? "Planned service dates"
-                : "Exact paid service dates"}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose one recurring day at a time. The calendar only edits the
-              active day/place, while the selected-dates table always shows the
-              learner&apos;s complete combined period.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold">
+                {purpose === "plan"
+                  ? "Planned service dates"
+                  : "Exact paid service dates"}
+              </p>
+              <InfoTip label="About the paid-period calendar">
+                Choose one recurring day at a time. The calendar only edits the
+                active day/place, while the selected-dates table always shows
+                the learner&apos;s complete combined period.
+              </InfoTip>
+            </div>
             <p className="mt-2 text-xs font-medium text-muted-foreground">
               Suggested period: {dateLabel(suggestionStart)} –{" "}
               {dateLabel(suggestionEnd)}

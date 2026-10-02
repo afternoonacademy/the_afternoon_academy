@@ -295,3 +295,14 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 <!-- Vercel preview rebuild trigger after learner workspace JSON typing fix -->
 
 <!-- Vercel preview rebuild retry after verified Operations iso helper fix -->
+
+
+## 2 October 2026 — One calendar per learner across multiple recurring days
+
+- The shared paid-period builder now combines every recurring place for one learner into a single calendar. A learner attending Tuesday and Thursday sees both sets of expected dates preselected in the same calendar.
+- Each selected date still retains its exact recurring place, table, time, price plan and replacement status; the selected-date table labels those details explicitly.
+- Open-date replacements require an explicit recurring place. A replacement can also be added by date even when that date is already selected for another recurring day.
+- Initial Family Pipeline planning now supports multiple recurring days for one child before the parent is contacted. Staff can add/remove recurring place rows, choose capacity seats and price plans per place, then review one combined date calendar and total.
+- The initial planned-place email now combines all recurring places and exact service dates in one message. The default template wording is multi-day aware; existing admin-customized templates are not overwritten.
+- Cleared initial payment activates every saved recurring place for the child in one payment action, creates one standing placement per recurring day and creates the exact dated Operations seats from the combined selected-session set.
+- Renewals use the same one-calendar interaction across all of the learner's active standing places. Renewal email date lines include the table and time so multi-day attendance is unambiguous.

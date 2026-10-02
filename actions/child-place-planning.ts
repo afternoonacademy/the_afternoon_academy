@@ -465,7 +465,7 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
 
   if (sendError) {
     if (deliveryLog) {
-      await supabase.from("email_delivery_log").update({ status: "failed", error_message: sendError.message.slice(0, 500) }).eq("id", deliveryLog.id)
+      await supabase.from("email_delivery_log").update({ status: "failed", failed_at: new Date().toISOString(), error_message: sendError.message.slice(0, 500) }).eq("id", deliveryLog.id)
     }
     throw new Error("The planned places are still saved, but the parent email could not be sent")
   }

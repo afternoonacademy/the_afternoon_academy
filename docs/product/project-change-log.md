@@ -308,3 +308,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Renewals use the same one-calendar interaction across all of the learner's active standing places. Renewal email date lines include the table and time so multi-day attendance is unambiguous.
 
 <!-- Multi-day learner planner preview trigger -->
+
+<!-- Multi-day learner planner final preview retry -->

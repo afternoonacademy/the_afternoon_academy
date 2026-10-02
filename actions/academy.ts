@@ -68,6 +68,39 @@ export async function saveRenewalEmailTemplate(formData: FormData) {
   revalidatePath("/admin/setup"); revalidatePath("/admin/renewals")
 }
 
+
+export async function savePlannedPlaceEmailTemplate(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z
+    .object({
+      subject: z.string().trim().min(2).max(200),
+      body: z.string().trim().min(2).max(12000),
+    })
+    .safeParse({
+      subject: formData.get("subject"),
+      body: formData.get("body"),
+    })
+
+  if (!parsed.success) throw new Error("Enter a subject and email body")
+
+  const { error } = await supabaseService()
+    .from("academy_email_templates")
+    .upsert(
+      {
+        template_key: "planned_place_offer",
+        subject_template: parsed.data.subject,
+        body_template: parsed.data.body,
+        updated_by: user.id,
+      },
+      { onConflict: "template_key" },
+    )
+
+  if (error) throw new Error("Could not save the planned-place email template")
+
+  revalidatePath("/admin/setup")
+  revalidatePath("/admin/leads")
+}
+
 const pricePlanSchema = z.object({ name: z.string().trim().min(2).max(120), priceEuros: z.coerce.number().min(0).max(10000), description: z.string().trim().max(300).optional() })
 
 export async function addSessionPricePlan(formData: FormData) {

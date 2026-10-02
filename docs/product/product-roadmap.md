@@ -187,3 +187,8 @@ Operations now combines exact dated paid seats with active recurring learners wh
 
 
 - Learner Workspace now opens with a compact current booking/payment summary so staff can immediately see recurring place, price plan, paid-through date, exact paid dates and whether the learner is Paid, Renewal due, Payment pending or has no active place.
+
+
+### Multi-day learner booking consistency — October 2026
+
+For both first-time offers and renewals, one learner now has one combined exact-date planner regardless of whether they attend one, two or five recurring days per week. The learner's recurring places remain distinct capacity records, but their expected dates are shown in one calendar and one selected-session summary. Initial offers can hold multiple recurring places before contact; one parent email and one cleared-payment confirmation cover the combined exact dates. Renewal planning follows the same interaction and email language.

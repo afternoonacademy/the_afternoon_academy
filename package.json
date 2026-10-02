@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npx eslint lib/paid-period.ts actions/paid-period.ts components/admin/paid-period-builder.tsx components/admin/manual-enrolment-form.tsx && npx tsc --noEmit && next build",
+    "build": "npx eslint components/admin/payment-activation-table.tsx components/admin/renewal-workflow-table.tsx app/admin/leads/page.tsx app/admin/renewals/page.tsx && npx tsc --noEmit && next build",
     "start": "next start",
     "lint": "eslint"
   },

@@ -339,6 +339,7 @@ function RenewalActions({
                       session.startsAt
                     }
                   >
+                    {weekdayNames[new Date(session.date + "T12:00:00Z").getUTCDay()]} ·{" "}
                     {date(session.date)} · Table {session.tableNumber} · {session.startsAt}
                   </span>
                 ))}

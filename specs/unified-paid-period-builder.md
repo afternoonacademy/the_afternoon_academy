@@ -81,3 +81,16 @@ The builder displays only operational learner identity, placement and billing da
 ## Rollback
 
 The UI/action commits can be reverted independently. The migration is additive and nullable; if already applied, the new columns can safely remain unused during rollback. No historical rows are rewritten.
+
+
+## Seat / capacity semantics — 2 October 2026
+
+Seats are operational capacity markers, not learner-owned recurring reservations.
+
+- A standing placement preserves learner, table, time, focus and price-plan defaults, but does not reserve a numbered seat for an unpaid future period.
+- Renewal drafts must not display an inherited seat as though it were reserved.
+- Capacity is validated per exact dated table/time.
+- When cleared payment is recorded, the system assigns the first available numbered Operations seat for each selected date. The number may differ from date to date.
+- Unpaid renewal cases reserve no Operations capacity.
+- The existing explicit, date-bounded `payment_pending` continuation remains the only unpaid exception and dynamically allocates an available dated seat.
+- Existing historical standing-placement seat numbers remain readable for compatibility but are not used as a reservation by the unified paid-period flow.

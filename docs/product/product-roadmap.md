@@ -142,3 +142,7 @@ At renewal, staff may select the price plan for the next paid period. The learne
 ### Deferred enabling work — AI family-update delivery
 
 Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.
+
+### Unified exact-date paid periods — October 2026
+
+Family Pipeline payment activation and Renewals use the same exact-date paid-period builder. Staff choose the learner's recurring place and then the precise paid service dates; expected recurring dates preload, Academy closures are visibly blocked, and open-date replacements are explicit. The selected-session structure is the source for the quote, editable renewal email, payment entitlement metadata and dated Operations seats. Period start/end remain derived compatibility fields. Price plans stay attached to the learner's recurring place and never move a learner between groups automatically.

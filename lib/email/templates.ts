@@ -1,23 +1,26 @@
 type EmailLanguage = "en" | "es"
 
+type LeadEmailChild = {
+  firstName: string
+  age: number
+  schoolName?: string
+  schoolYear?: string
+  curriculum: string
+  supportNeeds: string[]
+  courseOrExamBoard?: string
+  preferredDays: string[]
+  preferredTimes: string[]
+  preferredFrequency: string
+  notes?: string
+}
+
 type LeadEmailData = {
   parentName: string
   email: string
   phone: string
   area?: string
-  schoolName?: string
-
-  childAge: number
-  schoolYear?: string
-  curriculum: string
-  supportNeeds: string[]
-
-  preferredDays: string[]
-  preferredTimes: string[]
-  preferredFrequency: string
+  children: LeadEmailChild[]
   interestLevel: string
-
-  notes?: string
   language?: EmailLanguage
 }
 
@@ -65,6 +68,51 @@ function formatMessageHtml(value: string) {
 
 function getLanguageLabel(language?: EmailLanguage) {
   return language === "es" ? "Spanish page" : "English page"
+}
+
+function leadChildrenHtml(data: LeadEmailData) {
+  return data.children
+    .map(
+      (child, index) => `
+        <div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:14px;">
+          <p><strong>Child ${index + 1}:</strong> ${escapeHtml(child.firstName)}</p>
+          <p><strong>Age:</strong> ${child.age}</p>
+          <p><strong>School:</strong> ${escapeHtml(child.schoolName || "Not provided")}</p>
+          <p><strong>School year:</strong> ${escapeHtml(child.schoolYear || "Not provided")}</p>
+          <p><strong>Curriculum:</strong> ${escapeHtml(formatValue(child.curriculum))}</p>
+          <p><strong>Support needed:</strong> ${escapeHtml(formatArray(child.supportNeeds))}</p>
+          ${child.courseOrExamBoard ? `<p><strong>Course / exam board:</strong> ${escapeHtml(child.courseOrExamBoard)}</p>` : ""}
+          <p><strong>Preferred days:</strong> ${escapeHtml(formatArray(child.preferredDays))}</p>
+          <p><strong>Preferred times:</strong> ${escapeHtml(formatArray(child.preferredTimes))}</p>
+          <p><strong>Likely frequency:</strong> ${escapeHtml(formatValue(child.preferredFrequency))}</p>
+          <p><strong>Notes:</strong> ${escapeHtml(child.notes || "None")}</p>
+        </div>
+      `,
+    )
+    .join("")
+}
+
+function leadChildrenText(data: LeadEmailData) {
+  return data.children
+    .map(
+      (child, index) =>
+        [
+          `Child ${index + 1}: ${child.firstName}`,
+          `Age: ${child.age}`,
+          `School: ${child.schoolName || "Not provided"}`,
+          `School year: ${child.schoolYear || "Not provided"}`,
+          `Curriculum: ${formatValue(child.curriculum)}`,
+          `Support needed: ${formatArray(child.supportNeeds)}`,
+          child.courseOrExamBoard ? `Course / exam board: ${child.courseOrExamBoard}` : null,
+          `Preferred days: ${formatArray(child.preferredDays)}`,
+          `Preferred times: ${formatArray(child.preferredTimes)}`,
+          `Likely frequency: ${formatValue(child.preferredFrequency)}`,
+          `Notes: ${child.notes || "None"}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+    )
+    .join("\n\n")
 }
 
 function formatFocusGroupSession(session: FocusGroupInterestEmailData["preferredSession"]) {
@@ -169,123 +217,37 @@ Support context: ${data.notes || "None provided"}
 }
 
 export function parentConfirmationEmailHtml(data: LeadEmailData) {
-  if (data.language === "es") {
-    return `
-      <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
-        <h1 style="color: #111827; margin-bottom: 12px;">Hemos recibido tu solicitud de plaza</h1>
-
-        <p>Hola ${escapeHtml(data.parentName)},</p>
-
-        <p>
-          Gracias por tu interés en <strong>The Afternoon Academy</strong>.
-          Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
-        </p>
-
-        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-          <h2 style="font-size: 18px; margin-top: 0;">Solicitud enviada</h2>
-
-          <p><strong>Edad del niño/a:</strong> ${data.childAge}</p>
-          <p><strong>Curso:</strong> ${escapeHtml(data.schoolYear || "No indicado")}</p>
-          <p><strong>Currículo:</strong> ${escapeHtml(formatValue(data.curriculum))}</p>
-          <p><strong>Apoyo solicitado:</strong> ${escapeHtml(formatArray(data.supportNeeds))}</p>
-          <p><strong>Días preferidos:</strong> ${escapeHtml(formatArray(data.preferredDays))}</p>
-          <p><strong>Horarios preferidos:</strong> ${escapeHtml(formatArray(data.preferredTimes))}</p>
-          <p><strong>Frecuencia aproximada:</strong> ${escapeHtml(formatValue(data.preferredFrequency))}</p>
-        </div>
-
-        <p>
-          Esto no confirma una plaza todavía. Revisaremos tu solicitud y nos pondremos en contacto contigo para confirmar disponibilidad y próximos pasos.
-        </p>
-
-        <p>
-          Un saludo,<br />
-          <strong>The Afternoon Academy</strong>
-        </p>
-      </div>
-    `
-  }
+  const intro =
+    data.language === "es"
+      ? "Hemos recibido tu solicitud de plaza. Revisaremos las necesidades de cada niño/a y te contactaremos para confirmar disponibilidad y próximos pasos."
+      : "We received your place enquiry. We will review each child’s needs and contact you to confirm availability and next steps."
 
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 640px; margin: 0 auto;">
-      <h1 style="color: #111827; margin-bottom: 12px;">We received your place enquiry</h1>
-
-      <p>Hi ${escapeHtml(data.parentName)},</p>
-
-      <p>
-        Thank you for your interest in <strong>The Afternoon Academy</strong>.
-        We have received your place enquiry for The Afternoon Academy in Arturo Soria.
-      </p>
-
-      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-        <h2 style="font-size: 18px; margin-top: 0;">Your submitted enquiry</h2>
-
-        <p><strong>Child age:</strong> ${data.childAge}</p>
-        <p><strong>School year:</strong> ${escapeHtml(data.schoolYear || "Not provided")}</p>
-        <p><strong>Curriculum:</strong> ${escapeHtml(formatValue(data.curriculum))}</p>
-        <p><strong>Support needed:</strong> ${escapeHtml(formatArray(data.supportNeeds))}</p>
-        <p><strong>Preferred days:</strong> ${escapeHtml(formatArray(data.preferredDays))}</p>
-        <p><strong>Preferred times:</strong> ${escapeHtml(formatArray(data.preferredTimes))}</p>
-        <p><strong>Likely frequency:</strong> ${escapeHtml(formatValue(data.preferredFrequency))}</p>
+      <h1 style="color: #111827; margin-bottom: 12px;">${data.language === "es" ? "Hemos recibido tu solicitud de plaza" : "We received your place enquiry"}</h1>
+      <p>${data.language === "es" ? "Hola" : "Hi"} ${escapeHtml(data.parentName)},</p>
+      <p>${escapeHtml(intro)}</p>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:24px 0;">
+        <h2 style="font-size:18px;margin-top:0;">${data.language === "es" ? "Niños/as incluidos en la solicitud" : "Children included in the enquiry"}</h2>
+        ${leadChildrenHtml(data)}
       </div>
-
-      <p>
-        This does not confirm a place yet. We will review your enquiry and contact you to confirm availability and next steps.
-      </p>
-
-      <p>
-        Best wishes,<br />
-        <strong>The Afternoon Academy</strong>
-      </p>
+      <p>${data.language === "es" ? "Esto no confirma una plaza todavía." : "This does not confirm a place yet."}</p>
+      <p>${data.language === "es" ? "Un saludo" : "Best wishes"},<br /><strong>The Afternoon Academy</strong></p>
     </div>
   `
 }
 
 export function parentConfirmationEmailText(data: LeadEmailData) {
-  if (data.language === "es") {
-    return `
-Hola ${data.parentName},
-
-Gracias por tu interés en The Afternoon Academy.
-
-Hemos recibido tu solicitud de plaza para The Afternoon Academy en Arturo Soria.
-
-Solicitud enviada:
-
-Edad del niño/a: ${data.childAge}
-Curso: ${data.schoolYear || "No indicado"}
-Currículo: ${formatValue(data.curriculum)}
-Apoyo solicitado: ${formatArray(data.supportNeeds)}
-Días preferidos: ${formatArray(data.preferredDays)}
-Horarios preferidos: ${formatArray(data.preferredTimes)}
-Frecuencia aproximada: ${formatValue(data.preferredFrequency)}
-
-Esto no confirma una plaza todavía. Revisaremos tu solicitud y nos pondremos en contacto contigo para confirmar disponibilidad y próximos pasos.
-
-Un saludo,
-The Afternoon Academy
-    `.trim()
-  }
-
   return `
-Hi ${data.parentName},
+${data.language === "es" ? "Hola" : "Hi"} ${data.parentName},
 
-Thank you for your interest in The Afternoon Academy.
+${data.language === "es" ? "Hemos recibido tu solicitud de plaza. Revisaremos las necesidades de cada niño/a y te contactaremos para confirmar disponibilidad y próximos pasos." : "We received your place enquiry. We will review each child’s needs and contact you to confirm availability and next steps."}
 
-We have received your place enquiry for The Afternoon Academy in Arturo Soria.
+${leadChildrenText(data)}
 
-Your submitted enquiry:
+${data.language === "es" ? "Esto no confirma una plaza todavía." : "This does not confirm a place yet."}
 
-Child age: ${data.childAge}
-School year: ${data.schoolYear || "Not provided"}
-Curriculum: ${formatValue(data.curriculum)}
-Support needed: ${formatArray(data.supportNeeds)}
-Preferred days: ${formatArray(data.preferredDays)}
-Preferred times: ${formatArray(data.preferredTimes)}
-Likely frequency: ${formatValue(data.preferredFrequency)}
-
-This does not confirm a place yet. We will review your enquiry and contact you to confirm availability and next steps.
-
-Best wishes,
+${data.language === "es" ? "Un saludo" : "Best wishes"},
 The Afternoon Academy
   `.trim()
 }
@@ -293,29 +255,18 @@ The Afternoon Academy
 export function adminLeadNotificationEmailHtml(data: LeadEmailData) {
   return `
     <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 720px; margin: 0 auto;">
-      <h1 style="color: #111827; margin-bottom: 12px;">New Afternoon Academy place enquiry</h1>
-
-      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-        <h2 style="font-size: 18px; margin-top: 0;">Parent details</h2>
+      <h1 style="color:#111827;margin-bottom:12px;">New Afternoon Academy place enquiry</h1>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:24px 0;">
+        <h2 style="font-size:18px;margin-top:0;">Parent details</h2>
         <p><strong>Source language:</strong> ${escapeHtml(getLanguageLabel(data.language))}</p>
         <p><strong>Name:</strong> ${escapeHtml(data.parentName)}</p>
         <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
         <p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>
         <p><strong>Area:</strong> ${escapeHtml(data.area || "Not provided")}</p>
-        <p><strong>School:</strong> ${escapeHtml(data.schoolName || "Not provided")}</p>
       </div>
-
-      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 24px 0;">
-        <h2 style="font-size: 18px; margin-top: 0;">Child and session preferences</h2>
-        <p><strong>Child age:</strong> ${data.childAge}</p>
-        <p><strong>School year:</strong> ${escapeHtml(data.schoolYear || "Not provided")}</p>
-        <p><strong>Curriculum:</strong> ${escapeHtml(formatValue(data.curriculum))}</p>
-        <p><strong>Support needed:</strong> ${escapeHtml(formatArray(data.supportNeeds))}</p>
-        <p><strong>Preferred days:</strong> ${escapeHtml(formatArray(data.preferredDays))}</p>
-        <p><strong>Preferred times:</strong> ${escapeHtml(formatArray(data.preferredTimes))}</p>
-        <p><strong>Likely frequency:</strong> ${escapeHtml(formatValue(data.preferredFrequency))}</p>
-        <p><strong>Interest level:</strong> ${escapeHtml(formatValue(data.interestLevel))}</p>
-        <p><strong>Notes:</strong> ${escapeHtml(data.notes || "None")}</p>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:24px 0;">
+        <h2 style="font-size:18px;margin-top:0;">Child-specific requirements</h2>
+        ${leadChildrenHtml(data)}
       </div>
     </div>
   `
@@ -332,18 +283,11 @@ Name: ${data.parentName}
 Email: ${data.email}
 Phone: ${data.phone}
 Area: ${data.area || "Not provided"}
-School: ${data.schoolName || "Not provided"}
 
-Child and session preferences:
-Child age: ${data.childAge}
-School year: ${data.schoolYear || "Not provided"}
-Curriculum: ${formatValue(data.curriculum)}
-Support needed: ${formatArray(data.supportNeeds)}
-Preferred days: ${formatArray(data.preferredDays)}
-Preferred times: ${formatArray(data.preferredTimes)}
-Likely frequency: ${formatValue(data.preferredFrequency)}
+Child-specific requirements:
+${leadChildrenText(data)}
+
 Interest level: ${formatValue(data.interestLevel)}
-Notes: ${data.notes || "None"}
   `.trim()
 }
 

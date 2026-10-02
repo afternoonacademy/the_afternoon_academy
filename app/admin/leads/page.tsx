@@ -185,6 +185,19 @@ export default async function AdminLeadsPage() {
       !activeLearnerChildLeadIds.has(lead.child_lead_id),
   )
 
+  const communicationParentIds = [
+    ...new Set(followUpLeads.map((lead) => lead.parent_lead_id)),
+  ]
+  const { data: leadCommunications } = communicationParentIds.length
+    ? await supabaseAdmin
+        .from("email_delivery_log")
+        .select(
+          "id,parent_lead_id,child_lead_id,learner_id,renewal_case_id,email_kind,recipient_email,status,subject,body_text,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,created_at",
+        )
+        .in("parent_lead_id", communicationParentIds)
+        .order("created_at", { ascending: false })
+    : { data: [] }
+
   const seatHolds = (activeBookings || []).map((booking) => {
     const relatedChild = relation(booking.child_leads)
     return {
@@ -365,6 +378,7 @@ export default async function AdminLeadsPage() {
           {followUpLeads.length ? (
             <FamilyFollowUpTable
               closures={closures}
+              communications={leadCommunications || []}
               leads={followUpLeads}
               plannedBookings={plannedBookings}
               pricePlans={pricePlans || []}

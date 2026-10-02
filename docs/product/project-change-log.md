@@ -210,3 +210,13 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Cleared payment assigns the first available seat independently on each paid date; unpaid renewals reserve nothing.
 - Payment-pending continuation remains an explicit date-bounded exception and now allocates available dated capacity dynamically instead of relying on a standing seat number.
 - Existing standing-placement seat values are retained as compatibility/history data for now and are ignored by the new paid-period allocation path.
+
+
+## 2 October 2026 — Child-specific reusable public lead form
+
+- Replaced the legacy abbreviated “another child” section with a reusable full child block.
+- Families can add/remove children before one final submission.
+- Each child now carries independent support needs, curriculum, school/year, preferred days/times/frequency and notes.
+- Added IGCSE Chemistry as a child-specific support option with optional course/exam-board context.
+- Added child-level `school_name` storage while retaining parent-level `school_name` only for legacy compatibility.
+- Confirmation/admin enquiry emails now summarise every child separately instead of copying the first child’s requirements across siblings.

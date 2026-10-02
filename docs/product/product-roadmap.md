@@ -166,3 +166,6 @@ The Family Pipeline now reviews and activates each child independently. The foll
 ### Planned place → contact → paid child lifecycle — October 2026
 
 Family Pipeline initial activation is now explicitly staged per child: **Lead received → Session planned → Contacted / awaiting payment → Paid**. Planning records the recurring table/time, price plan, visible capacity seat and proposed exact dates without creating payment or dated Operations attendance. The planned recurring seat is an explicit temporary capacity hold and shows the child’s name in the seat map. Sending the parent’s planned-place email advances only that child to contacted. Cleared payment is confirmed later in a separate exact-date step, at which point paid entitlements and dated Operations places are created. Siblings may remain at different stages.
+
+
+- Planned-place parent communication is now admin-editable in Academy Setup → Email templates, using placeholders for the parent/child, recurring place, price plan, per-session price, planned dates, session count, total and payment details/reference.

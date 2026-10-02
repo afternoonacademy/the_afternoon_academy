@@ -26,6 +26,7 @@ const statusRank: Record<string, number> = {
   delivered: 3,
   failed: 4,
   bounced: 4,
+  suppressed: 4,
 }
 
 function detailForEvent(event: ResendWebhookEvent) {
@@ -46,6 +47,10 @@ function detailForEvent(event: ResendWebhookEvent) {
 
   if (event.type === "email.delivery_delayed") {
     return "Delivery delayed by recipient mail server"
+  }
+
+  if (event.type === "email.suppressed") {
+    return "Resend suppressed delivery to this recipient"
   }
 
   return null
@@ -88,7 +93,9 @@ export async function POST(request: NextRequest) {
             ? "bounced"
             : event.type === "email.failed"
               ? "failed"
-              : null
+              : event.type === "email.suppressed"
+                ? "suppressed"
+                : null
 
   // TAA intentionally does not store open/click engagement events.
   if (!nextStatus) {

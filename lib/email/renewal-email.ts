@@ -4,7 +4,7 @@ export const defaultRenewalSubject =
   "Renewal for {{learner_names}} at The Afternoon Academy"
 
 export const defaultRenewalBody =
-  "Hello {{parent_name}},\n\nWe hope you are well.\n\nYour next Academy period includes:\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\nWarmly,\nThe Afternoon Academy"
+  "Hello {{parent_name}},\n\nWe hope you are well.\n\nYour next Academy period includes:\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 
 const money = (cents: number) =>
   new Intl.NumberFormat("en-IE", {
@@ -80,6 +80,18 @@ export function renderRenewalEmail({
     service_dates: formatRenewalServiceDates(sessions),
     session_count: String(sessions.length),
     amount_due: money(amountCents),
+    payment_details: [
+      process.env.TAA_BUSINESS_NAME
+        ? `Business name: ${process.env.TAA_BUSINESS_NAME}`
+        : null,
+      process.env.TAA_BANK_ACCOUNT_NAME
+        ? `Account name: ${process.env.TAA_BANK_ACCOUNT_NAME}`
+        : null,
+      process.env.TAA_BANK_IBAN ? `IBAN: ${process.env.TAA_BANK_IBAN}` : null,
+      `Payment reference: ${learnerNames.join(", ")}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   }
 
   return {

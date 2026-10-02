@@ -215,21 +215,82 @@ async function createDatedOperationsSeats(
       )
     }
 
-    const { error: seatError } = await supabase.from("delivery_seats").upsert(
-      {
-        delivery_session_id: delivery.id,
-        learner_id: learnerId,
-        seat_number: session.seatNumber,
-        status: "scheduled",
-        note: session.replacement ? "Paid replacement session" : null,
-        updated_by: userId,
-      },
-      { onConflict: "delivery_session_id,learner_id" },
-    )
-    if (seatError)
+    const { data: existingLearnerSeat, error: existingLearnerSeatError } =
+      await supabase
+        .from("delivery_seats")
+        .select("id,seat_number,status")
+        .eq("delivery_session_id", delivery.id)
+        .eq("learner_id", learnerId)
+        .in("status", ["scheduled", "payment_pending"])
+        .maybeSingle()
+
+    if (existingLearnerSeatError)
       throw new Error(
-        `Payment was recorded, but the dated seat for ${formatDate(session.date)} could not be created. Do not retry payment until this record is checked.`,
+        `Payment was recorded, but the dated seat for ${formatDate(session.date)} could not be checked. Review Operations before retrying.`,
       )
+
+    if (existingLearnerSeat) {
+      const { error: updateSeatError } = await supabase
+        .from("delivery_seats")
+        .update({
+          seat_number: session.seatNumber,
+          status: "scheduled",
+          note: session.replacement ? "Paid replacement session" : null,
+          updated_by: userId,
+        })
+        .eq("id", existingLearnerSeat.id)
+
+      if (updateSeatError) {
+        console.error("Could not update existing dated Operations seat", {
+          updateSeatError,
+          deliverySessionId: delivery.id,
+          learnerId,
+          serviceDate: session.date,
+          seatNumber: session.seatNumber,
+        })
+        throw new Error(
+          `Payment was recorded, but the existing dated seat for ${formatDate(session.date)} could not be updated. Review Operations before retrying.`,
+        )
+      }
+      continue
+    }
+
+    const { error: seatError } = await supabase.from("delivery_seats").insert({
+      delivery_session_id: delivery.id,
+      learner_id: learnerId,
+      seat_number: session.seatNumber,
+      status: "scheduled",
+      note: session.replacement ? "Paid replacement session" : null,
+      updated_by: userId,
+    })
+
+    if (seatError) {
+      console.error("Could not create dated Operations seat", {
+        seatError,
+        deliverySessionId: delivery.id,
+        learnerId,
+        serviceDate: session.date,
+        seatNumber: session.seatNumber,
+      })
+
+      const { data: nowOccupied } = await supabase
+        .from("delivery_seats")
+        .select("learner_id")
+        .eq("delivery_session_id", delivery.id)
+        .eq("seat_number", session.seatNumber)
+        .in("status", ["scheduled", "payment_pending"])
+        .maybeSingle()
+
+      if (nowOccupied && nowOccupied.learner_id !== learnerId) {
+        throw new Error(
+          `Payment was recorded, but Seat ${session.seatNumber} at Table ${session.tableNumber} became occupied on ${formatDate(session.date)} at ${session.startsAt}. Review Operations before retrying.`,
+        )
+      }
+
+      throw new Error(
+        `Payment was recorded, but the dated seat for ${formatDate(session.date)} could not be created. Review Operations before retrying.`,
+      )
+    }
   }
 }
 

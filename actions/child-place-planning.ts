@@ -360,14 +360,25 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
   )
   const total = paidPeriodSummary(sessions).amountCents
   const recurringPlaces = (bookings || [])
-    .map(
-      (booking) =>
+    .map((booking) => {
+      const relation = Array.isArray(booking.session_price_plans)
+        ? booking.session_price_plans[0]
+        : booking.session_price_plans
+      return (
         weekdayNames[booking.weekday] +
         " · " +
         String(booking.starts_at).slice(0, 5) +
         " · Table " +
-        booking.table_number,
-    )
+        booking.table_number +
+        (relation
+          ? " · " +
+            relation.name +
+            " · " +
+            money(relation.price_cents) +
+            " / session"
+          : "")
+      )
+    })
     .join("\n")
 
   const planNames = [
@@ -389,6 +400,10 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
         session.startsAt +
         " · Table " +
         session.tableNumber +
+        " · " +
+        session.pricePlanName +
+        " · " +
+        money(session.priceCents) +
         (session.replacement ? " · replacement" : ""),
     )
     .join("\n")

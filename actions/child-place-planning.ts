@@ -22,7 +22,7 @@ const plannedSessionSchema = z.object({
   academyTableId: z.string().uuid(),
   tableNumber: z.coerce.number().int().min(1).max(40),
   seatNumber: z.coerce.number().int().min(1).max(40),
-  startsAt: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   durationMinutes: z.coerce.number().int().min(15).max(360),
   teacherName: z.string().trim().max(160).nullable(),
   focus: z.string().trim().max(500).nullable(),

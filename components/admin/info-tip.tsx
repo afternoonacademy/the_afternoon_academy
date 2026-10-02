@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Info } from "lucide-react"
 
 import {
@@ -16,7 +16,7 @@ export function InfoTip({
   className,
 }: {
   label?: string
-  children: React.ReactNode
+  children: ReactNode
   className?: string
 }) {
   const [open, setOpen] = useState(false)

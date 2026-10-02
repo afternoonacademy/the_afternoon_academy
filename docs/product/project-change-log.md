@@ -286,3 +286,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Dated capacity validation now counts active standing placements as reserved capacity and avoids allocating a new paid learner into capacity held by a recurring learner.
 - New initial standing placements retain the planned capacity-seat marker so future renewal capacity can be represented consistently.
 - Releasing a recurring place cancels future `payment_pending` Operations seats while preserving historical attendance/payment records.
+
+<!-- Operations renewal expectation preview trigger -->

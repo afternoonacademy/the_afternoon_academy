@@ -169,3 +169,8 @@ Family Pipeline initial activation is now explicitly staged per child: **Lead re
 
 
 - Planned-place parent communication is now admin-editable in Academy Setup → Email templates, using placeholders for the parent/child, recurring place, price plan, per-session price, planned dates, session count, total and payment details/reference.
+
+
+### Unified renewal lifecycle in Family Pipeline — October 2026
+
+Renewals now use the same staged admin pattern as a new child booking and are surfaced as **3 · Needs renewal** inside Family Pipeline. Each learner renews independently: **Needs renewal → Renewal planned → Contacted — awaiting payment → Paid**. The learner's existing recurring capacity is preserved after the last paid service date and is not made available to new families merely because the paid period expired. Capacity is released only by an explicit admin **Release recurring place** action with a recorded reason. The renewal plan reuses the learner's active standing place and price plan by default, generates the existing Academy Setup renewal email from the exact selected dates, and uses a compact cleared-payment confirmation before creating the next paid dated Operations seats. The former Renewals route now opens the Family Pipeline renewal section rather than maintaining a second operational workflow.

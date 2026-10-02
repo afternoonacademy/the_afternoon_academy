@@ -246,3 +246,8 @@ The Family Pipeline is the canonical admin lifecycle view and contains four mutu
 4. **Closed / archived** — closed leads and historical learner records whose recurring place was released after cancellation/non-payment/exit.
 
 Movement is lifecycle-driven rather than copy-based: **Lead → Customer → Renewal → Customer**, or **Lead / Customer / Renewal → Closed / archived**. The four UI tables are filtered views of the existing underlying records, not four separate enquiry/customer/payment systems.
+
+
+### Renewal-due Operations expectation
+
+A learner in **Needs renewal / Renewal planned / Contacted — awaiting payment** remains expected in the Operations room whenever their active standing placement matches the selected service date. The tile is visibly labelled **Renewal due · place held**, is included in the table capacity count, and supports teacher attendance. This is an operational expectation derived from the active recurring place, not evidence of payment. A teacher attendance action materialises a `payment_pending` dated seat when required for auditability. Explicit **Release recurring place** removes future expectations.

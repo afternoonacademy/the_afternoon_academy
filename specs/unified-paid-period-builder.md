@@ -106,3 +106,16 @@ The earlier rule that an unpaid renewal reserves no recurring capacity has been 
 - New-family place planning must treat those recurring holds as occupied capacity.
 - Capacity is returned only when an admin explicitly releases the recurring place for cancellation/non-payment/timetable exit. The release reason is retained on the renewal case.
 - Dated Operations attendance is still created only for paid dates (or the existing explicit date-bounded payment-pending continuation exception). Recurring capacity reservation and dated paid attendance remain distinct concepts.
+
+
+## Operations expectation while renewal is unpaid — 2 October 2026
+
+Recurring capacity continuity also governs the dated Operations view:
+
+- An active standing placement remains an expected learner on its matching weekday/table/time after the last paid date, until staff explicitly release the recurring place.
+- Operations must show that learner as **Renewal due · place held** and count them against capacity.
+- This expected appearance must not create or imply a paid entitlement.
+- If a teacher records attendance before payment clears, the system may materialise the dated seat as `payment_pending` so attendance has a real delivery-session reference.
+- When payment later clears, the existing dated learner seat is upgraded to `scheduled` rather than duplicated.
+- Capacity validation for any new paid/planned learner must include active standing placements, not only already-created dated seats.
+- Releasing the recurring place removes future renewal-due expectations and cancels future `payment_pending` seats, while preserving historical attendance.

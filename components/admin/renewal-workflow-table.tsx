@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   prepareExactRenewalDraft,
@@ -17,6 +17,7 @@ import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import type { FamilyRenewalRow } from "@/lib/admin/family-renewals"
 
 type PricePlan = { id: string; name: string; price_cents: number }
@@ -163,6 +164,16 @@ function RenewalActions({
   pricePlans: PricePlan[]
 }) {
   const [editing, setEditing] = useState(row.status === "needs_renewal")
+  const [emailEditing, setEmailEditing] = useState(false)
+  const [emailSubject, setEmailSubject] = useState(row.draftSubject || "")
+  const [emailBody, setEmailBody] = useState(row.draftBody || "")
+
+  useEffect(() => {
+    if (!emailEditing) {
+      setEmailSubject(row.draftSubject || "")
+      setEmailBody(row.draftBody || "")
+    }
+  }, [emailEditing, row.draftBody, row.draftSubject])
 
   const nextStart = new Date(row.lastPaidServiceDate + "T12:00:00Z")
   nextStart.setUTCDate(nextStart.getUTCDate() + 1)
@@ -339,7 +350,73 @@ function RenewalActions({
               learner to Contacted — awaiting payment.
             </InfoTip>
           </div>
-          <div className="mt-4 max-w-sm">
+          <div className="mt-4 max-w-3xl space-y-4">
+            <div className="rounded-xl border bg-muted/10">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Email preview
+                  </p>
+                  <p className="mt-1 text-sm">
+                    To: <span className="font-medium">{row.email}</span>
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setEmailEditing((value) => !value)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {emailEditing ? "Cancel edit" : "Edit email"}
+                </Button>
+              </div>
+
+              {emailEditing ? (
+                <div className="space-y-4 p-4">
+                  <label className="grid gap-1.5 text-sm font-medium">
+                    Subject
+                    <Input
+                      maxLength={200}
+                      onChange={(event) => setEmailSubject(event.target.value)}
+                      value={emailSubject}
+                    />
+                  </label>
+                  <label className="grid gap-1.5 text-sm font-medium">
+                    Message
+                    <Textarea
+                      className="min-h-72 whitespace-pre-wrap"
+                      maxLength={12000}
+                      onChange={(event) => setEmailBody(event.target.value)}
+                      value={emailBody}
+                    />
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    This edit applies only to this renewal email. It does not
+                    alter the Academy Setup template.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 p-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Subject
+                    </p>
+                    <p className="mt-1 font-medium">
+                      {emailSubject || "No subject generated"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Message
+                    </p>
+                    <div className="mt-2 whitespace-pre-wrap rounded-lg border bg-background p-4 text-sm leading-relaxed">
+                      {emailBody || "No email body generated"}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <SaveActionForm
               action={sendRenewalEmail}
               submitLabel="Email renewal to parent"
@@ -347,16 +424,8 @@ function RenewalActions({
             >
               <input name="caseId" type="hidden" value={row.caseId} />
               <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
-              <input
-                name="subject"
-                type="hidden"
-                value={row.draftSubject || ""}
-              />
-              <input
-                name="body"
-                type="hidden"
-                value={row.draftBody || ""}
-              />
+              <input name="subject" type="hidden" value={emailSubject} />
+              <input name="body" type="hidden" value={emailBody} />
             </SaveActionForm>
           </div>
         </section>

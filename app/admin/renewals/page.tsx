@@ -176,7 +176,9 @@ export default async function RenewalsPage() {
     const rawSessions = Array.isArray(renewal?.selected_sessions)
       ? renewal.selected_sessions
       : []
-    const structuredSessions = rawSessions.filter(isStructuredSession)
+    const structuredSessions = rawSessions
+      .filter(isStructuredSession)
+      .map((session) => ({ ...session, seatNumber: null }))
     const legacySessions = rawSessions
       .filter(isLegacySession)
       .map((session: any) => ({

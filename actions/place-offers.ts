@@ -141,7 +141,7 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   const idempotencyKey = `place-offer-${offer.id}`
   const { data: delivery } = await supabase.from("email_delivery_log").insert({
     parent_lead_id: value.parentLeadId, child_lead_id: value.childLeadId, place_offer_id: offer.id, email_kind: "place_offer",
-    recipient_email: parent.email, idempotency_key: idempotencyKey, created_by: user.id,
+    recipient_email: parent.email, idempotency_key: idempotencyKey, subject: message.subject, body_text: message.text, created_by: user.id,
   }).select("id").single()
 
   try {
@@ -157,7 +157,7 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   } catch (error) {
     await Promise.all([
       supabase.from("place_offers").update({ status: "cancelled" }).eq("id", offer.id),
-      delivery ? supabase.from("email_delivery_log").update({ status: "failed", error_message: error instanceof Error ? error.message.slice(0, 500) : "Send failed" }).eq("id", delivery.id) : Promise.resolve(),
+      delivery ? supabase.from("email_delivery_log").update({ status: "failed", failed_at: new Date().toISOString(), error_message: error instanceof Error ? error.message.slice(0, 500) : "Send failed" }).eq("id", delivery.id) : Promise.resolve(),
     ])
     throw new Error("The offer was saved but the email could not be sent. The seat has been released.")
   }

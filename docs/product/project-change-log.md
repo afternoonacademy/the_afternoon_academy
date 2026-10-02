@@ -349,3 +349,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 - The learner workspace now displays the retained recurring **Seat N** alongside each weekday, time and table in Current booking & payment.
 - Year groups in the learner workspace are rendered explicitly as **Year N** rather than a bare number, matching the clarified Operations convention.
+
+<!-- Combined admin UX preview retry after rate-limit window -->

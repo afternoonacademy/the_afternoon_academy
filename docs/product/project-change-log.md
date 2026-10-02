@@ -263,3 +263,14 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Renewal planning reuses the current table/time and price plan by default, applies Academy closures, saves exact proposed dates, and prepares the existing Academy Setup renewal email template.
 - Renewal email success advances the case to awaiting payment; cleared payment uses a compact summary/confirmation and activates the exact dated Operations seats.
 - Existing historical family-level renewal rows remain readable in the database; new renewal cases are learner-scoped using additive learner_id / standing_placement_id metadata.
+
+
+## 2 October 2026 — Four-queue Family Pipeline
+
+- Removed **Renewals** from the admin sidebar; the historical `/admin/renewals` route remains only as a redirect into Family Pipeline.
+- Reframed Family Pipeline as four mutually exclusive operational queues: **Leads**, **Customers**, **Renewals**, and **Closed / archived**.
+- Leads now exclude any child already represented by an active learner or current renewal, preventing duplicate appearances with stale/different statuses.
+- Customers shows active recurring learners outside the renewal window with parent/email, recurring place and current paid-through date.
+- Renewals shows active learners whose paid period is due/overdue and preserves their recurring capacity until paid or explicitly released.
+- Closed / archived preserves closed lead history plus learners whose renewal place was explicitly released/cancelled; historical learner records remain accessible.
+- Renewal discovery now includes all overdue active learners, not only those whose previous paid period ended within the prior 120 days.

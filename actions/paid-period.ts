@@ -172,6 +172,7 @@ export async function recordExactManualEnrolment(
       { data: template, error: templateError },
       { data: pricePlan, error: pricePlanError },
       { data: table, error: tableError },
+      { data: plannedBooking, error: bookingError },
     ] = await Promise.all([
       supabase
         .from("child_leads")
@@ -201,6 +202,13 @@ export async function recordExactManualEnrolment(
             "00000000-0000-0000-0000-000000000000",
         )
         .maybeSingle(),
+      supabase
+        .from("accepted_bookings")
+        .select("id,status,weekly_table_template_id,session_price_plan_id,seat_number")
+        .eq("parent_lead_id", value.parentLeadId)
+        .eq("child_lead_id", value.childLeadId)
+        .in("status", ["contacted", "accepted_awaiting_payment"])
+        .maybeSingle(),
     ])
 
     if (childError || !child || child.parent_lead_id !== value.parentLeadId) {
@@ -216,6 +224,17 @@ export async function recordExactManualEnrolment(
     }
     if (pricePlanError || !pricePlan) {
       return { error: "Choose an active price plan for this learner." }
+    }
+    if (
+      bookingError ||
+      !plannedBooking ||
+      plannedBooking.weekly_table_template_id !== value.templateId ||
+      plannedBooking.session_price_plan_id !== value.pricePlanId
+    ) {
+      return {
+        error:
+          "Plan the child’s place and contact the parent before confirming payment.",
+      }
     }
     if (
       tableError ||
@@ -247,7 +266,7 @@ export async function recordExactManualEnrolment(
         date: item.date,
         academyTableId: template.academy_table_id,
         tableNumber: template.table_number,
-        seatNumber: null,
+        seatNumber: plannedBooking.seat_number,
         startsAt: template.starts_at.slice(0, 5),
         durationMinutes: template.duration_minutes,
         teacherName: template.teacher_name,
@@ -293,7 +312,7 @@ export async function recordExactManualEnrolment(
       console.error("Manual paid-period record failed", { paymentError })
       return {
         error:
-          "The payment record could not be created. No recurring seat has been reserved; check the payment details and retry.",
+          "The payment record could not be created. The planned recurring place is still held; check the payment details and retry.",
       }
     }
 
@@ -415,7 +434,7 @@ export async function recordExactManualEnrolment(
     const exactSessions = datedSessions.map((session) => ({
       ...session,
       placementId: placement.id,
-      seatNumber: null,
+      seatNumber: plannedBooking.seat_number,
     }))
 
     const allocatedSessions = await createDatedOperationsSeats(
@@ -441,41 +460,32 @@ export async function recordExactManualEnrolment(
         })
         .eq("payment_entitlement_id", payment.id)
         .eq("learner_id", learner.id),
+      supabase
+        .from("accepted_bookings")
+        .update({
+          learner_id: learner.id,
+          payment_entitlement_id: payment.id,
+          status: "paid_active",
+          paid_at: new Date().toISOString(),
+          paid_by: user.id,
+        })
+        .eq("id", plannedBooking.id),
+      supabase
+        .from("child_leads")
+        .update({ pipeline_status: "paid" })
+        .eq("id", value.childLeadId),
     ])
 
-    const [{ data: familyChildLeads }, { data: familyLearners }] =
-      await Promise.all([
-        supabase
-          .from("child_leads")
-          .select("id")
-          .eq("parent_lead_id", value.parentLeadId),
-        supabase
-          .from("learners")
-          .select("id,child_lead_id")
-          .eq("parent_lead_id", value.parentLeadId),
-      ])
+    const { data: familyChildLeads } = await supabase
+      .from("child_leads")
+      .select("id,pipeline_status")
+      .eq("parent_lead_id", value.parentLeadId)
 
-    const familyLearnerIds = (familyLearners || []).map((item) => item.id)
-    const { data: paidLearnerRows } = familyLearnerIds.length
-      ? await supabase
-          .from("child_payment_entitlements")
-          .select("learner_id")
-          .in("learner_id", familyLearnerIds)
-          .eq("status", "paid")
-      : { data: [] as { learner_id: string }[] }
-
-    const paidLearnerIds = new Set(
-      (paidLearnerRows || []).map((item) => item.learner_id),
-    )
-    const paidChildLeadIds = new Set(
-      (familyLearners || [])
-        .filter((item) => paidLearnerIds.has(item.id))
-        .map((item) => item.child_lead_id)
-        .filter((id): id is string => Boolean(id)),
-    )
     const allChildrenActivated =
       Boolean(familyChildLeads?.length) &&
-      (familyChildLeads || []).every((item) => paidChildLeadIds.has(item.id))
+      (familyChildLeads || []).every(
+        (item) => item.pipeline_status === "paid",
+      )
 
     const parentUpdate = allChildrenActivated
       ? {

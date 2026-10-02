@@ -362,3 +362,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - The send action receives exactly the subject/body displayed in the preview, reducing the chance of silently sending an older draft.
 
 <!-- Retry preview after renewal email parser fix -->
+
+<!-- Retry preview after Vercel build-rate window -->

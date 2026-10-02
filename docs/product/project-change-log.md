@@ -335,3 +335,11 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Occupied Operations tiles now show the actual capacity marker explicitly as **Seat N**.
 - Learner year group is labelled as **Year N** (or “Year group not recorded”) instead of appearing as a bare number underneath the learner name.
 - This removes the ambiguity where a year-group value such as `3` or `4` could be mistaken for the learner's seat number, while available tiles continue to show the same Seat N numbering.
+
+
+## 2 October 2026 — Admin helper text moved to contextual info tips
+
+- Introduced a reusable admin information control using the existing shadcn/Radix popover pattern and a circled information icon.
+- Desktop users can reveal explanatory helper copy by hovering the icon; touch/mobile users can tap the icon to open the same explanation.
+- Removed persistent descriptive paragraphs from the main Operations room header, Family Pipeline section headers, renewal workflow steps, initial booking next-step panels and the shared paid-period calendar introduction.
+- Operational state labels, warnings, errors, empty states and data required to make a decision remain visible rather than being hidden in tooltips.

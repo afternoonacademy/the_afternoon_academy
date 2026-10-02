@@ -1,6 +1,6 @@
 # Family communications delivery tracking
 
-_Status: implemented on feature branch for preview validation — 2 October 2026._
+_Status: implemented release slice — founder accepted 2 October 2026._
 
 ## Goal
 

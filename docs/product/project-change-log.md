@@ -232,3 +232,16 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 
 - Compacted the Family follow-up table so the visible row shows only contact, child/age and support. Availability, weekly frequency, school/curriculum, notes, follow-up actions and **Add payment & dates** now sit inside the expanded Details row, removing the page-level horizontal scrollbar and forcing detail review before payment activation.
+
+
+## 2 October 2026 — Separate place planning, parent contact and payment
+
+- Replaced the combined initial “record payment + activate place” interaction with a child-level staged lifecycle: **Lead received → Session planned → Contacted / awaiting payment → Paid**.
+- Added child-level pipeline status so siblings can be at different operational stages.
+- Added an explicit planned recurring-capacity record using `accepted_bookings`; planning stores table/time, price plan, capacity seat and proposed exact service dates but creates no payment entitlement and no dated Operations attendance.
+- Added a visible seat-capacity map showing paid/planned/contacted child names and available capacity positions. Seat numbers remain capacity markers rather than fixed physical chairs.
+- Added **Record planned place**, **Email planned place to parent**, **Release place**, and separate **Confirm payment & activate paid dates** actions.
+- Planned-place email success advances only that child to contacted; send failure leaves the child at session planned.
+- Payment confirmation now requires a saved contacted planned place, then creates the paid entitlement, learner/standing placement as needed, dated Operations places, marks the recurring capacity record paid-active and advances the child to paid.
+- Parent/family conversion still occurs only after every child in that enquiry is paid.
+- Added additive schema fields for child pipeline state and planned-place quote/session metadata; existing historical booking/payment records remain readable.

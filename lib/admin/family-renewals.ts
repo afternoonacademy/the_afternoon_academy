@@ -3,6 +3,7 @@ import type {
   PaidPeriodPlacement,
   PaidPeriodSession,
 } from "@/lib/paid-period"
+import { renderRenewalEmail } from "@/lib/email/renewal-email"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 const iso = (date: Date) => date.toISOString().slice(0, 10)
@@ -67,6 +68,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     { data: closures },
     { data: datedSeats },
     { data: bookings },
+    { data: renewalTemplate },
   ] = await Promise.all([
     supabaseAdmin
       .from("child_payment_entitlements")
@@ -101,6 +103,11 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       .from("accepted_bookings")
       .select("learner_id,status")
       .in("status", ["paid_active", "session_planned", "contacted", "accepted_awaiting_payment"]),
+    supabaseAdmin
+      .from("academy_email_templates")
+      .select("subject_template,body_template")
+      .eq("template_key", "renewal_reminder")
+      .maybeSingle(),
   ])
 
   const academyClosures: AcademyClosure[] = (closures || []).map((closure) => ({
@@ -196,6 +203,15 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
           ? "renewal_planned"
           : "needs_renewal"
 
+    const currentEmailDraft = selectedSessions.length
+      ? renderRenewalEmail({
+          parentName: parent.parent_name,
+          sessions: selectedSessions,
+          subjectTemplate: renewalTemplate?.subject_template,
+          bodyTemplate: renewalTemplate?.body_template,
+        })
+      : null
+
     rows.push({
       learnerId: learner.id,
       childLeadId: learner.child_lead_id,
@@ -214,8 +230,8 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       proposedPeriodStart: renewal?.proposed_period_start || null,
       proposedPeriodEnd: renewal?.proposed_period_end || null,
       emailSentAt: renewal?.email_sent_at || null,
-      draftSubject: renewal?.draft_subject || null,
-      draftBody: renewal?.draft_body || null,
+      draftSubject: currentEmailDraft?.subject || renewal?.draft_subject || null,
+      draftBody: currentEmailDraft?.body || renewal?.draft_body || null,
       placements: learnerPlacements,
       closures: academyClosures,
       recurringCapacityHeld: capacityHeldLearners.has(learner.id),

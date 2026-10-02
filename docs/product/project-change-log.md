@@ -397,3 +397,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Learner Workspace now includes the same parent/family communication history after conversion.
 - Renewal rows surface the active renewal email delivery result so bounced/failed delivery is immediately visible to admin.
 - Delivery webhook verification requires server-only `RESEND_WEBHOOK_SECRET`; the endpoint does not process unsigned events.
+
+<!-- Trigger family communications preview build -->

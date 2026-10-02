@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { createLearnerGoal, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,18 +19,95 @@ function formatList(items: string[] | null | undefined) {
 
 export default async function LearnerPage({ params }: PageProps) {
   const { id } = await params
-  const [learnerResult, profileResult, attendanceResult, updatesResult, goalsResult] = await Promise.all([
+  const [
+    learnerResult,
+    profileResult,
+    attendanceResult,
+    updatesResult,
+    goalsResult,
+    standingResult,
+    entitlementResult,
+    renewalResult,
+  ] = await Promise.all([
     supabaseAdmin.from("learners").select("*").eq("id", id).maybeSingle(),
     supabaseAdmin.from("learner_profiles").select("*").eq("learner_id", id).maybeSingle(),
     supabaseAdmin.from("attendance_records").select("*, delivery_sessions(focus, starts_at, teacher_name)").eq("learner_id", id).order("attendance_date", { ascending: false }),
     supabaseAdmin.from("teacher_updates").select("*").eq("learner_id", id).order("occurred_on", { ascending: false }),
     supabaseAdmin.from("learner_goals").select("*").eq("learner_id", id).order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("standing_placements")
+      .select("id,weekday,table_number,starts_at,status,session_price_plans(name,price_cents)")
+      .eq("learner_id", id)
+      .eq("status", "active")
+      .order("weekday")
+      .order("starts_at"),
+    supabaseAdmin
+      .from("child_payment_entitlements")
+      .select("period_start,period_end,status,selected_sessions,created_at")
+      .eq("learner_id", id)
+      .eq("status", "paid")
+      .order("period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("renewal_cases")
+      .select("status,due_on,selected_sessions,email_sent_at")
+      .eq("learner_id", id)
+      .in("status", ["ready_to_send", "awaiting_payment", "overdue"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   if (!learnerResult.data) notFound()
   const learner = learnerResult.data
   const profile = profileResult.data
   const today = new Date().toISOString().slice(0, 10)
+
+  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  const activePlaces = standingResult.data || []
+  const latestEntitlement = entitlementResult.data
+  const renewal = renewalResult.data
+
+  const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
+    ? latestEntitlement.selected_sessions
+        .filter(
+          (session): session is { date: string } =>
+            Boolean(
+              session &&
+                typeof session === "object" &&
+                "date" in session &&
+                typeof session.date === "string",
+            ),
+        )
+        .map((session) => session.date)
+        .sort()
+    : []
+
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(value + "T12:00:00Z"))
+
+  const paymentStatus =
+    renewal?.status === "awaiting_payment"
+      ? "Payment pending"
+      : renewal?.status === "ready_to_send" || renewal?.status === "overdue"
+        ? "Renewal due"
+        : latestEntitlement?.period_end && latestEntitlement.period_end >= today
+          ? "Paid"
+          : activePlaces.length
+            ? "Renewal due"
+            : "No active place"
+
+  const paymentBadgeVariant =
+    paymentStatus === "Paid"
+      ? "default"
+      : paymentStatus === "No active place"
+        ? "outline"
+        : "secondary"
 
   return (
     <div className="space-y-8">
@@ -41,6 +119,81 @@ export default async function LearnerPage({ params }: PageProps) {
         </div>
         <span className="rounded-full border px-3 py-1 text-sm capitalize">{learner.status}</span>
       </div>
+
+      <section className="rounded-2xl border bg-muted/20 p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Current booking & payment
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-bold">
+                {learner.first_name} · {learner.year_group || "Year group not recorded"}
+              </h3>
+              <Badge variant={paymentBadgeVariant}>{paymentStatus}</Badge>
+            </div>
+          </div>
+          {latestEntitlement?.period_end ? (
+            <p className="text-sm font-semibold">
+              Paid through {formatDate(latestEntitlement.period_end)}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+          <div className="space-y-2 text-sm">
+            <div>
+              <p className="font-medium">Recurring place</p>
+              {activePlaces.length ? (
+                <div className="mt-1 space-y-1 text-muted-foreground">
+                  {activePlaces.map((place) => {
+                    const plan = Array.isArray(place.session_price_plans)
+                      ? place.session_price_plans[0]
+                      : place.session_price_plans
+                    return (
+                      <p key={place.id}>
+                        {weekdayNames[place.weekday]} · {place.starts_at.slice(0, 5)} · Table {place.table_number}
+                        {plan
+                          ? ` · ${plan.name} · €${(plan.price_cents / 100).toFixed(2)}/session`
+                          : ""}
+                      </p>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="mt-1 text-muted-foreground">No active recurring place</p>
+              )}
+            </div>
+            {paymentStatus === "Renewal due" || paymentStatus === "Payment pending" ? (
+              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-950">
+                Recurring place remains held until an admin releases it.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="text-sm">
+            <p className="font-medium">Booked paid dates</p>
+            {paidDates.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {paidDates.map((date) => (
+                  <span
+                    className="rounded-md border bg-background px-2.5 py-1 text-xs"
+                    key={date}
+                  >
+                    {formatDate(date)}
+                  </span>
+                ))}
+              </div>
+            ) : latestEntitlement ? (
+              <p className="mt-1 text-muted-foreground">
+                Paid period {formatDate(latestEntitlement.period_start)} – {formatDate(latestEntitlement.period_end)}
+              </p>
+            ) : (
+              <p className="mt-1 text-muted-foreground">No paid service dates recorded</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

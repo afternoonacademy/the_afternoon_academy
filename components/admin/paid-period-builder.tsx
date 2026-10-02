@@ -19,6 +19,8 @@ import {
 
 type PricePlan = { id: string; name: string; price_cents: number }
 
+const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 const dateLabel = (value: string) =>
   new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -42,6 +44,10 @@ function dateKey(value: Date) {
   const month = String(value.getMonth() + 1).padStart(2, "0")
   const day = String(value.getDate()).padStart(2, "0")
   return `${year}-${month}-${day}`
+}
+
+function learnerKey(placement: PaidPeriodPlacement) {
+  return placement.learnerId || placement.childLeadId || placement.learnerName
 }
 
 export function PaidPeriodBuilder({
@@ -68,11 +74,7 @@ export function PaidPeriodBuilder({
   const initialSelection = () =>
     sortPaidPeriodSessions(
       initialSessions.length
-        ? placements.flatMap((placement) =>
-            initialSessions.filter(
-              (session) => session.placementId === placement.placementId,
-            ),
-          )
+        ? initialSessions
         : placements.flatMap((placement) =>
             expectedDatesForPlacement(
               placement,
@@ -84,60 +86,145 @@ export function PaidPeriodBuilder({
     )
 
   const [sessions, setSessions] = useState<PaidPeriodSession[]>(initialSelection)
+  const [replacementPlacementByLearner, setReplacementPlacementByLearner] =
+    useState<Record<string, string>>({})
 
   const summary = paidPeriodSummary(sessions)
-  const orderedPlacements = useMemo(
-    () =>
-      [...placements].sort(
+
+  const learnerGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { learnerName: string; placements: PaidPeriodPlacement[] }
+    >()
+    for (const placement of placements) {
+      const key = learnerKey(placement)
+      const current = groups.get(key) || {
+        learnerName: placement.learnerName,
+        placements: [],
+      }
+      current.placements.push(placement)
+      groups.set(key, current)
+    }
+    return [...groups.entries()].map(([key, group]) => ({
+      key,
+      learnerName: group.learnerName,
+      placements: [...group.placements].sort(
         (a, b) =>
-          a.learnerName.localeCompare(b.learnerName) ||
+          a.weekday - b.weekday ||
           a.startsAt.localeCompare(b.startsAt) ||
           a.tableNumber - b.tableNumber,
       ),
-    [placements],
-  )
+    }))
+  }, [placements])
+
   const closureWarnings = closureDatesInRange(
     closures,
     suggestionStart,
     suggestionEnd,
   )
 
-  function sessionsFor(placementId: string) {
-    return sessions.filter((session) => session.placementId === placementId)
+  function sessionsForLearner(key: string) {
+    const ids = new Set(
+      learnerGroups
+        .find((group) => group.key === key)
+        ?.placements.map((placement) => placement.placementId) || [],
+    )
+    return sessions.filter((session) => ids.has(session.placementId))
   }
 
-  function updateDates(placement: PaidPeriodPlacement, dates: Date[] | undefined) {
-    const selected = (dates || []).map(dateKey)
-    const other = sessions.filter(
-      (session) => session.placementId !== placement.placementId,
+  function expectedPlacementsForDate(
+    groupPlacements: PaidPeriodPlacement[],
+    date: string,
+  ) {
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
+    return groupPlacements.filter(
+      (placement) =>
+        placement.weekday === weekday && !closureForDate(date, closures),
     )
-    const currentByDate = new Map(
-      sessionsFor(placement.placementId).map((session) => [session.date, session]),
+  }
+
+  function updateLearnerDates(
+    key: string,
+    groupPlacements: PaidPeriodPlacement[],
+    dates: Date[] | undefined,
+  ) {
+    const selectedDates = new Set((dates || []).map(dateKey))
+    const placementIds = new Set(
+      groupPlacements.map((placement) => placement.placementId),
     )
-    const next = selected.map((date) => {
-      const existing = currentByDate.get(date)
-      if (existing) return existing
-      return sessionFromPlacement(
-        placement,
+    const otherLearners = sessions.filter(
+      (session) => !placementIds.has(session.placementId),
+    )
+    const current = sessions.filter((session) =>
+      placementIds.has(session.placementId),
+    )
+    const currentByKey = new Map(
+      current.map((session) => [
+        `${session.placementId}|${session.date}`,
+        session,
+      ]),
+    )
+
+    const next: PaidPeriodSession[] = []
+    for (const date of selectedDates) {
+      const expectedPlacements = expectedPlacementsForDate(
+        groupPlacements,
         date,
-        new Date(`${date}T12:00:00Z`).getUTCDay() !== placement.weekday,
       )
-    })
-    setSessions(sortPaidPeriodSessions([...other, ...next]))
+
+      if (expectedPlacements.length) {
+        for (const placement of expectedPlacements) {
+          const existing = currentByKey.get(
+            `${placement.placementId}|${date}`,
+          )
+          next.push(
+            existing || sessionFromPlacement(placement, date, false),
+          )
+        }
+
+        for (const existing of current.filter(
+          (session) => session.date === date && session.replacement,
+        )) {
+          next.push(existing)
+        }
+        continue
+      }
+
+      const existingReplacement = current.find(
+        (session) => session.date === date && session.replacement,
+      )
+      if (existingReplacement) {
+        next.push(existingReplacement)
+        continue
+      }
+
+      const replacementPlacementId =
+        replacementPlacementByLearner[key] ||
+        groupPlacements[0]?.placementId
+      const placement = groupPlacements.find(
+        (item) => item.placementId === replacementPlacementId,
+      )
+      if (placement) {
+        next.push(sessionFromPlacement(placement, date, true))
+      }
+    }
+
+    setSessions(sortPaidPeriodSessions([...otherLearners, ...next]))
   }
 
-  function resetPlacement(placement: PaidPeriodPlacement) {
-    const expected = expectedDatesForPlacement(
-      placement,
-      suggestionStart,
-      suggestionEnd,
-      closures,
-    ).map((date) => sessionFromPlacement(placement, date, false))
+  function resetLearner(groupPlacements: PaidPeriodPlacement[]) {
+    const ids = new Set(groupPlacements.map((item) => item.placementId))
+    const expected = groupPlacements.flatMap((placement) =>
+      expectedDatesForPlacement(
+        placement,
+        suggestionStart,
+        suggestionEnd,
+        closures,
+      ).map((date) => sessionFromPlacement(placement, date, false)),
+    )
     setSessions((current) =>
       sortPaidPeriodSessions([
-        ...current.filter(
-          (session) => session.placementId !== placement.placementId,
-        ),
+        ...current.filter((session) => !ids.has(session.placementId)),
         ...expected,
       ]),
     )
@@ -163,7 +250,8 @@ export function PaidPeriodBuilder({
   if (!placements.length) {
     return (
       <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-        Choose the learner, table, time and price plan to load the paid service dates.
+        Choose at least one recurring table/time and price plan to load the
+        service dates.
       </div>
     )
   }
@@ -181,12 +269,15 @@ export function PaidPeriodBuilder({
           <CalendarDays className="mt-0.5 size-5 text-primary" />
           <div>
             <p className="font-semibold">
-              {purpose === "plan" ? "Planned service dates" : "Exact paid service dates"}
+              {purpose === "plan"
+                ? "Planned service dates"
+                : "Exact paid service dates"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {purpose === "plan"
-                ? "Expected recurring dates are preselected for the offer. Deselect dates you do not plan to offer, or select an open date on another weekday as a replacement."
-                : "Expected recurring dates are preselected. Deselect any date the family is not paying for. Selecting an open date on another weekday records it as a replacement session."}
+              One calendar covers all recurring days for each learner. Expected
+              dates from every active place are preselected. Deselect any date
+              not included in this period. For an open-date replacement, choose
+              which recurring place it replaces, then select the new date.
             </p>
             <p className="mt-2 text-xs font-medium text-muted-foreground">
               Suggested period: {dateLabel(suggestionStart)} –{" "}
@@ -209,7 +300,8 @@ export function PaidPeriodBuilder({
               <ul className="mt-2 space-y-1 text-sm">
                 {closureWarnings.map((closure) => (
                   <li key={`${closure.date}-${closure.reason}`}>
-                    <strong>{dateLabel(closure.date)}</strong> — {closure.reason}
+                    <strong>{dateLabel(closure.date)}</strong> —{" "}
+                    {closure.reason}
                   </li>
                 ))}
               </ul>
@@ -219,30 +311,32 @@ export function PaidPeriodBuilder({
       ) : null}
 
       <div className="space-y-6">
-        {orderedPlacements.map((placement) => {
-          const selected = sessionsFor(placement.placementId)
-          const selectedDates = selected.map((session) => toDate(session.date))
-          const planId = selected[0]?.pricePlanId || placement.pricePlanId
+        {learnerGroups.map((group) => {
+          const selected = sessionsForLearner(group.key)
+          const selectedDates = [
+            ...new Set(selected.map((session) => session.date)),
+          ].map(toDate)
+          const replacementPlacementId =
+            replacementPlacementByLearner[group.key] ||
+            group.placements[0]?.placementId ||
+            ""
 
           return (
             <section
               className="rounded-xl border bg-background p-4"
-              key={placement.placementId}
+              key={group.key}
             >
               <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
                 <div>
-                  <h4 className="text-lg font-bold">{placement.learnerName}</h4>
+                  <h4 className="text-lg font-bold">{group.learnerName}</h4>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Table {placement.tableNumber} · {placement.startsAt.slice(0, 5)} · seat assigned when payment clears
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {selected[0]?.pricePlanName || placement.pricePlanName} ·{" "}
-                    {money(selected[0]?.priceCents ?? placement.priceCents)} per
-                    session
+                    {group.placements.length} recurring place
+                    {group.placements.length === 1 ? "" : "s"} combined in one
+                    calendar
                   </p>
                 </div>
                 <Button
-                  onClick={() => resetPlacement(placement)}
+                  onClick={() => resetLearner(group.placements)}
                   size="sm"
                   type="button"
                   variant="outline"
@@ -252,29 +346,92 @@ export function PaidPeriodBuilder({
                 </Button>
               </div>
 
-              {allowPricePlanChange && pricePlans.length ? (
-                <label className="mt-4 grid max-w-md gap-1 text-sm font-medium">
-                  Price plan for this learner
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {group.placements.map((placement) => {
+                  const placementSessions = sessions.filter(
+                    (session) =>
+                      session.placementId === placement.placementId,
+                  )
+                  const currentPlanId =
+                    placementSessions[0]?.pricePlanId || placement.pricePlanId
+                  return (
+                    <div
+                      className="rounded-lg border bg-muted/10 p-3"
+                      key={placement.placementId}
+                    >
+                      <p className="font-semibold">
+                        {days[placement.weekday]} ·{" "}
+                        {placement.startsAt.slice(0, 5)} · Table{" "}
+                        {placement.tableNumber}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {placement.seatNumber
+                          ? `Capacity seat ${placement.seatNumber}`
+                          : "Seat assigned when payment clears"}
+                      </p>
+                      {allowPricePlanChange && pricePlans.length ? (
+                        <select
+                          className="mt-2 h-9 w-full rounded-md border bg-background px-2 text-sm"
+                          onChange={(event) =>
+                            changePlan(placement, event.target.value)
+                          }
+                          value={currentPlanId}
+                        >
+                          {pricePlans.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {plan.name} · {money(plan.price_cents)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="mt-2 text-sm">
+                          {placementSessions[0]?.pricePlanName ||
+                            placement.pricePlanName}{" "}
+                          ·{" "}
+                          {money(
+                            placementSessions[0]?.priceCents ??
+                              placement.priceCents,
+                          )}{" "}
+                          / session
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {group.placements.length > 1 ? (
+                <label className="mt-4 grid max-w-xl gap-1 text-sm font-medium">
+                  Replacement session applies to
                   <select
                     className="h-10 rounded-md border bg-background px-3 font-normal"
                     onChange={(event) =>
-                      changePlan(placement, event.target.value)
+                      setReplacementPlacementByLearner((current) => ({
+                        ...current,
+                        [group.key]: event.target.value,
+                      }))
                     }
-                    value={planId}
+                    value={replacementPlacementId}
                   >
-                    {pricePlans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name} · {money(plan.price_cents)}
+                    {group.placements.map((placement) => (
+                      <option
+                        key={placement.placementId}
+                        value={placement.placementId}
+                      >
+                        {days[placement.weekday]} ·{" "}
+                        {placement.startsAt.slice(0, 5)} · Table{" "}
+                        {placement.tableNumber}
                       </option>
                     ))}
                   </select>
                   <span className="text-xs font-normal text-muted-foreground">
-                    Changing the price plan does not move this learner’s table or time. Dated seats are assigned from available capacity when payment clears.
+                    Only used when you select an open date that is not already
+                    one of the learner’s normal recurring days.
                   </span>
                 </label>
               ) : null}
 
-              <div className="mt-4 grid gap-5 lg:grid-cols-[auto_1fr]">
+              <div className="mt-4 grid gap-5 xl:grid-cols-[auto_1fr]">
                 <div className="overflow-x-auto">
                   <Calendar
                     disabled={(day) =>
@@ -285,7 +442,10 @@ export function PaidPeriodBuilder({
                       closure: (day) =>
                         Boolean(closureForDate(dateKey(day), closures)),
                       expected: (day) =>
-                        day.getDay() === placement.weekday &&
+                        group.placements.some(
+                          (placement) =>
+                            day.getDay() === placement.weekday,
+                        ) &&
                         !closureForDate(dateKey(day), closures),
                     }}
                     modifiersClassNames={{
@@ -294,14 +454,20 @@ export function PaidPeriodBuilder({
                       expected:
                         "ring-1 ring-inset ring-primary/30 data-[selected=true]:ring-0",
                     }}
-                    onSelect={(dates) => updateDates(placement, dates)}
+                    onSelect={(dates) =>
+                      updateLearnerDates(
+                        group.key,
+                        group.placements,
+                        dates,
+                      )
+                    }
                     selected={selectedDates}
                   />
                 </div>
 
                 <div>
                   <p className="text-sm font-semibold">
-                    {placement.learnerName}’s selected dates
+                    {group.learnerName}’s selected dates
                   </p>
                   {selected.length ? (
                     <div className="mt-2 overflow-hidden rounded-lg border">
@@ -309,7 +475,7 @@ export function PaidPeriodBuilder({
                         <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                           <tr>
                             <th className="px-3 py-2 font-medium">Date</th>
-                            <th className="px-3 py-2 font-medium">Place</th>
+                            <th className="px-3 py-2 font-medium">Recurring place</th>
                             <th className="px-3 py-2 font-medium">Type</th>
                             <th className="px-3 py-2 text-right font-medium">
                               Price
@@ -326,10 +492,15 @@ export function PaidPeriodBuilder({
                                 {dateLabel(session.date)}
                               </td>
                               <td className="px-3 py-2 text-muted-foreground">
-                                Table {session.tableNumber} · {session.startsAt} ·{" "}
-                                {session.seatNumber
-                                  ? `Seat ${session.seatNumber}`
-                                  : "Seat assigned on payment"}
+                                {days[
+                                  group.placements.find(
+                                    (item) =>
+                                      item.placementId ===
+                                      session.placementId,
+                                  )?.weekday ?? 0
+                                ]}{" "}
+                                · Table {session.tableNumber} ·{" "}
+                                {session.startsAt}
                               </td>
                               <td className="px-3 py-2">
                                 {session.replacement ? (
@@ -349,8 +520,8 @@ export function PaidPeriodBuilder({
                       </table>
                     </div>
                   ) : (
-                    <p className="mt-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                      No paid dates selected for this learner.
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      No service dates selected.
                     </p>
                   )}
                 </div>
@@ -360,36 +531,22 @@ export function PaidPeriodBuilder({
         })}
       </div>
 
-      <div className="grid divide-y rounded-xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <div className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Selected sessions
-          </p>
-          <p className="mt-1 text-2xl font-bold">{summary.count}</p>
-        </div>
-        <div className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Paid date span
-          </p>
-          <p className="mt-1 text-sm font-semibold">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 p-4">
+        <div>
+          <p className="text-sm font-semibold">Selected period total</p>
+          <p className="text-xs text-muted-foreground">
+            {summary.count} session{summary.count === 1 ? "" : "s"}
             {summary.periodStart && summary.periodEnd
-              ? `${dateLabel(summary.periodStart)} – ${dateLabel(summary.periodEnd)}`
-              : "Choose at least one date"}
+              ? ` · ${dateLabel(summary.periodStart)} – ${dateLabel(summary.periodEnd)}`
+              : ""}
           </p>
         </div>
-        <div className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Calculated total
-          </p>
-          <p className="mt-1 text-2xl font-bold">
-            {money(summary.amountCents)}
-          </p>
-        </div>
+        <p className="text-xl font-bold">{money(summary.amountCents)}</p>
       </div>
 
       <p className="text-sm font-medium text-muted-foreground">
         {purpose === "plan"
-          ? "Saving this plan holds recurring capacity and prepares the parent quote. It does not create payment or dated Operations attendance."
+          ? "Saving this plan holds all selected recurring capacity places and prepares one combined parent quote. It does not create payment or dated Operations attendance."
           : "After manual payment confirmation, these exact dates are the dates that will create dated Operations sessions and seats."}
       </p>
     </div>

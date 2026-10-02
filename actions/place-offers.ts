@@ -140,7 +140,7 @@ export async function createAndSendPlaceOffer(formData: FormData) {
   })
   const idempotencyKey = `place-offer-${offer.id}`
   const { data: delivery } = await supabase.from("email_delivery_log").insert({
-    parent_lead_id: value.parentLeadId, place_offer_id: offer.id, email_kind: "place_offer",
+    parent_lead_id: value.parentLeadId, child_lead_id: value.childLeadId, place_offer_id: offer.id, email_kind: "place_offer",
     recipient_email: parent.email, idempotency_key: idempotencyKey, created_by: user.id,
   }).select("id").single()
 

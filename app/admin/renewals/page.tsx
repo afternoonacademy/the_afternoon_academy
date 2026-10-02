@@ -28,7 +28,7 @@ function isStructuredSession(value: any): value is PaidPeriodSession {
       typeof value.date === "string" &&
       typeof value.academyTableId === "string" &&
       typeof value.tableNumber === "number" &&
-      typeof value.seatNumber === "number" &&
+      (typeof value.seatNumber === "number" || value.seatNumber === null) &&
       typeof value.startsAt === "string" &&
       typeof value.durationMinutes === "number" &&
       typeof value.pricePlanId === "string" &&
@@ -123,8 +123,7 @@ export default async function RenewalsPage() {
     if (
       !learner?.parent_lead_id ||
       !plan ||
-      !placement.session_price_plan_id ||
-      !placement.seat_number
+      !placement.session_price_plan_id
     )
       continue
 
@@ -135,7 +134,7 @@ export default async function RenewalsPage() {
       weekday: placement.weekday,
       academyTableId: placement.academy_table_id,
       tableNumber: placement.table_number,
-      seatNumber: placement.seat_number,
+      seatNumber: null,
       startsAt: placement.starts_at.slice(0, 5),
       durationMinutes: placement.duration_minutes,
       teacherName: placement.teacher_name,
@@ -264,9 +263,7 @@ export default async function RenewalsPage() {
       <section className="border-t pt-6">
         <h3 className="text-xl font-bold tracking-tight">Renewal queue</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Each learner keeps their active table, time and seat by default.
-          Academy closures are visibly blocked, replacement dates are explicit,
-          and changing a price plan never moves a learner between groups.
+          Each learner keeps their active table and time by default. Seats are not reserved by an unpaid renewal; capacity is allocated from the dated Operations session only when payment clears (or when staff explicitly enable payment-pending continuation). Academy closures are visibly blocked, replacement dates are explicit, and changing a price plan never moves a learner between groups.
         </p>
         <div className="mt-5">
           {rows.length ? (

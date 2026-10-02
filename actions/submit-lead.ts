@@ -152,19 +152,58 @@ export async function submitLead(
   }
 
   if (resend) {
-    const parentEmail = await resend.emails.send({
-      from: resendFromEmail,
-      to: data.email,
-      subject:
-        language === "es"
-          ? "Hemos recibido tu solicitud de plaza"
-          : "We received your Afternoon Academy place enquiry",
-      html: parentConfirmationEmailHtml(emailData),
-      text: parentConfirmationEmailText(emailData),
-    })
+    const parentSubject =
+      language === "es"
+        ? "Hemos recibido tu solicitud de plaza"
+        : "We received your Afternoon Academy place enquiry"
+    const parentText = parentConfirmationEmailText(emailData)
+    const idempotencyKey = "enquiry-acknowledgement-" + parentLead.id
+
+    const { data: deliveryLog } = await supabaseAdmin
+      .from("email_delivery_log")
+      .insert({
+        parent_lead_id: parentLead.id,
+        email_kind: "enquiry_acknowledgement",
+        recipient_email: data.email,
+        idempotency_key: idempotencyKey,
+        subject: parentSubject,
+        body_text: parentText,
+      })
+      .select("id")
+      .single()
+
+    const parentEmail = await resend.emails.send(
+      {
+        from: resendFromEmail,
+        to: data.email,
+        subject: parentSubject,
+        html: parentConfirmationEmailHtml(emailData),
+        text: parentText,
+      },
+      { headers: { "Idempotency-Key": idempotencyKey } },
+    )
 
     if (parentEmail.error) {
       console.error("Parent confirmation email error:", parentEmail.error)
+      if (deliveryLog) {
+        await supabaseAdmin
+          .from("email_delivery_log")
+          .update({
+            status: "failed",
+            failed_at: new Date().toISOString(),
+            error_message: parentEmail.error.message.slice(0, 500),
+          })
+          .eq("id", deliveryLog.id)
+      }
+    } else if (deliveryLog) {
+      await supabaseAdmin
+        .from("email_delivery_log")
+        .update({
+          status: "sent",
+          resend_email_id: parentEmail.data?.id || null,
+          sent_at: new Date().toISOString(),
+        })
+        .eq("id", deliveryLog.id)
     }
 
     if (adminLeadEmail) {

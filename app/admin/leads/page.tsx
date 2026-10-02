@@ -2,6 +2,8 @@ import Link from "next/link"
 
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { FamilyFollowUpTable } from "@/components/admin/family-follow-up-table"
+import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
+import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
 
 type LeadOverviewRow = {
   parent_lead_id: string
@@ -47,6 +49,7 @@ export default async function AdminLeadsPage() {
   }
 
   const leads = (data || []) as LeadOverviewRow[]
+  const renewalRows = await loadFamilyRenewals()
   const pipeline = [
     ["Lead received", "new"],
     ["Session planned", "session_planned"],
@@ -171,6 +174,37 @@ export default async function AdminLeadsPage() {
         ) : (
           <p className="border-y py-5 text-sm text-muted-foreground">No parent leads have been submitted yet.</p>
         )}</div>
+      </section>
+
+      <section className="border-t pt-6" id="renewals">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-bold tracking-tight">
+              3 · Needs renewal · {renewalRows.length} learner
+              {renewalRows.length === 1 ? "" : "s"}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+              Existing learners keep their recurring capacity after the last paid
+              date. Plan the next period, send the renewal email, then confirm
+              cleared payment using the same staged process as a new family.
+              Capacity is released only through the explicit Release recurring
+              place action.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          {renewalRows.length ? (
+            <RenewalWorkflowTable
+              pricePlans={pricePlans || []}
+              rows={renewalRows}
+            />
+          ) : (
+            <p className="border-y py-5 text-sm text-muted-foreground">
+              No learners need renewal in the current window.
+            </p>
+          )}
+        </div>
       </section>
     </div>
   )

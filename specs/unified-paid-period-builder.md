@@ -145,3 +145,14 @@ For learners with more than one recurring place, the shared builder uses an expl
 - The combined selected-session table remains visible and contains all dates from all recurring places while the admin switches between tabs.
 - Replacement sessions remain explicitly labelled and removable.
 - The interaction is shared by initial place planning and renewal planning.
+
+
+## Post-save interaction — 2 October 2026
+
+A successful planning submit must visibly advance the workflow.
+
+- After a renewal plan is saved, the paid-period editor collapses automatically.
+- The row stays expanded so the admin immediately sees the saved date/amount summary and the next action, **Email renewal to parent**.
+- **Edit renewal plan** is the explicit way to reopen the builder.
+- Initial-offer planning uses the same save → collapse → saved summary → next-action pattern.
+- Failed saves leave the editor open and show the actionable error.

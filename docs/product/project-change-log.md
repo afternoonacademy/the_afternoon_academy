@@ -245,3 +245,6 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Payment confirmation now requires a saved contacted planned place, then creates the paid entitlement, learner/standing placement as needed, dated Operations places, marks the recurring capacity record paid-active and advances the child to paid.
 - Parent/family conversion still occurs only after every child in that enquiry is paid.
 - Added additive schema fields for child pipeline state and planned-place quote/session metadata; existing historical booking/payment records remain readable.
+
+
+- Added the initial planned-place/payment-request email to Academy Setup → Email templates. The Family Pipeline now renders the actual outgoing subject/body from the stored `planned_place_offer` template; a successful send still advances only that child from **Session planned** to **Contacted — awaiting payment**.

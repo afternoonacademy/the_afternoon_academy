@@ -411,7 +411,7 @@ export async function recordExactManualEnrolment(
         weekday: template.weekday,
         table_number: template.table_number,
         academy_table_id: template.academy_table_id,
-        seat_number: null,
+        seat_number: plannedBooking.seat_number,
         starts_at: template.starts_at,
         duration_minutes: template.duration_minutes,
         teacher_name: template.teacher_name,

@@ -111,7 +111,7 @@ export function FamilyCommunications({
                       </p>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
                         {item.subject || "No subject"} · {item.recipient_email}
-                        {relatedName(item) ? ` · regarding ${relatedName(item)}` : " · family-wide"}
+                        {relatedName(item) ? ` · regarding ${relatedName(item)}` : " · family record"}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">

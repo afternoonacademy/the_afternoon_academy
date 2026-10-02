@@ -756,7 +756,10 @@ export async function recordExactRenewalPayment(formData: FormData) {
         parent_lead_id: parsed.data.parentLeadId,
         period_start: summary.periodStart,
         period_end: summary.periodEnd,
-        sessions_per_week: Math.max(1, learnerIds.length),
+        sessions_per_week: Math.max(
+          1,
+          new Set(saved.map((session) => session.placementId)).size,
+        ),
         status: "paid",
         amount_cents: summary.amountCents,
         received_at: `${parsed.data.receivedOn}T12:00:00Z`,
@@ -792,7 +795,10 @@ export async function recordExactRenewalPayment(formData: FormData) {
         learner_id: learnerId,
         period_start: learnerSummary.periodStart,
         period_end: learnerSummary.periodEnd,
-        sessions_per_week: 1,
+        sessions_per_week: Math.max(
+          1,
+          new Set(sessions.map((session) => session.placementId)).size,
+        ),
         status: "paid",
         recorded_by: user.id,
         selected_sessions: allocated,
@@ -832,7 +838,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
   for (const [placementId, pricePlanId] of plansByPlacement) {
     const { error } = await supabase
       .from("standing_placements")
-      .update({ session_price_plan_id: pricePlanId, seat_number: null, updated_by: user.id })
+      .update({ session_price_plan_id: pricePlanId, updated_by: user.id })
       .eq("id", placementId)
       .eq("status", "active")
     if (error)

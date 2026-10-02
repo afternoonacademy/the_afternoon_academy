@@ -37,6 +37,7 @@ const manualLeadSchema = z.object({
 
 const manualEnrolmentSchema = z.object({
   parentLeadId: z.string().uuid(), childLeadId: z.string().uuid(), templateId: z.string().uuid(),
+  pricePlanId: z.string().uuid(),
   seatNumber: z.coerce.number().int().min(1).max(6), receivedOn: z.string().date(),
   periodStart: z.string().date(), periodEnd: z.string().date(), paymentReceived: z.literal("yes"),
 }).refine((value) => value.periodEnd >= value.periodStart, { message: "Seat end date must be on or after the start date" })
@@ -269,16 +270,18 @@ export async function recordManualEnrolment(_previousState: ManualEnrolmentActio
     const parsed = manualEnrolmentSchema.safeParse({
       parentLeadId: formData.get("parentLeadId"), childLeadId: formData.get("childLeadId"), templateId: formData.get("templateId"),
       seatNumber: formData.get("seatNumber"), receivedOn: formData.get("receivedOn"), periodStart: formData.get("periodStart"),
-      periodEnd: formData.get("periodEnd"), paymentReceived: formData.get("paymentReceived"),
+      periodEnd: formData.get("periodEnd"), pricePlanId: formData.get("pricePlanId"), paymentReceived: formData.get("paymentReceived"),
     })
     if (!parsed.success) return { error: "Check the payment, seat and service dates." }
     const data = parsed.data; const supabase = supabaseService()
-    const [{ data: child, error: childError }, { data: template, error: templateError }] = await Promise.all([
+    const [{ data: child, error: childError }, { data: template, error: templateError }, { data: pricePlan, error: pricePlanError }] = await Promise.all([
       supabase.from("child_leads").select("parent_lead_id, first_name, school_year").eq("id", data.childLeadId).single(),
       supabase.from("weekly_table_templates").select("weekday, table_number, academy_table_id, starts_at, duration_minutes").eq("id", data.templateId).eq("status", "active").maybeSingle(),
+      supabase.from("session_price_plans").select("id,price_cents").eq("id", data.pricePlanId).eq("status", "active").maybeSingle(),
     ])
     if (childError || child?.parent_lead_id !== data.parentLeadId) return { error: "That child does not belong to this family." }
     if (templateError || !template) return { error: "That timetable slot is no longer available." }
+    if (pricePlanError || !pricePlan) return { error: "Choose an active price plan for this learner." }
     if (!child.first_name) return { error: "Add the child’s first name before recording their place." }
     const { data: table, error: tableError } = await supabase.from("academy_tables").select("seat_capacity, status").eq("id", template.academy_table_id).maybeSingle()
     if (tableError || !table || table.status !== "active") return { error: "That Academy table is not available." }
@@ -303,7 +306,7 @@ export async function recordManualEnrolment(_previousState: ManualEnrolmentActio
     if (entitlementError) return { error: "Payment was recorded, but the child payment period could not be activated. Please contact support before retrying." }
     const { error: endError } = await supabase.from("standing_placements").update({ status: "ended", effective_to: data.periodStart, updated_by: user.id }).eq("learner_id", learner.id).eq("weekday", template.weekday).eq("status", "active")
     if (endError) return { error: "Payment was recorded, but the previous placement could not be updated. Please contact support before retrying." }
-    const { error: placementError } = await supabase.from("standing_placements").insert({ learner_id: learner.id, weekday: template.weekday, table_number: template.table_number, academy_table_id: template.academy_table_id, seat_number: data.seatNumber, starts_at: template.starts_at, duration_minutes: template.duration_minutes, effective_from: data.periodStart, created_by: user.id, updated_by: user.id })
+    const { error: placementError } = await supabase.from("standing_placements").insert({ learner_id: learner.id, weekday: template.weekday, table_number: template.table_number, academy_table_id: template.academy_table_id, seat_number: data.seatNumber, starts_at: template.starts_at, duration_minutes: template.duration_minutes, session_price_plan_id: pricePlan.id, effective_from: data.periodStart, created_by: user.id, updated_by: user.id })
     if (placementError) return { error: "Payment was recorded, but the standing place could not be activated. Please contact support before retrying." }
     const { error: bookingUpdateError } = await supabase.from("accepted_bookings").update({ learner_id: learner.id, payment_entitlement_id: payment.id, status: "paid_active", paid_at: new Date().toISOString(), paid_by: user.id }).eq("id", booking.id)
     if (bookingUpdateError) return { error: "Payment was recorded, but the booking could not be activated. Please contact support before retrying." }

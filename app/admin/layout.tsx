@@ -13,10 +13,6 @@ const navItems = [
     label: "Family pipeline",
   },
   {
-    href: "/admin/renewals",
-    label: "Renewals",
-  },
-  {
     href: "/admin/learners",
     label: "Learner records",
   },

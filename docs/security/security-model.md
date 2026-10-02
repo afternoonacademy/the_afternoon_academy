@@ -100,3 +100,7 @@ Before a learner-data feature is considered done, ask:
 ## Review cadence
 
 Revisit this model whenever TAA adds a parent portal, new staff roles, specialist partners, school sharing, payments, AI processing, multi-site operation, or another material data flow.
+
+## Parent email delivery telemetry
+
+TAA may retain operational delivery outcomes for parent communications (sent, delivered, delayed, bounced and failed) so staff can identify messages that did not reach the recipient. TAA does not use email open or click tracking for this workflow. Delivery webhooks must be cryptographically verified and stored through trusted server/service-role paths; webhook signing secrets remain server-only. Retain only the minimum delivery metadata needed for operational support and audit rather than full provider webhook payloads.

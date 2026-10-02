@@ -122,3 +122,78 @@ The administration foundation is complete and becomes the clean production basel
 ### Next discrete build — Focus Groups
 
 Focus Groups will be an additional, deliberately composed Academy group type—not a repositioning of Homework Club. The first candidate product is an IGCSE Chemistry Focus Group for Years 10–11. Architecture discovery must first establish the smallest safe extension to the existing enquiry and lead pipeline, with no duplicate family, learner, payment or placement systems.
+
+### Focus Groups launch workflow — September 2026
+
+The first public Focus Group is IGCSE Chemistry for Years 10–11. Interest registrations enter the existing lead pipeline, where staff deliberately compose the group and continue through the existing manual payment and placement workflow where appropriate. The registration acknowledgement and internal notification are transactional only: they do not confirm a place, reserve a seat or request payment.
+
+### Academy closure and renewal control — October 2026
+
+The Academy calendar records planned closures once and excludes them from future renewal service-date calculations. Renewals are a persistent operational queue, not a date-window report: an expired paid period becomes overdue until renewed or closed. Where a family is late but staff elect to continue teaching, the system records a date-bounded **Payment pending** operational seat rather than falsely marking it paid. Parent renewal emails remain human-edited and explicitly sent, with the final message retained in the delivery record.
+
+### Renewal session selection and pricing — October 2026
+
+Renewal amounts are calculated from the active Academy timetable's per-session rates, rather than typed freehand. Staff select a coverage period, receive the eligible dated sessions after Academy closures are excluded, and can remove individual sessions before the editable renewal email is prepared. The resulting selection is retained with the renewal case and is used when cleared funds activate dated seats. A make-up/replacement-session composer remains a later, separate operations slice; it must validate table capacity and avoid silently changing a learner's standing place.
+
+Commercial rates are maintained as named reusable session price plans (for example, General Homework Support and IGCSE Chemistry Focus Group), then selected for the learner's recurring paid place. Tables, days and times are delivery information only. The final renewal selection retains the copied price used in its communication and payment record.
+
+At renewal, staff may select the price plan for the next paid period. The learner's current plan is the default; a different plan changes the quote but is only applied to the learner's recurring place after cleared payment is recorded. Selecting a specialist plan does not itself create a suitable group or move a seat: staff remain responsible for that deliberate placement decision.
+
+### Deferred enabling work — AI family-update delivery
+
+Enable and approve Vercel AI Gateway before treating family-update drafting as an end-to-end feature. A subsequent controlled slice may add reviewed Resend delivery and branded formatting, with explicit confirmation for each send, durable audit records, safeguarding/data-protection review and full end-to-end testing. AI remains administrative support; it does not independently decide or send parent communications.
+
+### Unified exact-date paid periods — October 2026
+
+Family Pipeline payment activation and Renewals use the same exact-date paid-period builder. Staff choose the learner's recurring place and then the precise paid service dates; expected recurring dates preload, Academy closures are visibly blocked, and open-date replacements are explicit. The selected-session structure is the source for the quote, editable renewal email, payment entitlement metadata and dated Operations seats. Period start/end remain derived compatibility fields. Price plans stay attached to the learner's recurring place and never move a learner between groups automatically.
+
+
+### Dated seats and recurring capacity — October 2026
+
+Treat numbered seats as an Operations/capacity mechanism only; they are not fixed physical chairs. Families keep a recurring table/time arrangement and an explicit recurring capacity hold while that standing placement remains active. For existing recurring learners, payment expiry does **not** release capacity. Renewal-due learners remain expected in Operations and count against capacity until staff explicitly release the recurring place. Exact paid dates remain the source of truth for payment entitlement; renewal-due Operations appearances are visibly labelled and do not create a paid entitlement.
+
+
+### Repeatable family enquiry form — October 2026
+
+The public place-enquiry form now treats each child as an independent learning requirement inside one family submission. Parent/contact details are entered once; staff receive one child record and one timetable-preference record per child, including independent support type, school/curriculum context and availability. This supports siblings needing different services such as general homework support, IGCSE Chemistry or 1-to-1 tuition.
+
+
+### Child-first follow-up and payment activation — October 2026
+
+The Family Pipeline now reviews and activates each child independently. The follow-up table is shown before payment actions, displays requested sessions per week, and exposes **Add payment & dates** on each child row. A payment for one sibling does not reserve, enrol or convert the others; the family reaches converted only after every child in that enquiry has its own paid activation.
+
+
+### Planned place → contact → paid child lifecycle — October 2026
+
+Family Pipeline initial activation is now explicitly staged per child: **Lead received → Session planned → Contacted / awaiting payment → Paid**. Planning records the recurring table/time, price plan, visible capacity seat and proposed exact dates without creating payment or dated Operations attendance. The planned recurring seat is an explicit temporary capacity hold and shows the child’s name in the seat map. Sending the parent’s planned-place email advances only that child to contacted. Cleared payment is confirmed later in a separate exact-date step, at which point paid entitlements and dated Operations places are created. Siblings may remain at different stages.
+
+
+- Planned-place parent communication is now admin-editable in Academy Setup → Email templates, using placeholders for the parent/child, recurring place, price plan, per-session price, planned dates, session count, total and payment details/reference.
+
+
+### Unified renewal lifecycle in Family Pipeline — October 2026
+
+Renewals now use the same staged admin pattern as a new child booking and are surfaced as **3 · Needs renewal** inside Family Pipeline. Each learner renews independently: **Needs renewal → Renewal planned → Contacted — awaiting payment → Paid**. The learner's existing recurring capacity is preserved after the last paid service date and is not made available to new families merely because the paid period expired. Capacity is released only by an explicit admin **Release recurring place** action with a recorded reason. The renewal plan reuses the learner's active standing place and price plan by default, generates the existing Academy Setup renewal email from the exact selected dates, and uses a compact cleared-payment confirmation before creating the next paid dated Operations seats. The former Renewals route now opens the Family Pipeline renewal section rather than maintaining a second operational workflow.
+
+
+### Family Pipeline lifecycle queues — October 2026
+
+Family Pipeline is the single operational family/customer lifecycle surface. It is split into four mutually exclusive queues: **1 · Leads**, **2 · Customers**, **3 · Renewals**, and **4 · Closed / archived**. A child/learner appears in only one operational queue at a time. Paid active learners are removed from Leads; learners in the renewal window are removed from both Leads and Customers; completed renewal returns the learner to Customers; cancellation/non-payment release moves the historical record to Closed / archived. Renewals are no longer a sidebar destination.
+
+
+### Renewal-due learners in Operations — October 2026
+
+Operations now combines exact dated paid seats with active recurring learners whose paid period has expired but whose standing place has not been released. Those learners appear in the correct dated table/time as **Renewal due · place held**, count against capacity, and remain available for teacher attendance. Recording attendance materialises a date-bounded `payment_pending` Operations seat without creating a paid entitlement. When the renewal payment clears, the dated seat is upgraded to paid/scheduled; when staff release the recurring place, future renewal-due Operations seats are cancelled and the capacity becomes available.
+
+
+- Learner Workspace now opens with a compact current booking/payment summary so staff can immediately see recurring place, price plan, paid-through date, exact paid dates and whether the learner is Paid, Renewal due, Payment pending or has no active place.
+
+
+### Multi-day learner booking consistency — October 2026
+
+For both first-time offers and renewals, one learner now has one combined exact-date planner regardless of whether they attend one, two or five recurring days per week. The learner's recurring places remain distinct capacity records, but their expected dates are shown in one calendar and one selected-session summary. Initial offers can hold multiple recurring places before contact; one parent email and one cleared-payment confirmation cover the combined exact dates. Renewal planning follows the same interaction and email language.
+
+
+### Family communications and delivery outcomes — October 2026
+
+Parent communications use one family-centric history anchored to `parent_lead_id`, so enquiry-stage messages exist before learner activation and remain visible after conversion. Optional child/learner/renewal references preserve context without creating a parallel lead-vs-learner communications system. Resend delivery webhooks update operational status as Sent, Delivered, Delivery delayed, Bounced or Failed. TAA intentionally does not use open or click tracking. Family Pipeline lead details and Learner Workspace both surface the retained parent communication history.

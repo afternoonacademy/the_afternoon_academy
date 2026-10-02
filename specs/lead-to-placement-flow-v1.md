@@ -129,3 +129,130 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Recording a family payment records both the received date and the covered service period. It activates all the parent’s held child bookings, creates/activates their learner records and assigns their paid recurring seats.
 - The parent lead becomes **Enrolled / paid** only after staff records payment.
 - One-off trials and genuine exceptions are added on the dated room board; they do not overwrite the normal booking.
+
+
+## Repeatable child-specific public enquiry — 2 October 2026
+
+- Parent/contact details are captured once per family enquiry.
+- The public form contains one reusable child block and an explicit **Add another child** action.
+- Each child independently records first name, age, school, school year, curriculum, support needs, optional IGCSE course/exam-board context, preferred days, preferred times, preferred frequency and child-specific notes.
+- Adding another child does not submit the enquiry; the family submits once after all children have been added.
+- Each submitted child creates its own `child_leads` row and its own `timetable_preferences` row under the shared parent lead.
+- Support choices are never copied automatically from one sibling to another.
+- The legacy abbreviated “another child” name/age/year section is retired.
+
+
+## Child-first follow-up and activation — 2 October 2026
+
+- The Family follow-up queue is the operational review step before any initial payment activation.
+- Each row represents one child response, even when siblings share a parent lead.
+- The queue shows the child name, requested support, requested sessions per week and availability.
+- **Add payment & dates** is a child-level action beside **Details**; it opens the exact-date paid-period builder already scoped to that child.
+- Siblings are activated independently. Recording payment for one child must not imply that another sibling has been offered, paid or enrolled.
+- A family lead reaches `converted` only once every child in that family enquiry has at least one paid child entitlement. Partial child activation retains the family in follow-up.
+- The separate family-level payment table is removed from the active Leads workflow to avoid implying that all siblings must be activated together.
+
+
+### Compact follow-up row
+
+The visible follow-up row is intentionally limited to essential triage information: family/contact email, child name/age and requested support. Availability, requested weekly frequency, school/curriculum, notes, contact phone/area, follow-up actions and the child-scoped **Add payment & dates** action live inside the expanded **Details** row. This keeps the desktop table within the page width and ensures staff review the child detail before recording payment.
+
+
+## Planned-place → contact → payment lifecycle — implementation plan (2 October 2026)
+
+### Goal
+Separate child-level place planning, parent contact and payment confirmation. A planned place consumes one recurring capacity position and shows the child's name in the seat map; it does not create dated Operations attendance or a paid entitlement.
+
+### Non-goals
+- No automatic email at plan time.
+- No dated Operations seats before confirmed payment, except the existing explicit date-bounded payment-pending continuation workflow.
+- No sibling-wide activation.
+- No reintroduction of historical standing-seat ownership into renewals.
+
+### Files / schema
+- Add child-level pipeline status to \`child_leads\`.
+- Extend \`accepted_bookings\` to represent \`session_planned\` and \`contacted\` recurring capacity holds with a price plan and source weekly template.
+- Update \`lead_overview_view\` to expose the child-level status.
+- Add server actions/components for place planning, parent email and payment confirmation.
+- Reuse the exact-date paid-period builder only at the payment stage.
+
+### Authorization / privacy / safeguarding
+All mutations remain admin-only server actions using \`requireAdmin()\` and the service-role server client. No new browser write access is introduced. Emails contain only the minimum place/payment information already visible to the admin.
+
+### Failure modes
+- Planned seat already held: reject with an actionable capacity error.
+- Price plan/template archived between view and save: reject.
+- Email send failure: retain \`session_planned\`, do not advance to contacted.
+- Payment confirmation without a contacted/planned place: reject.
+- Dated capacity unavailable at payment time: reject before creating paid Operations seats.
+- Sibling status remains independent.
+
+### Acceptance criteria
+1. New child response starts as **Lead received**.
+2. Admin can open Details, choose recurring table/time, price plan and one visible available seat, then click **Record planned place**.
+3. Planned seat map shows names for paid/planned/contacted places and clearly marks available positions.
+4. Planning changes only that child to **Session planned** and creates no payment or dated Operations records.
+5. Admin can then send the planned-place email; successful send changes that child to **Contacted — awaiting payment**.
+6. Payment confirmation is a separate step that reviews exact paid dates and records payment; successful confirmation changes the child to **Paid** and creates dated Operations seats.
+7. Siblings may be at different statuses simultaneously.
+8. Releasing a planned/contacted place returns that recurring capacity position to available.
+
+### Tests / rollback
+Run lint, typecheck/build, targeted lifecycle checks and Supabase security advisors. Schema changes are additive/status-compatible and can be rolled back by reverting code while leaving the added nullable columns unused.
+
+
+### Implemented staged lifecycle
+
+The staged child flow is implemented as follows:
+
+1. **Lead received** — child enquiry exists; no capacity is reserved.
+2. **Session planned** — admin selects recurring table/time, price plan and a visible available capacity seat, reviews proposed exact dates, and records the plan. The recurring capacity position is held but no payment or dated Operations seats are created.
+3. **Contacted — awaiting payment** — admin sends the planned-place email from the saved plan. Only successful delivery advances the child.
+4. **Paid** — after funds clear, admin reviews the exact paid dates and confirms payment. Only then are payment entitlement, learner activation/standing placement and dated Operations seats created.
+
+A planned/contacted place can be released, returning the recurring capacity marker to available. The seat map shows names for active planned/contacted/paid recurring capacity records and does not imply a fixed physical chair.
+
+
+### Planned-place email template
+
+The email used for **Session planned → Contacted — awaiting payment** is stored as `academy_email_templates.template_key = planned_place_offer` and is editable in Academy Setup → Email templates. The send action renders the stored subject/body with the reviewed child/place/date/price/payment placeholders. Status advances only after successful delivery; failed sends leave the child at Session planned.
+
+
+### Compact cleared-payment confirmation
+
+Once a child is **Contacted — awaiting payment**, the initial activation flow no longer reopens the paid-period date picker. The saved planned-place snapshot is displayed read-only: child, table/time, price plan, planned service dates, session count and total. Admin records the payment received date, confirms that the planned amount has cleared, and clicks **Confirm payment & activate N dates**. The server still revalidates the saved plan, closures and dated capacity before creating the paid entitlement and Operations places.
+
+
+## Unified child renewal workflow — 2 October 2026
+
+Renewal is now surfaced in Family Pipeline rather than operated as a separate parallel screen.
+
+For an existing learner:
+1. **Needs renewal** — the most recent paid period is ending/ended. The existing recurring capacity remains reserved.
+2. **Renewal planned** — admin reviews the next exact service dates using the learner's active standing place and price-plan default.
+3. **Contacted — awaiting payment** — the renewal email generated from the Academy Setup renewal template has been sent successfully.
+4. **Paid** — cleared payment is confirmed from a compact saved-plan summary; the next child/payment entitlement and exact dated Operations seats are created.
+
+Renewal cases are learner-specific so siblings can be at different stages. Existing recurring capacity is not released merely because the paid period expires. The explicit **Release recurring place** action requires a reason, cancels the active recurring booking capacity and ends the learner's standing placement. Historical family-level renewal records are not rewritten.
+
+
+## Family Pipeline lifecycle queues — 2 October 2026
+
+The Family Pipeline is the canonical admin lifecycle view and contains four mutually exclusive sections:
+
+1. **Leads** — child enquiries before paid learner activation. A child with an active learner or an active renewal must not also appear here.
+2. **Customers** — active paid learners with an active recurring place who are outside the renewal window.
+3. **Renewals** — active learners whose next paid period needs action. Their recurring capacity remains reserved until renewed or explicitly released.
+4. **Closed / archived** — closed leads and historical learner records whose recurring place was released after cancellation/non-payment/exit.
+
+Movement is lifecycle-driven rather than copy-based: **Lead → Customer → Renewal → Customer**, or **Lead / Customer / Renewal → Closed / archived**. The four UI tables are filtered views of the existing underlying records, not four separate enquiry/customer/payment systems.
+
+
+### Renewal-due Operations expectation
+
+A learner in **Needs renewal / Renewal planned / Contacted — awaiting payment** remains expected in the Operations room whenever their active standing placement matches the selected service date. The tile is visibly labelled **Renewal due · place held**, is included in the table capacity count, and supports teacher attendance. This is an operational expectation derived from the active recurring place, not evidence of payment. A teacher attendance action materialises a `payment_pending` dated seat when required for auditability. Explicit **Release recurring place** removes future expectations.
+
+
+### Multi-day initial place planning
+
+A child may be offered more than one recurring Academy day in the same initial pipeline cycle. Admin can add multiple recurring place rows, each with its own table/time, capacity seat and price plan, then review all expected dates in one combined learner calendar. Saving the plan creates/updates one recurring capacity booking per selected place. The parent receives one planned-place email listing every recurring place and all exact service dates. Cleared payment creates one active learner, one standing placement per recurring day, one combined paid entitlement and the exact dated Operations seats.

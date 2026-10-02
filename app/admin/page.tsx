@@ -3,8 +3,10 @@ import Link from "next/link";
 import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+// Operations view includes renewal-due recurring capacity.
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 const move = (date: string, days: number) => {
   const value = new Date(`${date}T12:00:00`);
@@ -28,6 +30,7 @@ export default async function AdminPage({
     { data: attendance },
     { data: tables },
     { data: weeklyTemplates },
+    { data: closures },
   ] = await Promise.all([
     supabaseAdmin
       .from("delivery_sessions")
@@ -38,8 +41,8 @@ export default async function AdminPage({
       .order("starts_at"),
     supabaseAdmin
       .from("delivery_seats")
-      .select("id, delivery_session_id, learner_id, seat_number")
-      .eq("status", "scheduled"),
+      .select("id, delivery_session_id, learner_id, seat_number, status")
+      .in("status", ["scheduled", "payment_pending"]),
     supabaseAdmin
       .from("learners")
       .select("id, first_name, year_group")
@@ -61,12 +64,24 @@ export default async function AdminPage({
       .eq("weekday", new Date(`${date}T12:00:00`).getDay())
       .lte("effective_from", date)
       .or(`effective_to.is.null,effective_to.gte.${date}`),
+    supabaseAdmin
+      .from("academy_closures")
+      .select("reason,starts_on,ends_on")
+      .lte("starts_on", date)
+      .gte("ends_on", date),
   ]);
 
   const sessionIds = new Set((sessions || []).map((session) => session.id));
   const visibleSeats = (seats || []).filter((seat) =>
     sessionIds.has(seat.delivery_session_id),
   );
+  const expectedRenewalSeats = await loadRenewalExpectedSeatsForDate({
+    date,
+    sessions: sessions || [],
+    seats: visibleSeats,
+    tables: tables || [],
+    academyClosed: Boolean((closures || []).length),
+  });
   const link = (next: Record<string, string>) =>
     `/admin?${new URLSearchParams({ date, ...next })}`;
 
@@ -83,6 +98,7 @@ export default async function AdminPage({
           <Button className="bg-[#ffde59] text-[#26345f] hover:bg-[#ffe987]" size="sm">View day</Button>
         </form>
       </div>
+      {(closures || []).length ? <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><strong>Academy closed:</strong> {(closures || []).map((closure) => closure.reason).join(" · ")}. The delivery board is shown for reference; do not run a normal Academy session on this date.</div> : null}
       <div className="flex items-center justify-between rounded-2xl border border-indigo-100 bg-white p-3 shadow-sm">
         <Link
           className="px-3 py-2 text-sm"
@@ -109,6 +125,7 @@ export default async function AdminPage({
         date={date}
         eligibleLearnerIds={learners?.map((learner) => learner.id) || []}
         learners={learners || []}
+        expectedRenewalSeats={expectedRenewalSeats}
         seats={visibleSeats}
         sessions={sessions || []}
         tables={tables || []}

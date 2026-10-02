@@ -19,66 +19,46 @@ export type SubmitLeadState = {
 
 export async function submitLead(
   _previousState: SubmitLeadState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SubmitLeadState> {
-const language: "en" | "es" =
-  formData.get("language") === "es" ? "es" : "en"
-  const rawData = {
+  const language: "en" | "es" =
+    formData.get("language") === "es" ? "es" : "en"
+
+  let children: unknown
+  try {
+    children = JSON.parse(String(formData.get("children") || "[]"))
+  } catch {
+    return {
+      success: false,
+      message:
+        language === "es"
+          ? "Revisa los datos de cada niño/a."
+          : "Please check each child’s details.",
+    }
+  }
+
+  const parsed = leadFormSchema.safeParse({
     parentName: formData.get("parentName"),
     email: formData.get("email"),
     phone: formData.get("phone"),
     area: formData.get("area") || undefined,
-    schoolName: formData.get("schoolName") || undefined,
-    childFirstName: formData.get("childFirstName"),
-
-    childAge: formData.get("childAge"),
-    schoolYear: formData.get("schoolYear") || undefined,
-    curriculum: formData.get("curriculum"),
-
-    supportNeeds: formData.getAll("supportNeeds"),
-
-    preferredDays: formData.getAll("preferredDays"),
-    preferredTimes: formData.getAll("preferredTimes"),
-    preferredFrequency: formData.get("preferredFrequency"),
-
+    children,
     interestLevel: formData.get("interestLevel"),
-    notes: formData.get("notes") || undefined,
-
     consentContact: formData.get("consentContact") === "on",
-  }
-
-  const parsed = leadFormSchema.safeParse(rawData)
+  })
 
   if (!parsed.success) {
-    const firstError =
-      parsed.error.issues[0]?.message ||
-      (language === "es"
-        ? "Revisa el formulario e inténtalo de nuevo."
-        : "Please check the form and try again.")
-
     return {
       success: false,
-      message: firstError,
+      message:
+        parsed.error.issues[0]?.message ||
+        (language === "es"
+          ? "Revisa el formulario e inténtalo de nuevo."
+          : "Please check the form and try again."),
     }
   }
 
   const data = parsed.data
-
-  const additionalFirstNames = formData.getAll("additionalChildFirstName").map((value) => String(value).trim())
-  const additionalAges = formData.getAll("additionalChildAge").map((value) => Number(value))
-  const additionalYears = formData.getAll("additionalChildSchoolYear").map((value) => String(value).trim())
-
-  if (additionalFirstNames.length !== additionalAges.length || additionalFirstNames.length !== additionalYears.length ||
-    additionalFirstNames.some((name, index) => !name || !Number.isInteger(additionalAges[index]) || additionalAges[index] < 4 || additionalAges[index] > 12)) {
-    return { success: false, message: language === "es" ? "Revisa los datos de cada niño/a." : "Please check each additional child’s details." }
-  }
-
-  const additionalChildren = additionalFirstNames.map((firstName, index) => ({
-    first_name: firstName,
-    child_age: additionalAges[index],
-    school_year: additionalYears[index] || null,
-  }))
-
   const { data: parentLead, error: parentError } = await supabaseAdmin
     .from("parent_leads")
     .insert({
@@ -86,7 +66,7 @@ const language: "en" | "es" =
       email: data.email,
       phone: data.phone,
       area: data.area || null,
-      school_name: data.schoolName || null,
+      school_name: data.children[0]?.schoolName || null,
       interest_level: data.interestLevel,
       consent_contact: data.consentContact,
       source: language === "es" ? "landing_page_es" : "landing_page_en",
@@ -97,7 +77,6 @@ const language: "en" | "es" =
 
   if (parentError || !parentLead) {
     console.error("Parent lead insert error:", parentError)
-
     return {
       success: false,
       message:
@@ -107,60 +86,58 @@ const language: "en" | "es" =
     }
   }
 
-  const childRows = [
-    {
-      parent_lead_id: parentLead.id,
-      first_name: data.childFirstName,
-      child_age: data.childAge,
-      school_year: data.schoolYear || null,
-      curriculum: data.curriculum,
-      support_needs: data.supportNeeds,
-      notes: data.notes || null,
-    },
-    ...additionalChildren.map((child) => ({
-      parent_lead_id: parentLead.id,
-      first_name: child.first_name,
-      child_age: child.child_age,
-      school_year: child.school_year,
-      curriculum: data.curriculum,
-      support_needs: data.supportNeeds,
-      notes: data.notes || null,
-    })),
-  ]
-
   const { data: childLeads, error: childError } = await supabaseAdmin
     .from("child_leads")
-    .insert(childRows)
+    .insert(
+      data.children.map((child) => ({
+        parent_lead_id: parentLead.id,
+        first_name: child.firstName,
+        child_age: child.age,
+        school_name: child.schoolName || null,
+        school_year: child.schoolYear || null,
+        curriculum: child.curriculum,
+        support_needs: child.supportNeeds,
+        course_or_exam_board:
+          child.supportNeeds.includes("igcse_chemistry")
+            ? child.courseOrExamBoard || null
+            : null,
+        notes: child.notes || null,
+      })),
+    )
     .select("id")
 
-  if (childError || !childLeads?.length) {
+  if (childError || !childLeads || childLeads.length !== data.children.length) {
     await supabaseAdmin.from("parent_leads").delete().eq("id", parentLead.id)
     console.error("Child lead insert error:", childError)
     return {
       success: false,
-      message: language === "es"
-        ? "Ha ocurrido un error al guardar los datos del niño/a. Inténtalo de nuevo."
-        : "Something went wrong while saving the child details. Please try again.",
+      message:
+        language === "es"
+          ? "Ha ocurrido un error al guardar los datos de los niños/as. Inténtalo de nuevo."
+          : "Something went wrong while saving the child details. Please try again.",
     }
   }
 
   const { error: timetableError } = await supabaseAdmin
     .from("timetable_preferences")
-    .insert(childLeads.map((childLead) => ({
-      child_lead_id: childLead.id,
-      preferred_days: data.preferredDays,
-      preferred_times: data.preferredTimes,
-      preferred_frequency: data.preferredFrequency,
-    })))
+    .insert(
+      childLeads.map((childLead, index) => ({
+        child_lead_id: childLead.id,
+        preferred_days: data.children[index].preferredDays,
+        preferred_times: data.children[index].preferredTimes,
+        preferred_frequency: data.children[index].preferredFrequency,
+      })),
+    )
 
   if (timetableError) {
     await supabaseAdmin.from("parent_leads").delete().eq("id", parentLead.id)
     console.error("Timetable preference insert error:", timetableError)
     return {
       success: false,
-      message: language === "es"
-        ? "Ha ocurrido un error al guardar tu solicitud de plaza. Inténtalo de nuevo."
-        : "Something went wrong while saving your place enquiry. Please try again.",
+      message:
+        language === "es"
+          ? "Ha ocurrido un error al guardar tu solicitud de plaza. Inténtalo de nuevo."
+          : "Something went wrong while saving your place enquiry. Please try again.",
     }
   }
 
@@ -169,36 +146,64 @@ const language: "en" | "es" =
     email: data.email,
     phone: data.phone,
     area: data.area,
-    schoolName: data.schoolName,
-
-    childAge: data.childAge,
-    schoolYear: data.schoolYear,
-    curriculum: data.curriculum,
-    supportNeeds: data.supportNeeds,
-
-    preferredDays: data.preferredDays,
-    preferredTimes: data.preferredTimes,
-    preferredFrequency: data.preferredFrequency,
+    children: data.children,
     interestLevel: data.interestLevel,
-
-    notes: data.notes,
     language,
   }
 
   if (resend) {
-    const parentEmail = await resend.emails.send({
-      from: resendFromEmail,
-      to: data.email,
-      subject:
-        language === "es"
-          ? "Hemos recibido tu solicitud de plaza"
-          : "We received your Afternoon Academy place enquiry",
-      html: parentConfirmationEmailHtml(emailData),
-      text: parentConfirmationEmailText(emailData),
-    })
+    const parentSubject =
+      language === "es"
+        ? "Hemos recibido tu solicitud de plaza"
+        : "We received your Afternoon Academy place enquiry"
+    const parentText = parentConfirmationEmailText(emailData)
+    const idempotencyKey = "enquiry-acknowledgement-" + parentLead.id
+
+    const { data: deliveryLog } = await supabaseAdmin
+      .from("email_delivery_log")
+      .insert({
+        parent_lead_id: parentLead.id,
+        email_kind: "enquiry_acknowledgement",
+        recipient_email: data.email,
+        idempotency_key: idempotencyKey,
+        subject: parentSubject,
+        body_text: parentText,
+      })
+      .select("id")
+      .single()
+
+    const parentEmail = await resend.emails.send(
+      {
+        from: resendFromEmail,
+        to: data.email,
+        subject: parentSubject,
+        html: parentConfirmationEmailHtml(emailData),
+        text: parentText,
+      },
+      { headers: { "Idempotency-Key": idempotencyKey } },
+    )
 
     if (parentEmail.error) {
       console.error("Parent confirmation email error:", parentEmail.error)
+      if (deliveryLog) {
+        await supabaseAdmin
+          .from("email_delivery_log")
+          .update({
+            status: "failed",
+            failed_at: new Date().toISOString(),
+            error_message: parentEmail.error.message.slice(0, 500),
+          })
+          .eq("id", deliveryLog.id)
+      }
+    } else if (deliveryLog) {
+      await supabaseAdmin
+        .from("email_delivery_log")
+        .update({
+          status: "sent",
+          resend_email_id: parentEmail.data?.id || null,
+          sent_at: new Date().toISOString(),
+        })
+        .eq("id", deliveryLog.id)
     }
 
     if (adminLeadEmail) {
@@ -206,7 +211,7 @@ const language: "en" | "es" =
         from: resendFromEmail,
         to: adminLeadEmail,
         replyTo: data.email,
-        subject: `New Afternoon Academy place enquiry: ${data.parentName}`,
+        subject: "New Afternoon Academy place enquiry: " + data.parentName,
         html: adminLeadNotificationEmailHtml(emailData),
         text: adminLeadNotificationEmailText(emailData),
       })

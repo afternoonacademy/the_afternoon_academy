@@ -196,3 +196,6 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Applied the additive exact-paid-period entitlement migration to the connected Supabase project so `payment_entitlements` and `child_payment_entitlements` can store the selected-session payload used by the preview.
 - Removed the single orphan `accepted_awaiting_payment` booking created by the failed preview submission.
 - Hardened manual payment activation so a temporary recurring-seat hold is automatically rolled back if the payment entitlement write fails, preventing the same partial-record state from being left behind.
+
+- Fixed dated Operations-seat creation to avoid PostgREST `ON CONFLICT` against partial unique indexes. The paid-period activation path now reuses an existing active learner/session seat when present, otherwise performs a normal insert and relies on the existing partial uniqueness constraints for race-safe conflict detection.
+- Reset the affected test family back to its pre-payment baseline after the failed preview activation: no accepted booking, learner, payment entitlement or standing placement remains for the test attempt; the parent lead remains `contacted`.

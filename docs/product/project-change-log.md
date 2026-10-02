@@ -401,3 +401,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 <!-- Trigger family communications preview build -->
 
 <!-- Retry family communications preview after Resend integration -->
+
+- Suppressed delivery is also tracked as an actionable failure state, alongside bounce/failed/delayed outcomes.

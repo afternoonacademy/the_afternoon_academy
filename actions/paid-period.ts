@@ -494,7 +494,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       supabase
         .from("standing_placements")
         .select(
-          "id,learner_id,academy_table_id,table_number,seat_number,weekday,starts_at,duration_minutes,teacher_name,focus,learners!inner(first_name,parent_lead_id)",
+          "id,learner_id,academy_table_id,table_number,weekday,starts_at,duration_minutes,teacher_name,focus,learners!inner(first_name,parent_lead_id)",
         )
         .eq("status", "active"),
       supabase
@@ -534,7 +534,6 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       item.learnerId !== placement.learner_id ||
       item.academyTableId !== placement.academy_table_id ||
       item.tableNumber !== placement.table_number ||
-      item.seatNumber !== placement.seat_number ||
       item.startsAt !== placement.starts_at.slice(0, 5)
     ) {
       throw new Error("A selected session no longer matches the learner’s standing place")
@@ -547,7 +546,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       date: item.date,
       academyTableId: placement.academy_table_id,
       tableNumber: placement.table_number,
-      seatNumber: placement.seat_number,
+      seatNumber: null,
       startsAt: placement.starts_at.slice(0, 5),
       durationMinutes: placement.duration_minutes,
       teacherName: placement.teacher_name,
@@ -561,7 +560,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   })
 
   await assertDatesOpen(serverSessions, supabase)
-  await assertDatedSeatAvailability(serverSessions, supabase)
+  await assertPaidPeriodCapacity(serverSessions, supabase)
 
   const summary = paidPeriodSummary(serverSessions)
   if (!summary.periodStart || !summary.periodEnd)
@@ -646,7 +645,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
     throw new Error("The renewal selection changed. Save the exact sessions again before recording payment.")
 
   await assertDatesOpen(saved, supabase)
-  await assertDatedSeatAvailability(saved, supabase)
+  await assertPaidPeriodCapacity(saved, supabase)
   const summary = paidPeriodSummary(saved)
   if (!summary.periodStart || !summary.periodEnd)
     throw new Error("This renewal has no selected service dates")
@@ -681,10 +680,21 @@ export async function recordExactRenewalPayment(formData: FormData) {
     .single()
   if (paymentError || !payment) throw new Error("Could not record the received payment")
 
+  const allocatedSessions: PaidPeriodSession[] = []
+
   for (const learnerId of learnerIds) {
     const sessions = saved.filter((session) => session.learnerId === learnerId)
     const learnerSummary = paidPeriodSummary(sessions)
     if (!learnerSummary.periodStart || !learnerSummary.periodEnd) continue
+
+    const allocated = await createDatedOperationsSeats(
+      sessions,
+      learnerId,
+      user.id,
+      supabase,
+    )
+    allocatedSessions.push(...allocated)
+
     const { error } = await supabase.from("child_payment_entitlements").upsert(
       {
         payment_entitlement_id: payment.id,
@@ -694,15 +704,31 @@ export async function recordExactRenewalPayment(formData: FormData) {
         sessions_per_week: 1,
         status: "paid",
         recorded_by: user.id,
-        selected_sessions: sessions,
-        selected_session_count: sessions.length,
+        selected_sessions: allocated,
+        selected_session_count: allocated.length,
       },
       { onConflict: "learner_id,period_start,period_end" },
     )
-    if (error)
-      throw new Error("Payment was recorded, but a learner entitlement could not be activated")
+    if (error) {
+      throw new Error(
+        "Payment was recorded, but a learner entitlement could not be activated",
+      )
+    }
+  }
 
-    await createDatedOperationsSeats(sessions, learnerId, user.id, supabase)
+  const finalSessions = sortPaidPeriodSessions(allocatedSessions)
+  const { error: paymentSessionError } = await supabase
+    .from("payment_entitlements")
+    .update({
+      selected_sessions: finalSessions,
+      selected_session_count: finalSessions.length,
+    })
+    .eq("id", payment.id)
+
+  if (paymentSessionError) {
+    throw new Error(
+      "Payment and Operations places were recorded, but the payment session audit could not be updated",
+    )
   }
 
   const plansByPlacement = new Map<string, string>()
@@ -715,7 +741,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
   for (const [placementId, pricePlanId] of plansByPlacement) {
     const { error } = await supabase
       .from("standing_placements")
-      .update({ session_price_plan_id: pricePlanId, updated_by: user.id })
+      .update({ session_price_plan_id: pricePlanId, seat_number: null, updated_by: user.id })
       .eq("id", placementId)
       .eq("status", "active")
     if (error)
@@ -729,6 +755,8 @@ export async function recordExactRenewalPayment(formData: FormData) {
     .update({
       status: "renewed",
       renewed_at: new Date().toISOString(),
+      selected_sessions: finalSessions,
+      selected_session_count: finalSessions.length,
       updated_by: user.id,
     })
     .eq("id", parsed.data.caseId)

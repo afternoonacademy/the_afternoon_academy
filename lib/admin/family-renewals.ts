@@ -163,7 +163,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
   )
 
   // One renewal row per learner, using only that learner's latest paid entitlement.
-  const latestByLearner = new Map<string, (typeof entitlements extends (infer T)[] | null ? T : never)>()
+  const latestByLearner = new Map<string, NonNullable<typeof entitlements>[number]>()
   for (const entitlement of entitlements || []) {
     if (!latestByLearner.has(entitlement.learner_id)) {
       latestByLearner.set(entitlement.learner_id, entitlement)

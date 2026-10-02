@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { allocateDatedOperationsSeat } from "@/lib/delivery-capacity";
 import { supabaseService } from "@/lib/supabase/service";
 
 const learnerSchema = z.object({
@@ -42,6 +43,20 @@ const attendanceSchema = z.object({
   sessionId: z.string().uuid().optional(),
   deliverySessionId: z.string().uuid().optional(),
   note: z.string().trim().max(500).optional(),
+});
+
+
+const renewalExpectedAttendanceSchema = z.object({
+  learnerId: z.string().uuid(),
+  attendanceDate: z.string().date(),
+  status: z.enum(["present", "absent"]),
+  placementId: z.string().uuid(),
+  academyTableId: z.string().uuid(),
+  tableNumber: z.coerce.number().int().min(1).max(40),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  durationMinutes: z.coerce.number().int().min(15).max(360),
+  teacherName: z.string().trim().max(160).optional(),
+  focus: z.string().trim().max(500).optional(),
 });
 
 const teacherUpdateSchema = z.object({
@@ -390,6 +405,122 @@ export async function updateLearnerPersonalProfile(formData: FormData) {
   if (error) throw new Error("Could not update the personal profile");
   revalidatePath("/admin/learners");
   revalidatePath(`/admin/learners/${value.learnerId}`);
+}
+
+export async function recordRenewalExpectedAttendance(formData: FormData) {
+  const { user } = await requireAdmin();
+  const parsed = renewalExpectedAttendanceSchema.safeParse({
+    learnerId: formData.get("learnerId"),
+    attendanceDate: formData.get("attendanceDate"),
+    status: formData.get("status"),
+    placementId: formData.get("placementId"),
+    academyTableId: formData.get("academyTableId"),
+    tableNumber: formData.get("tableNumber"),
+    startsAt: formData.get("startsAt"),
+    durationMinutes: formData.get("durationMinutes"),
+    teacherName: formData.get("teacherName") || undefined,
+    focus: formData.get("focus") || undefined,
+  });
+
+  if (!parsed.success) {
+    throw new Error("Could not record renewal attendance");
+  }
+
+  const value = parsed.data;
+  const weekday = new Date(value.attendanceDate + "T12:00:00Z").getUTCDay();
+  const supabase = supabaseService();
+
+  const { data: placement, error: placementError } = await supabase
+    .from("standing_placements")
+    .select("id,learner_id,status,weekday,academy_table_id,table_number,starts_at,duration_minutes,teacher_name,focus,effective_from,effective_to")
+    .eq("id", value.placementId)
+    .eq("learner_id", value.learnerId)
+    .maybeSingle();
+
+  if (
+    placementError ||
+    !placement ||
+    placement.status !== "active" ||
+    placement.weekday !== weekday ||
+    placement.academy_table_id !== value.academyTableId ||
+    placement.table_number !== value.tableNumber ||
+    placement.starts_at.slice(0, 5) !== value.startsAt ||
+    placement.effective_from > value.attendanceDate ||
+    (placement.effective_to && placement.effective_to < value.attendanceDate)
+  ) {
+    throw new Error("This recurring place is no longer active for that date");
+  }
+
+  const { data: paidCoverage, error: coverageError } = await supabase
+    .from("child_payment_entitlements")
+    .select("id")
+    .eq("learner_id", value.learnerId)
+    .eq("status", "paid")
+    .lte("period_start", value.attendanceDate)
+    .gte("period_end", value.attendanceDate)
+    .maybeSingle();
+
+  if (coverageError) {
+    throw new Error("Could not verify payment coverage for this date");
+  }
+
+  const seatNumber = await allocateDatedOperationsSeat({
+    session: {
+      learnerId: value.learnerId,
+      placementId: value.placementId,
+      date: value.attendanceDate,
+      academyTableId: value.academyTableId,
+      tableNumber: value.tableNumber,
+      startsAt: value.startsAt,
+      durationMinutes: placement.duration_minutes,
+      teacherName: placement.teacher_name,
+      focus: placement.focus,
+    },
+    learnerId: value.learnerId,
+    userId: user.id,
+    status: paidCoverage ? "scheduled" : "payment_pending",
+    note: paidCoverage
+      ? null
+      : "Renewal due — recurring place retained until released by admin",
+    supabase,
+  });
+
+  const { data: deliverySession, error: sessionError } = await supabase
+    .from("delivery_sessions")
+    .select("id")
+    .eq("service_date", value.attendanceDate)
+    .eq("academy_table_id", value.academyTableId)
+    .eq("starts_at", value.startsAt)
+    .maybeSingle();
+
+  if (sessionError || !deliverySession) {
+    throw new Error("Could not prepare the Operations session");
+  }
+
+  const { error: attendanceError } = await supabase
+    .from("attendance_records")
+    .upsert(
+      {
+        learner_id: value.learnerId,
+        attendance_date: value.attendanceDate,
+        status: value.status,
+        delivery_session_id: deliverySession.id,
+        note: paidCoverage
+          ? null
+          : "Attendance recorded while renewal payment is outstanding",
+        recorded_by: user.id,
+      },
+      { onConflict: "delivery_session_id,learner_id,attendance_date" },
+    );
+
+  if (attendanceError) {
+    throw new Error("Could not save attendance");
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/operations");
+  revalidatePath(`/admin/learners/${value.learnerId}`);
+  return seatNumber;
 }
 
 export async function recordAttendance(formData: FormData) {

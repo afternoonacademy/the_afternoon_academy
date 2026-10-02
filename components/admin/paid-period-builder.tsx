@@ -121,6 +121,16 @@ export function PaidPeriodBuilder({
   ])
 
   const summary = paidPeriodSummary(sessions)
+  const orderedPlacements = useMemo(
+    () =>
+      [...placements].sort(
+        (a, b) =>
+          a.learnerName.localeCompare(b.learnerName) ||
+          a.startsAt.localeCompare(b.startsAt) ||
+          a.tableNumber - b.tableNumber,
+      ),
+    [placements],
+  )
   const closureWarnings = closureDatesInRange(
     closures,
     suggestionStart,
@@ -243,7 +253,7 @@ export function PaidPeriodBuilder({
       ) : null}
 
       <div className="space-y-6">
-        {placements.map((placement) => {
+        {orderedPlacements.map((placement) => {
           const selected = sessionsFor(placement.placementId)
           const selectedDates = selected.map((session) => toDate(session.date))
           const planId = selected[0]?.pricePlanId || placement.pricePlanId

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
+import { allocateDatedOperationsSeat, assertPaidPeriodCapacity } from "@/lib/delivery-capacity"
 import {
   paidPeriodSummary,
   sortPaidPeriodSessions,
@@ -19,7 +20,7 @@ const selectedSessionSchema = z.object({
   date: z.string().date(),
   academyTableId: z.string().uuid(),
   tableNumber: z.coerce.number().int().min(1).max(40),
-  seatNumber: z.coerce.number().int().min(1).max(40),
+  seatNumber: z.number().int().min(1).max(40).nullable(),
   startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   durationMinutes: z.coerce.number().int().min(15).max(360),
   teacherName: z.string().trim().max(160).nullable(),
@@ -34,7 +35,6 @@ const manualSchema = z.object({
   parentLeadId: z.string().uuid(),
   childLeadId: z.string().uuid(),
   templateId: z.string().uuid(),
-  seatNumber: z.coerce.number().int().min(1).max(40),
   pricePlanId: z.string().uuid(),
   receivedOn: z.string().date(),
   paymentReceived: z.literal("yes"),
@@ -66,7 +66,6 @@ function parseSessions(raw: string): PaidPeriodSession[] {
   if (!parsed.success) throw new Error("Choose at least one valid paid service date")
   const unique = new Set<string>()
   const learnerAllocations = new Set<string>()
-  const seatAllocations = new Set<string>()
   for (const session of parsed.data) {
     const key = `${session.placementId}|${session.date}|${session.startsAt}`
     if (unique.has(key)) throw new Error("A service date is selected more than once")
@@ -79,12 +78,6 @@ function parseSessions(raw: string): PaidPeriodSession[] {
       }
       learnerAllocations.add(learnerKey)
     }
-
-    const seatKey = `${session.date}|${session.academyTableId}|${session.startsAt}|${session.seatNumber}`
-    if (seatAllocations.has(seatKey)) {
-      throw new Error(`Seat ${session.seatNumber} is selected twice for the same dated session`)
-    }
-    seatAllocations.add(seatKey)
   }
   return sortPaidPeriodSessions(parsed.data)
 }
@@ -121,177 +114,31 @@ async function assertDatesOpen(
   }
 }
 
-async function assertDatedSeatAvailability(
-  sessions: PaidPeriodSession[],
-  supabase: ReturnType<typeof supabaseService>,
-) {
-  for (const session of sessions) {
-    const { data: delivery, error: sessionError } = await supabase
-      .from("delivery_sessions")
-      .select("id")
-      .eq("service_date", session.date)
-      .eq("academy_table_id", session.academyTableId)
-      .eq("starts_at", session.startsAt)
-      .maybeSingle()
-    if (sessionError) throw new Error("Could not check a selected Operations session")
-    if (!delivery) continue
-
-    const { data: occupied, error: occupiedError } = await supabase
-      .from("delivery_seats")
-      .select("learner_id")
-      .eq("delivery_session_id", delivery.id)
-      .eq("seat_number", session.seatNumber)
-      .in("status", ["scheduled", "payment_pending"])
-      .maybeSingle()
-    if (occupiedError) throw new Error("Could not check a selected Operations seat")
-    if (
-      occupied &&
-      (!session.learnerId || occupied.learner_id !== session.learnerId)
-    ) {
-      throw new Error(
-        `Seat ${session.seatNumber} at Table ${session.tableNumber} is occupied on ${formatDate(session.date)} at ${session.startsAt}. Choose another place/date before saving.`,
-      )
-    }
-
-    if (session.learnerId) {
-      const { data: duplicate, error: duplicateError } = await supabase
-        .from("delivery_seats")
-        .select("id")
-        .eq("delivery_session_id", delivery.id)
-        .eq("learner_id", session.learnerId)
-        .in("status", ["scheduled", "payment_pending"])
-        .maybeSingle()
-      if (duplicateError) throw new Error("Could not check duplicate learner allocation")
-      if (duplicate && occupied?.learner_id !== session.learnerId) {
-        throw new Error(
-          `${session.learnerName} is already allocated to this session on ${formatDate(session.date)}.`,
-        )
-      }
-    }
-  }
-}
-
 async function createDatedOperationsSeats(
   sessions: PaidPeriodSession[],
   learnerId: string,
   userId: string,
   supabase: ReturnType<typeof supabaseService>,
 ) {
+  const allocated: PaidPeriodSession[] = []
+
   for (const session of sessions) {
-    const { data: delivery, error: deliveryError } = await supabase
-      .from("delivery_sessions")
-      .upsert(
-        {
-          service_date: session.date,
-          table_number: session.tableNumber,
-          academy_table_id: session.academyTableId,
-          starts_at: session.startsAt,
-          duration_minutes: session.durationMinutes,
-          teacher_name: session.teacherName,
-          focus: session.focus,
-          status: "scheduled",
-          created_by: userId,
-          updated_by: userId,
-        },
-        { onConflict: "service_date,academy_table_id,starts_at" },
-      )
-      .select("id")
-      .single()
-    if (deliveryError || !delivery)
-      throw new Error(
-        `Payment was recorded, but the Operations session for ${formatDate(session.date)} could not be created. Do not retry payment until this record is checked.`,
-      )
-
-    const { data: occupied } = await supabase
-      .from("delivery_seats")
-      .select("learner_id")
-      .eq("delivery_session_id", delivery.id)
-      .eq("seat_number", session.seatNumber)
-      .in("status", ["scheduled", "payment_pending"])
-      .maybeSingle()
-    if (occupied && occupied.learner_id !== learnerId) {
-      throw new Error(
-        `Payment was recorded, but Seat ${session.seatNumber} became occupied on ${formatDate(session.date)}. Resolve the Operations seat before retrying.`,
-      )
-    }
-
-    const { data: existingLearnerSeat, error: existingLearnerSeatError } =
-      await supabase
-        .from("delivery_seats")
-        .select("id,seat_number,status")
-        .eq("delivery_session_id", delivery.id)
-        .eq("learner_id", learnerId)
-        .in("status", ["scheduled", "payment_pending"])
-        .maybeSingle()
-
-    if (existingLearnerSeatError)
-      throw new Error(
-        `Payment was recorded, but the dated seat for ${formatDate(session.date)} could not be checked. Review Operations before retrying.`,
-      )
-
-    if (existingLearnerSeat) {
-      const { error: updateSeatError } = await supabase
-        .from("delivery_seats")
-        .update({
-          seat_number: session.seatNumber,
-          status: "scheduled",
-          note: session.replacement ? "Paid replacement session" : null,
-          updated_by: userId,
-        })
-        .eq("id", existingLearnerSeat.id)
-
-      if (updateSeatError) {
-        console.error("Could not update existing dated Operations seat", {
-          updateSeatError,
-          deliverySessionId: delivery.id,
-          learnerId,
-          serviceDate: session.date,
-          seatNumber: session.seatNumber,
-        })
-        throw new Error(
-          `Payment was recorded, but the existing dated seat for ${formatDate(session.date)} could not be updated. Review Operations before retrying.`,
-        )
-      }
-      continue
-    }
-
-    const { error: seatError } = await supabase.from("delivery_seats").insert({
-      delivery_session_id: delivery.id,
-      learner_id: learnerId,
-      seat_number: session.seatNumber,
+    const seatNumber = await allocateDatedOperationsSeat({
+      session,
+      learnerId,
+      userId,
       status: "scheduled",
       note: session.replacement ? "Paid replacement session" : null,
-      updated_by: userId,
+      supabase,
     })
-
-    if (seatError) {
-      console.error("Could not create dated Operations seat", {
-        seatError,
-        deliverySessionId: delivery.id,
-        learnerId,
-        serviceDate: session.date,
-        seatNumber: session.seatNumber,
-      })
-
-      const { data: nowOccupied } = await supabase
-        .from("delivery_seats")
-        .select("learner_id")
-        .eq("delivery_session_id", delivery.id)
-        .eq("seat_number", session.seatNumber)
-        .in("status", ["scheduled", "payment_pending"])
-        .maybeSingle()
-
-      if (nowOccupied && nowOccupied.learner_id !== learnerId) {
-        throw new Error(
-          `Payment was recorded, but Seat ${session.seatNumber} at Table ${session.tableNumber} became occupied on ${formatDate(session.date)} at ${session.startsAt}. Review Operations before retrying.`,
-        )
-      }
-
-      throw new Error(
-        `Payment was recorded, but the dated seat for ${formatDate(session.date)} could not be created. Review Operations before retrying.`,
-      )
-    }
+    allocated.push({
+      ...session,
+      learnerId,
+      seatNumber,
+    })
   }
+
+  return allocated
 }
 
 export async function recordExactManualEnrolment(

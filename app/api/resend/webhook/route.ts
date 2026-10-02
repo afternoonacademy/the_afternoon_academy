@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 
   if (nextStatus === "delivered") update.delivered_at = occurredAt
   if (nextStatus === "bounced") update.bounced_at = occurredAt
-  if (nextStatus === "failed") update.failed_at = occurredAt
+  if (nextStatus === "failed" || nextStatus === "suppressed") update.failed_at = occurredAt
 
   const { error: updateError } = await supabase
     .from("email_delivery_log")

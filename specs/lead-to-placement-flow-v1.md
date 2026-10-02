@@ -151,3 +151,8 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Siblings are activated independently. Recording payment for one child must not imply that another sibling has been offered, paid or enrolled.
 - A family lead reaches `converted` only once every child in that family enquiry has at least one paid child entitlement. Partial child activation retains the family in follow-up.
 - The separate family-level payment table is removed from the active Leads workflow to avoid implying that all siblings must be activated together.
+
+
+### Compact follow-up row
+
+The visible follow-up row is intentionally limited to essential triage information: family/contact email, child name/age and requested support. Availability, requested weekly frequency, school/curriculum, notes, contact phone/area, follow-up actions and the child-scoped **Add payment & dates** action live inside the expanded **Details** row. This keeps the desktop table within the page width and ensures staff review the child detail before recording payment.

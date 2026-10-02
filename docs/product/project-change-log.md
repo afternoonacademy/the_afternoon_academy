@@ -288,3 +288,6 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Releasing a recurring place cancels future `payment_pending` Operations seats while preserving historical attendance/payment records.
 
 <!-- Operations renewal expectation preview trigger -->
+
+
+- Added a read-only **Current booking & payment** summary at the top of each Learner Workspace. It shows learner/year, active recurring place(s), current price plan/session price, payment/renewal status, paid-through date and exact booked paid dates where available. Renewal-due/payment-pending learners also show that their recurring place remains held until explicitly released.

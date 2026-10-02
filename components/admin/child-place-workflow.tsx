@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Mail, Users } from "lucide-react"
+import { Mail, Plus, Trash2, Users } from "lucide-react"
 
 import {
   recordPlannedChildPlace,
@@ -70,6 +70,12 @@ export type RecurringSeatHold = {
   status: string
 }
 
+type PlaceSelection = {
+  templateId: string
+  seatNumber: string
+  pricePlanId: string
+}
+
 const days = [
   "Sunday",
   "Monday",
@@ -107,7 +113,7 @@ export function ChildPlaceWorkflow({
   closures,
   seatCapacities,
   seatHolds,
-  plannedBooking,
+  plannedBookings = [],
 }: {
   parentLeadId: string
   child: Child
@@ -117,69 +123,81 @@ export function ChildPlaceWorkflow({
   closures: AcademyClosure[]
   seatCapacities: Record<string, number>
   seatHolds: RecurringSeatHold[]
-  plannedBooking?: PlannedBooking | null
+  plannedBookings?: PlannedBooking[]
 }) {
   const today = iso(new Date())
   const endDate = new Date()
   endDate.setUTCDate(endDate.getUTCDate() + 35)
   const suggestionEnd = iso(endDate)
 
-  const [templateId, setTemplateId] = useState(
-    plannedBooking?.weekly_table_template_id || "",
-  )
-  const [seatNumber, setSeatNumber] = useState(
-    plannedBooking?.seat_number ? String(plannedBooking.seat_number) : "",
-  )
-  const [pricePlanId, setPricePlanId] = useState(
-    plannedBooking?.session_price_plan_id || "",
-  )
-  const [editing, setEditing] = useState(!plannedBooking)
+  const initialSelections: PlaceSelection[] = plannedBookings.length
+    ? plannedBookings.map((booking) => ({
+        templateId: booking.weekly_table_template_id || "",
+        seatNumber: String(booking.seat_number),
+        pricePlanId: booking.session_price_plan_id || "",
+      }))
+    : [{ templateId: "", seatNumber: "", pricePlanId: "" }]
 
-  const selectedSlot = slots.find((slot) => slot.id === templateId)
-  const selectedPlan = pricePlans.find((plan) => plan.id === pricePlanId)
-  const capacity = selectedSlot
-    ? seatCapacities[selectedSlot.academy_table_id] || 0
-    : 0
+  const [placeSelections, setPlaceSelections] =
+    useState<PlaceSelection[]>(initialSelections)
+  const [editing, setEditing] = useState(!plannedBookings.length)
 
-  const slotHolds = selectedSlot
-    ? seatHolds.filter(
-        (hold) =>
-          hold.weekday === selectedSlot.weekday &&
-          hold.academyTableId === selectedSlot.academy_table_id &&
-          hold.startsAt.slice(0, 5) === selectedSlot.starts_at.slice(0, 5),
-      )
-    : []
-
-  const seatHold = (seat: number) =>
-    slotHolds.find((hold) => hold.seatNumber === seat)
+  const initialSessions = plannedBookings.flatMap(
+    (booking) => booking.planned_sessions || [],
+  )
 
   const builderPlacements = useMemo<PaidPeriodPlacement[]>(() => {
-    if (!selectedSlot || !selectedPlan || !seatNumber) return []
+    return placeSelections.flatMap((selection) => {
+      const slot = slots.find((item) => item.id === selection.templateId)
+      const plan = pricePlans.find(
+        (item) => item.id === selection.pricePlanId,
+      )
+      if (!slot || !plan || !selection.seatNumber) return []
 
-    return [
-      {
-        placementId: selectedSlot.id,
-        learnerId: null,
-        learnerName: child.first_name || "Child",
-        childLeadId: child.id,
-        weekday: selectedSlot.weekday,
-        academyTableId: selectedSlot.academy_table_id,
-        tableNumber: selectedSlot.table_number,
-        seatNumber: Number(seatNumber),
-        startsAt: selectedSlot.starts_at.slice(0, 5),
-        durationMinutes: selectedSlot.duration_minutes,
-        teacherName: selectedSlot.teacher_name,
-        focus: selectedSlot.focus,
-        pricePlanId: selectedPlan.id,
-        pricePlanName: selectedPlan.name,
-        priceCents: selectedPlan.price_cents,
-      },
-    ]
-  }, [child.first_name, child.id, seatNumber, selectedPlan, selectedSlot])
+      return [
+        {
+          placementId: slot.id,
+          learnerId: null,
+          learnerName: child.first_name || "Child",
+          childLeadId: child.id,
+          weekday: slot.weekday,
+          academyTableId: slot.academy_table_id,
+          tableNumber: slot.table_number,
+          seatNumber: Number(selection.seatNumber),
+          startsAt: slot.starts_at.slice(0, 5),
+          durationMinutes: slot.duration_minutes,
+          teacherName: slot.teacher_name,
+          focus: slot.focus,
+          pricePlanId: plan.id,
+          pricePlanName: plan.name,
+          priceCents: plan.price_cents,
+        },
+      ]
+    })
+  }, [child.first_name, child.id, placeSelections, pricePlans, slots])
 
   const canEmail = pipelineStatus === "session_planned"
   const canConfirmPayment = pipelineStatus === "contacted"
   const isPaid = pipelineStatus === "paid"
+
+  function updateSelection(index: number, patch: Partial<PlaceSelection>) {
+    setPlaceSelections((current) =>
+      current.map((selection, itemIndex) =>
+        itemIndex === index ? { ...selection, ...patch } : selection,
+      ),
+    )
+  }
+
+  function removeSelection(index: number) {
+    setPlaceSelections((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const validSelections = placeSelections.filter(
+    (selection) =>
+      selection.templateId &&
+      selection.seatNumber &&
+      selection.pricePlanId,
+  )
 
   return (
     <div className="space-y-5">
@@ -195,7 +213,7 @@ export function ChildPlaceWorkflow({
           </div>
         </div>
 
-        {plannedBooking && !isPaid ? (
+        {plannedBookings.length && !isPaid ? (
           <div className="flex gap-2">
             <Button
               onClick={() => setEditing((value) => !value)}
@@ -203,12 +221,12 @@ export function ChildPlaceWorkflow({
               type="button"
               variant="outline"
             >
-              {editing ? "Hide planner" : "Edit planned place"}
+              {editing ? "Hide planner" : "Edit planned places"}
             </Button>
             <SaveActionForm
               action={releasePlannedChildPlace}
-              submitLabel="Release place"
-              successMessage="Planned place released"
+              submitLabel="Release places"
+              successMessage="Planned places released"
             >
               <input name="parentLeadId" type="hidden" value={parentLeadId} />
               <input name="childLeadId" type="hidden" value={child.id} />
@@ -217,176 +235,320 @@ export function ChildPlaceWorkflow({
         ) : null}
       </div>
 
-      {plannedBooking && !editing ? (
+      {plannedBookings.length && !editing ? (
         <div className="rounded-xl border bg-muted/20 p-4">
-          <p className="font-semibold">Current planned place</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {days[plannedBooking.weekday]} ·{" "}
-            {plannedBooking.starts_at.slice(0, 5)} · Table{" "}
-            {plannedBooking.table_number} · Capacity seat{" "}
-            {plannedBooking.seat_number}
+          <p className="font-semibold">Current planned recurring places</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {plannedBookings.map((booking) => {
+              const plan = pricePlans.find(
+                (item) => item.id === booking.session_price_plan_id,
+              )
+              return (
+                <div
+                  className="rounded-lg border bg-background p-3 text-sm"
+                  key={booking.id}
+                >
+                  <p className="font-semibold">
+                    {days[booking.weekday]} ·{" "}
+                    {booking.starts_at.slice(0, 5)} · Table{" "}
+                    {booking.table_number}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Capacity seat {booking.seat_number}
+                    {plan
+                      ? ` · ${plan.name} · ${money(plan.price_cents)} / session`
+                      : ""}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+          <p className="mt-3 text-sm font-semibold">
+            Planned total:{" "}
+            {money(
+              initialSessions.reduce(
+                (sum, session) => sum + session.priceCents,
+                0,
+              ),
+            )}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {selectedPlan?.name || "Price plan"} ·{" "}
-            {selectedPlan ? money(selectedPlan.price_cents) + " / session" : ""}
-          </p>
-          {plannedBooking.planned_amount_cents !== null ? (
-            <p className="mt-2 text-sm font-semibold">
-              Planned total: {money(plannedBooking.planned_amount_cents)}
-            </p>
-          ) : null}
         </div>
       ) : null}
 
       {!isPaid && editing ? (
         <SaveActionForm
           action={recordPlannedChildPlace}
-          submitLabel={plannedBooking ? "Update planned place" : "Record planned place"}
-          successMessage="Session planned"
+          submitLabel={
+            plannedBookings.length
+              ? "Update planned places"
+              : "Record planned places"
+          }
+          successMessage="Sessions planned"
         >
           <input name="parentLeadId" type="hidden" value={parentLeadId} />
           <input name="childLeadId" type="hidden" value={child.id} />
-          <input name="templateId" type="hidden" value={templateId} />
-          <input name="seatNumber" type="hidden" value={seatNumber} />
-          <input name="pricePlanId" type="hidden" value={pricePlanId} />
+          <input
+            name="plannedPlaces"
+            type="hidden"
+            value={JSON.stringify(
+              validSelections.map((selection) => ({
+                templateId: selection.templateId,
+                seatNumber: Number(selection.seatNumber),
+                pricePlanId: selection.pricePlanId,
+              })),
+            )}
+          />
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <label className="grid gap-1 text-sm font-medium">
-              Recurring table and time
-              <select
-                className="h-10 rounded-md border bg-background px-3 font-normal"
-                onChange={(event) => {
-                  setTemplateId(event.target.value)
-                  setSeatNumber("")
-                }}
-                required
-                value={templateId}
-              >
-                <option value="">Choose recurring place</option>
-                {slots.map((slot) => (
-                  <option key={slot.id} value={slot.id}>
-                    {days[slot.weekday]} · {slot.starts_at.slice(0, 5)} · Table{" "}
-                    {slot.table_number}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="space-y-4">
+            {placeSelections.map((selection, index) => {
+              const selectedSlot = slots.find(
+                (slot) => slot.id === selection.templateId,
+              )
+              const capacity = selectedSlot
+                ? seatCapacities[selectedSlot.academy_table_id] || 0
+                : 0
+              const slotHolds = selectedSlot
+                ? seatHolds.filter(
+                    (hold) =>
+                      hold.weekday === selectedSlot.weekday &&
+                      hold.academyTableId ===
+                        selectedSlot.academy_table_id &&
+                      hold.startsAt.slice(0, 5) ===
+                        selectedSlot.starts_at.slice(0, 5),
+                  )
+                : []
+              const seatHold = (seat: number) =>
+                slotHolds.find((hold) => hold.seatNumber === seat)
 
-            <label className="grid gap-1 text-sm font-medium">
-              Price plan
-              <select
-                className="h-10 rounded-md border bg-background px-3 font-normal"
-                onChange={(event) => setPricePlanId(event.target.value)}
-                required
-                value={pricePlanId}
-              >
-                <option value="">Choose price plan</option>
-                {pricePlans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name} · {money(plan.price_cents)} / session
-                  </option>
-                ))}
-              </select>
-            </label>
+              return (
+                <section
+                  className="rounded-xl border bg-background p-4"
+                  key={index}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        Recurring place {index + 1}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Add one row for every day/time this child will normally
+                        attend.
+                      </p>
+                    </div>
+                    {placeSelections.length > 1 ? (
+                      <Button
+                        onClick={() => removeSelection(index)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Trash2 className="size-4" />
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <label className="grid gap-1 text-sm font-medium">
+                      Recurring table and time
+                      <select
+                        className="h-10 rounded-md border bg-background px-3 font-normal"
+                        onChange={(event) =>
+                          updateSelection(index, {
+                            templateId: event.target.value,
+                            seatNumber: "",
+                          })
+                        }
+                        required
+                        value={selection.templateId}
+                      >
+                        <option value="">Choose recurring place</option>
+                        {slots.map((slot) => {
+                          const usedElsewhere = placeSelections.some(
+                            (other, otherIndex) =>
+                              otherIndex !== index &&
+                              other.templateId === slot.id,
+                          )
+                          return (
+                            <option
+                              disabled={usedElsewhere}
+                              key={slot.id}
+                              value={slot.id}
+                            >
+                              {days[slot.weekday]} ·{" "}
+                              {slot.starts_at.slice(0, 5)} · Table{" "}
+                              {slot.table_number}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </label>
+
+                    <label className="grid gap-1 text-sm font-medium">
+                      Price plan
+                      <select
+                        className="h-10 rounded-md border bg-background px-3 font-normal"
+                        onChange={(event) =>
+                          updateSelection(index, {
+                            pricePlanId: event.target.value,
+                          })
+                        }
+                        required
+                        value={selection.pricePlanId}
+                      >
+                        <option value="">Choose price plan</option>
+                        {pricePlans.map((plan) => (
+                          <option key={plan.id} value={plan.id}>
+                            {plan.name} · {money(plan.price_cents)} / session
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  {selectedSlot ? (
+                    <div className="mt-4 rounded-xl border p-4">
+                      <div className="flex items-start gap-3">
+                        <Users className="mt-0.5 size-5 text-primary" />
+                        <div>
+                          <p className="font-semibold">
+                            Capacity seats · Table{" "}
+                            {selectedSlot.table_number} ·{" "}
+                            {selectedSlot.starts_at.slice(0, 5)}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Seat numbers are capacity markers, not fixed
+                            physical chairs.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {Array.from(
+                          { length: capacity },
+                          (_, seatIndex) => seatIndex + 1,
+                        ).map((seat) => {
+                          const hold = seatHold(seat)
+                          const ownBooking = plannedBookings.find(
+                            (booking) =>
+                              booking.weekly_table_template_id ===
+                                selection.templateId &&
+                              booking.seat_number === seat,
+                          )
+                          const isOwn =
+                            hold?.childLeadId === child.id ||
+                            Boolean(ownBooking)
+                          const unavailable = Boolean(hold && !isOwn)
+                          const selected =
+                            Number(selection.seatNumber) === seat
+
+                          return (
+                            <button
+                              className={
+                                "rounded-lg border p-3 text-left text-sm transition " +
+                                (selected
+                                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                  : unavailable
+                                    ? "cursor-not-allowed bg-muted/50 text-muted-foreground"
+                                    : "hover:bg-muted/40")
+                              }
+                              disabled={unavailable}
+                              key={seat}
+                              onClick={() =>
+                                updateSelection(index, {
+                                  seatNumber: String(seat),
+                                })
+                              }
+                              type="button"
+                            >
+                              <span className="block font-semibold">
+                                Seat {seat}
+                              </span>
+                              <span className="mt-1 block text-xs">
+                                {hold
+                                  ? hold.childName +
+                                    " · " +
+                                    statusLabel(
+                                      hold.status === "paid_active"
+                                        ? "paid"
+                                        : hold.status,
+                                    )
+                                  : "Available"}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </section>
+              )
+            })}
+
+            <Button
+              onClick={() =>
+                setPlaceSelections((current) => [
+                  ...current,
+                  { templateId: "", seatNumber: "", pricePlanId: "" },
+                ])
+              }
+              type="button"
+              variant="outline"
+            >
+              <Plus className="size-4" />
+              Add another recurring day
+            </Button>
           </div>
 
-          {selectedSlot ? (
-            <div className="rounded-xl border p-4">
-              <div className="flex items-start gap-3">
-                <Users className="mt-0.5 size-5 text-primary" />
-                <div>
-                  <p className="font-semibold">
-                    Capacity seats · Table {selectedSlot.table_number} ·{" "}
-                    {selectedSlot.starts_at.slice(0, 5)}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Seat numbers are capacity markers, not fixed physical chairs.
-                    Names show who is currently holding each recurring place.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: capacity }, (_, index) => index + 1).map(
-                  (seat) => {
-                    const hold = seatHold(seat)
-                    const isOwn =
-                      hold?.childLeadId === child.id ||
-                      plannedBooking?.seat_number === seat
-                    const unavailable = Boolean(hold && !isOwn)
-                    const selected = Number(seatNumber) === seat
-
-                    return (
-                      <button
-                        className={
-                          "rounded-lg border p-3 text-left text-sm transition " +
-                          (selected
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : unavailable
-                              ? "cursor-not-allowed bg-muted/50 text-muted-foreground"
-                              : "hover:bg-muted/40")
-                        }
-                        disabled={unavailable}
-                        key={seat}
-                        onClick={() => setSeatNumber(String(seat))}
-                        type="button"
-                      >
-                        <span className="block font-semibold">Seat {seat}</span>
-                        <span className="mt-1 block text-xs">
-                          {hold
-                            ? hold.childName +
-                              " · " +
-                              statusLabel(
-                                hold.status === "paid_active"
-                                  ? "paid"
-                                  : hold.status,
-                              )
-                            : "Available"}
-                        </span>
-                      </button>
-                    )
-                  },
-                )}
-              </div>
-            </div>
-          ) : null}
-
           <PaidPeriodBuilder
-            key={templateId + ":" + seatNumber + ":" + pricePlanId}
+            key={placeSelections
+              .map(
+                (selection) =>
+                  selection.templateId +
+                  ":" +
+                  selection.seatNumber +
+                  ":" +
+                  selection.pricePlanId,
+              )
+              .join("|")}
             closures={closures}
-            initialSessions={
-              plannedBooking?.planned_sessions &&
-              plannedBooking.weekly_table_template_id === templateId &&
-              plannedBooking.session_price_plan_id === pricePlanId &&
-              String(plannedBooking.seat_number) === seatNumber
-                ? plannedBooking.planned_sessions
-                : []
-            }
+            initialSessions={initialSessions}
             placements={builderPlacements}
             purpose="plan"
-            suggestionEnd={plannedBooking?.planned_period_end || suggestionEnd}
-            suggestionStart={plannedBooking?.planned_period_start || today}
+            suggestionEnd={
+              plannedBookings
+                .map((booking) => booking.planned_period_end)
+                .filter(Boolean)
+                .sort()
+                .at(-1) || suggestionEnd
+            }
+            suggestionStart={
+              plannedBookings
+                .map((booking) => booking.planned_period_start)
+                .filter(Boolean)
+                .sort()[0] || today
+            }
           />
         </SaveActionForm>
       ) : null}
 
-      {plannedBooking && canEmail && !editing ? (
+      {plannedBookings.length && canEmail && !editing ? (
         <div className="rounded-xl border p-4">
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 size-5 text-primary" />
             <div>
               <p className="font-semibold">Next step · contact parent</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                The place is planned and capacity is held, but no payment or
-                dated Operations attendance exists yet. Send the planned-place
-                email when you are happy with the offer.
+                All recurring days and the combined date list will be included
+                in one planned-place email. No payment or dated Operations
+                attendance exists yet.
               </p>
             </div>
           </div>
           <div className="mt-4">
             <SaveActionForm
               action={sendPlannedPlaceEmail}
-              submitLabel="Email planned place to parent"
+              submitLabel="Email planned places to parent"
               successMessage="Parent contacted — awaiting payment"
             >
               <input name="parentLeadId" type="hidden" value={parentLeadId} />
@@ -396,13 +558,12 @@ export function ChildPlaceWorkflow({
         </div>
       ) : null}
 
-      {plannedBooking && canConfirmPayment && !editing ? (
+      {plannedBookings.length && canConfirmPayment && !editing ? (
         <div className="rounded-xl border p-4">
           <p className="font-semibold">Next step · confirm cleared payment</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review the exact paid dates against the transfer, then confirm the
-            payment. Only this step creates the paid entitlement and dated
-            Operations places.
+            Confirm the combined planned amount and dates. Only this step
+            creates the paid entitlement and dated Operations places.
           </p>
           <div className="mt-4">
             <ManualEnrolmentForm
@@ -410,12 +571,12 @@ export function ChildPlaceWorkflow({
               closures={closures}
               fixedChild={child}
               parentLeadId={parentLeadId}
-              plannedPlace={{
-                templateId: plannedBooking.weekly_table_template_id || "",
-                pricePlanId: plannedBooking.session_price_plan_id || "",
-                seatNumber: plannedBooking.seat_number,
-                sessions: plannedBooking.planned_sessions || [],
-              }}
+              plannedPlaces={plannedBookings.map((booking) => ({
+                templateId: booking.weekly_table_template_id || "",
+                pricePlanId: booking.session_price_plan_id || "",
+                seatNumber: booking.seat_number,
+                sessions: booking.planned_sessions || [],
+              }))}
               pricePlans={pricePlans}
               slots={slots}
             />
@@ -425,7 +586,7 @@ export function ChildPlaceWorkflow({
 
       {isPaid ? (
         <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900">
-          This child has a confirmed paid place. The exact paid dates are now
+          This child has confirmed paid places. The exact paid dates are now
           represented in Operations.
         </div>
       ) : null}

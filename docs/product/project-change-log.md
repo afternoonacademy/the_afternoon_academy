@@ -384,3 +384,16 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Saved renewal-plan date chips now include the weekday before each date, alongside table and start time, matching the recurring-place summary for faster admin recall.
 
 <!-- Trigger Vercel preview for renewal weekday quick-recall changes -->
+
+
+## 2 October 2026 — Family communications delivery tracking
+
+- Extended the existing `email_delivery_log` rather than introducing a parallel communications system. Every communication remains anchored to `parent_lead_id`, with optional child, learner and renewal-case context.
+- Added a service-role-only `email_delivery_events` audit table and a signed Resend webhook endpoint for sent, delivered, delayed, bounced and failed outcomes.
+- TAA explicitly ignores open/click webhook events; no parent engagement tracking was added.
+- Public enquiry acknowledgement emails are now retained as family communications before a learner exists.
+- Planned-place, legacy place-offer and renewal emails retain child/learner context and exact subject/body where available.
+- Family Pipeline lead Details now includes a chronological **Family communications** history.
+- Learner Workspace now includes the same parent/family communication history after conversion.
+- Renewal rows surface the active renewal email delivery result so bounced/failed delivery is immediately visible to admin.
+- Delivery webhook verification requires server-only `RESEND_WEBHOOK_SECRET`; the endpoint does not process unsigned events.

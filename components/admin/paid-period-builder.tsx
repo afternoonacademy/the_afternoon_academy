@@ -62,18 +62,20 @@ export function PaidPeriodBuilder({
 }) {
   const initialSelection = () =>
     sortPaidPeriodSessions(
-      placements.flatMap((placement) => {
-        const existing = initialSessions.filter(
-          (session) => session.placementId === placement.placementId,
-        )
-        if (existing.length) return existing
-        return expectedDatesForPlacement(
-          placement,
-          suggestionStart,
-          suggestionEnd,
-          closures,
-        ).map((date) => sessionFromPlacement(placement, date, false))
-      }),
+      initialSessions.length
+        ? placements.flatMap((placement) =>
+            initialSessions.filter(
+              (session) => session.placementId === placement.placementId,
+            ),
+          )
+        : placements.flatMap((placement) =>
+            expectedDatesForPlacement(
+              placement,
+              suggestionStart,
+              suggestionEnd,
+              closures,
+            ).map((date) => sessionFromPlacement(placement, date, false)),
+          ),
     )
 
   const [sessions, setSessions] = useState<PaidPeriodSession[]>(initialSelection)

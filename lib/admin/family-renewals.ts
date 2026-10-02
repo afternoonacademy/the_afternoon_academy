@@ -115,7 +115,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     supabaseAdmin
       .from("email_delivery_log")
       .select(
-        "renewal_case_id,status,delivery_detail,sent_at,delivered_at,bounced_at,failed_at,created_at",
+        "renewal_case_id,status,delivery_detail,error_message,sent_at,delivered_at,bounced_at,failed_at,created_at",
       )
       .eq("email_kind", "renewal_reminder")
       .order("created_at", { ascending: false }),
@@ -257,7 +257,9 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
         ? latestDeliveryByRenewal.get(renewal.id)?.status || null
         : null,
       emailDeliveryDetail: renewal?.id
-        ? latestDeliveryByRenewal.get(renewal.id)?.delivery_detail || null
+        ? latestDeliveryByRenewal.get(renewal.id)?.delivery_detail ||
+          latestDeliveryByRenewal.get(renewal.id)?.error_message ||
+          null
         : null,
       emailDeliveryAt: renewal?.id
         ? latestDeliveryByRenewal.get(renewal.id)?.delivered_at ||

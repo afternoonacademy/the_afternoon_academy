@@ -12,7 +12,7 @@ export type PaidPeriodPlacement = {
   weekday: number
   academyTableId: string
   tableNumber: number
-  seatNumber: number
+  seatNumber: number | null
   startsAt: string
   durationMinutes: number
   teacherName: string | null
@@ -30,7 +30,7 @@ export type PaidPeriodSession = {
   date: string
   academyTableId: string
   tableNumber: number
-  seatNumber: number
+  seatNumber: number | null
   startsAt: string
   durationMinutes: number
   teacherName: string | null

@@ -174,3 +174,8 @@ Family Pipeline initial activation is now explicitly staged per child: **Lead re
 ### Unified renewal lifecycle in Family Pipeline — October 2026
 
 Renewals now use the same staged admin pattern as a new child booking and are surfaced as **3 · Needs renewal** inside Family Pipeline. Each learner renews independently: **Needs renewal → Renewal planned → Contacted — awaiting payment → Paid**. The learner's existing recurring capacity is preserved after the last paid service date and is not made available to new families merely because the paid period expired. Capacity is released only by an explicit admin **Release recurring place** action with a recorded reason. The renewal plan reuses the learner's active standing place and price plan by default, generates the existing Academy Setup renewal email from the exact selected dates, and uses a compact cleared-payment confirmation before creating the next paid dated Operations seats. The former Renewals route now opens the Family Pipeline renewal section rather than maintaining a second operational workflow.
+
+
+### Family Pipeline lifecycle queues — October 2026
+
+Family Pipeline is the single operational family/customer lifecycle surface. It is split into four mutually exclusive queues: **1 · Leads**, **2 · Customers**, **3 · Renewals**, and **4 · Closed / archived**. A child/learner appears in only one operational queue at a time. Paid active learners are removed from Leads; learners in the renewal window are removed from both Leads and Customers; completed renewal returns the learner to Customers; cancellation/non-payment release moves the historical record to Closed / archived. Renewals are no longer a sidebar destination.

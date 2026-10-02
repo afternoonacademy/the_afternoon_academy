@@ -133,3 +133,15 @@ A learner with more than one recurring place must not receive one independent da
 - Initial offers and renewals use the same calendar behavior.
 - A first-time child may have multiple planned recurring bookings before contact. Those bookings are emailed as one combined offer and activated together only after cleared payment is confirmed.
 - Renewal email date lines include the exact table/time so parents and staff can distinguish different recurring days.
+
+
+## Active recurring-place switcher — 2 October 2026
+
+For learners with more than one recurring place, the shared builder uses an explicit recurring-place switcher rather than an undifferentiated multi-day calendar.
+
+- The learner header shows one tab/button per recurring place, labelled with weekday, time and table plus the current selected-date count.
+- Only the active recurring place can be edited in the calendar. Non-matching weekdays are disabled, so editing Tuesday cannot silently change Thursday.
+- Open-date replacements are automatically tied to the active recurring place. There is no separate replacement-place selector.
+- The combined selected-session table remains visible and contains all dates from all recurring places while the admin switches between tabs.
+- Replacement sessions remain explicitly labelled and removable.
+- The interaction is shared by initial place planning and renewal planning.

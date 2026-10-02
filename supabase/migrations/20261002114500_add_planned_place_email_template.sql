@@ -15,9 +15,7 @@ values (
   'Academy place for {{child_name}}',
   'Hello {{parent_name}},
 
-We can offer {{child_name}} the following Academy place:
-
-{{recurring_place}}
+We hope you are well.
 
 Your first Academy period includes:
 
@@ -25,11 +23,9 @@ Your first Academy period includes:
 
 That is {{session_count}} session(s), totalling {{amount_due}}.
 
-If you would like to take the place, please make a bank transfer using the details below.
+If you would like to take the place, please make your bank transfer.
 
 {{payment_details}}
-
-Payment reference: {{payment_reference}}
 
 Warmly,
 The Afternoon Academy'

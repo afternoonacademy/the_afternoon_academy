@@ -36,6 +36,7 @@ function statusLabel(status: string) {
   if (status === "delivered") return "Delivered"
   if (status === "bounced") return "Bounced"
   if (status === "failed") return "Failed"
+  if (status === "suppressed") return "Suppressed"
   if (status === "delayed") return "Delivery delayed"
   if (status === "sent") return "Sent"
   return "Pending"
@@ -43,7 +44,7 @@ function statusLabel(status: string) {
 
 function statusVariant(status: string) {
   if (status === "delivered") return "default" as const
-  if (status === "bounced" || status === "failed") return "destructive" as const
+  if (status === "bounced" || status === "failed" || status === "suppressed") return "destructive" as const
   return "secondary" as const
 }
 
@@ -128,7 +129,7 @@ export function FamilyCommunications({
                     {item.delivery_detail || item.error_message ? (
                       <p
                         className={
-                          item.status === "bounced" || item.status === "failed"
+                          item.status === "bounced" || item.status === "failed" || item.status === "suppressed"
                             ? "mb-3 font-medium text-destructive"
                             : "mb-3 text-muted-foreground"
                         }

@@ -229,3 +229,6 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Added **Add payment & dates** beside **Details** on each child row and removed the separate active family-level payment table.
 - Initial payment activation is now explicitly child-scoped; siblings can be offered and activated separately.
 - Recording payment for one child no longer marks the whole family converted. The parent lead converts only after all children on that family enquiry have at least one paid child entitlement.
+
+
+- Compacted the Family follow-up table so the visible row shows only contact, child/age and support. Availability, weekly frequency, school/curriculum, notes, follow-up actions and **Add payment & dates** now sit inside the expanded Details row, removing the page-level horizontal scrollbar and forcing detail review before payment activation.

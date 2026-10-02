@@ -441,17 +441,66 @@ export async function recordExactManualEnrolment(
         })
         .eq("payment_entitlement_id", payment.id)
         .eq("learner_id", learner.id),
-      supabase
-        .from("parent_leads")
-        .update({
+    ])
+
+    const [{ data: familyChildLeads }, { data: familyLearners }] =
+      await Promise.all([
+        supabase
+          .from("child_leads")
+          .select("id")
+          .eq("parent_lead_id", value.parentLeadId),
+        supabase
+          .from("learners")
+          .select("id,child_lead_id")
+          .eq("parent_lead_id", value.parentLeadId),
+      ])
+
+    const familyLearnerIds = (familyLearners || []).map((item) => item.id)
+    const { data: paidLearnerRows } = familyLearnerIds.length
+      ? await supabase
+          .from("child_payment_entitlements")
+          .select("learner_id")
+          .in("learner_id", familyLearnerIds)
+          .eq("status", "paid")
+      : { data: [] as { learner_id: string }[] }
+
+    const paidLearnerIds = new Set(
+      (paidLearnerRows || []).map((item) => item.learner_id),
+    )
+    const paidChildLeadIds = new Set(
+      (familyLearners || [])
+        .filter((item) => paidLearnerIds.has(item.id))
+        .map((item) => item.child_lead_id)
+        .filter((id): id is string => Boolean(id)),
+    )
+    const allChildrenActivated =
+      Boolean(familyChildLeads?.length) &&
+      (familyChildLeads || []).every((item) => paidChildLeadIds.has(item.id))
+
+    const parentUpdate = allChildrenActivated
+      ? {
           status: "converted",
           enrolled_at: new Date().toISOString(),
           enrolled_by: user.id,
           payment_confirmed_at: new Date().toISOString(),
           payment_confirmed_by: user.id,
-        })
-        .eq("id", value.parentLeadId),
-    ])
+        }
+      : {
+          payment_confirmed_at: new Date().toISOString(),
+          payment_confirmed_by: user.id,
+        }
+
+    const { error: parentUpdateError } = await supabase
+      .from("parent_leads")
+      .update(parentUpdate)
+      .eq("id", value.parentLeadId)
+
+    if (parentUpdateError) {
+      console.error("Child payment saved but family status update failed", {
+        parentUpdateError,
+        parentLeadId: value.parentLeadId,
+      })
+    }
 
     revalidatePath("/admin")
     revalidatePath("/admin/leads")
@@ -460,7 +509,7 @@ export async function recordExactManualEnrolment(
     revalidatePath("/admin/payments")
 
     return {
-      success: `Payment recorded. ${allocatedSessions.length} dated Operations place${allocatedSessions.length === 1 ? "" : "s"} allocated from current capacity. No parent email was sent automatically.`,
+      success: `Payment recorded for ${child.first_name}. ${allocatedSessions.length} dated Operations place${allocatedSessions.length === 1 ? "" : "s"} allocated from current capacity.${allChildrenActivated ? " All children in this family now have a paid activation." : " Other children in this family remain independent until their own place/payment is confirmed."} No parent email was sent automatically.`,
     }
   } catch (error) {
     console.error("Exact manual enrolment failed:", error)

@@ -197,3 +197,33 @@ For both first-time offers and renewals, one learner now has one combined exact-
 ### Family communications and delivery outcomes — October 2026
 
 Parent communications use one family-centric history anchored to `parent_lead_id`, so enquiry-stage messages exist before learner activation and remain visible after conversion. Optional child/learner/renewal references preserve context without creating a parallel lead-vs-learner communications system. Resend delivery webhooks update operational status as Sent, Delivered, Delivery delayed, Bounced or Failed. TAA intentionally does not use open or click tracking. Family Pipeline lead details and Learner Workspace both surface the retained parent communication history.
+
+
+## 2 October 2026 — Controlled Restart release closure
+
+The large launch-operations rebuild is now treated as a completed product slice. The repository release baseline is the unified family operations and communications implementation on `main`.
+
+### Completed in this slice
+
+- One Family Pipeline across leads, active customers, renewals and closed/archive states.
+- Child-specific enquiry records and child-by-child progression for siblings.
+- Staged initial lifecycle: lead received → session planned → contacted / awaiting payment → paid.
+- Shared exact-date paid-period planning for initial activation and renewals, with Academy closures blocked.
+- Reusable session price plans and copied historic pricing on selected dated sessions.
+- Multi-day recurring places handled through one learner-level paid-period interaction.
+- Explicit recurring-capacity continuity for renewal-due learners until staff release the place.
+- Renewal-due learners shown in Operations as place held without creating a paid entitlement.
+- Learner Workspace booking/payment summary.
+- One family communication history across enquiry, learner and renewal stages.
+- Resend delivery outcome tracking for sent, delivered, delayed, bounced, failed and suppressed states, without open/click tracking.
+- IGCSE Chemistry Focus Group interest capture using the existing family/lead model rather than a parallel subsystem.
+
+### Remaining Phase 1 work
+
+- Complete the fuller learner-profile model for strengths, barriers, interests, successful strategies and parent priorities.
+- Formalise the group-matching workflow around learning need, age, personality and timetable.
+- Complete the consent, safeguarding and incident workflow beyond the current engineering/data boundaries.
+- Mature teacher/staff profiles, cover and assignment only when staffing complexity requires it.
+- Build reliable utilisation/attendance/conversion reporting only after enough live data exists.
+- Keep the parent portal deferred until the underlying learning-evidence workflow is consistently used.
+- Keep AI family-update delivery deferred until provider approval, data-protection/safeguarding controls and the required AI infrastructure are explicitly approved.

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Child = { id: string; first_name: string | null; child_age: number | null; school_year: string | null };
-type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string; duration_minutes: number };
+type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string; duration_minutes: number; teacher_name: string | null; focus: string | null };
 type TakenSeat = { key: string; childName: string };
 type PricePlan = { id: string; name: string; price_cents: number };
 type Closure = { startsOn: string; endsOn: string; reason: string };

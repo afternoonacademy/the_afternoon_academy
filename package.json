@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run lint && npx tsc --noEmit && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },

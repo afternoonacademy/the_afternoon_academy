@@ -211,3 +211,8 @@ The staged child flow is implemented as follows:
 4. **Paid** — after funds clear, admin reviews the exact paid dates and confirms payment. Only then are payment entitlement, learner activation/standing placement and dated Operations seats created.
 
 A planned/contacted place can be released, returning the recurring capacity marker to available. The seat map shows names for active planned/contacted/paid recurring capacity records and does not imply a fixed physical chair.
+
+
+### Planned-place email template
+
+The email used for **Session planned → Contacted — awaiting payment** is stored as `academy_email_templates.template_key = planned_place_offer` and is editable in Academy Setup → Email templates. The send action renders the stored subject/body with the reviewed child/place/date/price/payment placeholders. Status advances only after successful delivery; failed sends leave the child at Session planned.

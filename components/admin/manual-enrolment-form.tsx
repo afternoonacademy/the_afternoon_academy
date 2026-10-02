@@ -30,7 +30,6 @@ type Slot = {
   focus: string | null
 }
 
-type TakenSeat = { key: string; childName: string }
 type PricePlan = { id: string; name: string; price_cents: number }
 
 const initialState: ExactManualEnrolmentState = {}
@@ -50,16 +49,12 @@ export function ManualEnrolmentForm({
   parentLeadId,
   childOptions,
   slots,
-  takenSeats,
-  seatCapacities,
   pricePlans,
   closures,
 }: {
   parentLeadId: string
   childOptions: Child[]
   slots: Slot[]
-  takenSeats: TakenSeat[]
-  seatCapacities: Record<string, number>
   pricePlans: PricePlan[]
   closures: AcademyClosure[]
 }) {
@@ -74,33 +69,15 @@ export function ManualEnrolmentForm({
   )
   const [childLeadId, setChildLeadId] = useState("")
   const [templateId, setTemplateId] = useState("")
-  const [seatNumber, setSeatNumber] = useState("")
   const [pricePlanId, setPricePlanId] = useState("")
 
   const selectedChild = childOptions.find((child) => child.id === childLeadId)
   const selectedSlot = slots.find((slot) => slot.id === templateId)
   const selectedPlan = pricePlans.find((plan) => plan.id === pricePlanId)
 
-  const seats = Array.from(
-    {
-      length: selectedSlot
-        ? seatCapacities[selectedSlot.academy_table_id] || 0
-        : 0,
-    },
-    (_, index) => index + 1,
-  )
-
-  const takenSeat = (seat: number) =>
-    selectedSlot
-      ? takenSeats.find(
-          ({ key }) =>
-            key ===
-            `${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`,
-        )
-      : undefined
 
   const builderPlacements = useMemo<PaidPeriodPlacement[]>(() => {
-    if (!selectedChild || !selectedSlot || !selectedPlan || !seatNumber) return []
+    if (!selectedChild || !selectedSlot || !selectedPlan) return []
     return [
       {
         placementId: selectedSlot.id,
@@ -110,7 +87,7 @@ export function ManualEnrolmentForm({
         weekday: selectedSlot.weekday,
         academyTableId: selectedSlot.academy_table_id,
         tableNumber: selectedSlot.table_number,
-        seatNumber: Number(seatNumber),
+        seatNumber: null,
         startsAt: selectedSlot.starts_at.slice(0, 5),
         durationMinutes: selectedSlot.duration_minutes,
         teacherName: selectedSlot.teacher_name,
@@ -120,19 +97,17 @@ export function ManualEnrolmentForm({
         priceCents: selectedPlan.price_cents,
       },
     ]
-  }, [pricePlanId, seatNumber, selectedChild, selectedPlan, selectedSlot])
+  }, [pricePlanId, selectedChild, selectedPlan, selectedSlot])
 
   return (
     <form action={formAction} className="space-y-5">
       <input name="parentLeadId" type="hidden" value={parentLeadId} />
       <input name="templateId" type="hidden" value={templateId} />
-      <input name="seatNumber" type="hidden" value={seatNumber} />
       <input name="pricePlanId" type="hidden" value={pricePlanId} />
 
       <p className="text-sm text-muted-foreground">
         Use this only after you have personally checked the bank transfer. The
-        exact dates below become the paid entitlement and the dated Operations
-        seats. No parent email is sent automatically.
+        exact dates below become the paid entitlement. Operations seats are assigned automatically from available table capacity only after payment is confirmed. No parent email is sent automatically.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -162,7 +137,6 @@ export function ManualEnrolmentForm({
             disabled={!childLeadId}
             onChange={(event) => {
               setTemplateId(event.target.value)
-              setSeatNumber("")
             }}
             required
             value={templateId}
@@ -179,31 +153,6 @@ export function ManualEnrolmentForm({
             The weekday comes from the actual recurring Academy place; it is not
             a separate billing field.
           </p>
-        </div>
-
-        <div>
-          <Label>Seat</Label>
-          <select
-            className="h-10 w-full rounded-md border bg-background px-3"
-            disabled={!selectedSlot}
-            onChange={(event) => setSeatNumber(event.target.value)}
-            required
-            value={seatNumber}
-          >
-            <option value="">
-              {selectedSlot ? "Choose available seat" : "Choose place first"}
-            </option>
-            {seats.map((seat) => {
-              const held = takenSeat(seat)
-              return (
-                <option disabled={Boolean(held)} key={seat} value={seat}>
-                  {held
-                    ? `Seat ${seat} — ${held.childName}`
-                    : `Seat ${seat} — available`}
-                </option>
-              )
-            })}
-          </select>
         </div>
 
         <div>
@@ -234,7 +183,7 @@ export function ManualEnrolmentForm({
       </div>
 
       <PaidPeriodBuilder
-        key={`${childLeadId}:${templateId}:${seatNumber}:${pricePlanId}`}
+        key={`${childLeadId}:${templateId}:${pricePlanId}`}
         closures={closures}
         placements={builderPlacements}
         suggestionEnd={suggestionEnd}
@@ -255,10 +204,10 @@ export function ManualEnrolmentForm({
         {pending ? (
           <>
             <LoaderCircle className="size-4 animate-spin" />
-            Recording payment and dated seats…
+            Recording payment and allocating dated places…
           </>
         ) : (
-          "Record payment and activate exact dated seats"
+          "Record payment and activate exact dated places"
         )}
       </Button>
 

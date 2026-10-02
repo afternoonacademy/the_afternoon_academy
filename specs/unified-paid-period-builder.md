@@ -1,6 +1,6 @@
 # Unified Paid-Period Builder
 
-_Status: implementation slice — 2 October 2026._
+_Status: implemented release slice — founder accepted 2 October 2026._
 
 ## Goal
 

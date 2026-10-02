@@ -35,7 +35,8 @@ async function buildRenewalDates(parentLeadId: string, periodStart: string, peri
   }
   return { dates: [...new Set(sessions.map((session) => session.date))].sort(), sessions, learnerNames: (learners || []).map((learner) => learner.first_name).filter(Boolean).join(", ") || "your child" }
 }
-const applyTemplate = (template: string, values: Record<string, string>) => Object.entries(values).reduce((result, [key, value]) => result.replaceAll(`{{${key}}}`, value), template)\nconst formatRenewalServiceDates = (sessions: any[]) => {
+const applyTemplate = (template: string, values: Record<string, string>) => Object.entries(values).reduce((result, [key, value]) => result.replaceAll(`{{${key}}}`, value), template)
+const formatRenewalServiceDates = (sessions: any[]) => {
   const groups = new Map<string, any[]>()
   for (const session of sessions) {
     const serviceName = session.pricePlanName || session.focus || "Academy sessions"

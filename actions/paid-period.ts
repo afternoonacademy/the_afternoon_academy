@@ -654,7 +654,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   const serviceDates = serverSessions
     .map(
       (session) =>
-        `${session.learnerName} · ${formatDate(session.date)} · ${session.startsAt}${session.replacement ? " · replacement" : ""}`,
+        `${session.learnerName} · ${formatDate(session.date)} · ${session.startsAt} · Table ${session.tableNumber}${session.replacement ? " · replacement" : ""}`,
     )
     .join("\n")
   const amountDue = new Intl.NumberFormat("en-IE", {

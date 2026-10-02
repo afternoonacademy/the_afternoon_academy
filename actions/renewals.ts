@@ -231,6 +231,37 @@ export async function releaseRenewalPlace(formData: FormData) {
     throw new Error("Could not release the learner’s recurring place")
   }
 
+  const { data: futureSessions, error: futureSessionsError } = await supabase
+    .from("delivery_sessions")
+    .select("id")
+    .gte("service_date", iso(new Date()))
+
+  if (futureSessionsError) {
+    throw new Error(
+      "The recurring place was released, but future renewal-due Operations seats could not be checked",
+    )
+  }
+
+  const futureSessionIds = (futureSessions || []).map((session) => session.id)
+  if (futureSessionIds.length) {
+    const { error: futureSeatError } = await supabase
+      .from("delivery_seats")
+      .update({
+        status: "cancelled",
+        note: "Recurring place released: " + value.reason,
+        updated_by: user.id,
+      })
+      .eq("learner_id", value.learnerId)
+      .eq("status", "payment_pending")
+      .in("delivery_session_id", futureSessionIds)
+
+    if (futureSeatError) {
+      throw new Error(
+        "The recurring place was released, but future renewal-due Operations seats could not be cleared",
+      )
+    }
+  }
+
   revalidatePath("/admin")
   revalidatePath("/admin/leads")
   revalidatePath("/admin/renewals")

@@ -266,14 +266,19 @@ function TableCard({
               >
                 {learner ? (
                   <>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">
+                      Seat {seatNumber}
+                    </p>
                     <Link
-                      className="font-semibold text-white hover:underline"
+                      className="mt-1 block font-semibold text-white hover:underline"
                       href={`/admin/learners/${learner.id}`}
                     >
                       {learner.first_name}
                     </Link>
                     <p className="mt-1 text-[10px] text-indigo-100">
-                      {learner.year_group || "Learner"}
+                      {learner.year_group
+                        ? `Year ${String(learner.year_group).replace(/^Year\s*/i, "")}`
+                        : "Year group not recorded"}
                     </p>
                     {renewalDue ? (
                       <p className="mt-1 text-[10px] font-bold text-amber-100">

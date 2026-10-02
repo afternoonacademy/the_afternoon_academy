@@ -118,9 +118,12 @@ export function FamilyFollowUpTable({
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const plannedByChild = new Map(
-    plannedBookings.map((booking) => [booking.child_lead_id, booking]),
-  )
+  const plannedByChild = new Map<string, PlannedBooking[]>()
+  for (const booking of plannedBookings) {
+    const current = plannedByChild.get(booking.child_lead_id) || []
+    current.push(booking)
+    plannedByChild.set(booking.child_lead_id, current)
+  }
 
   const columns: ColumnDef<FollowUpLead>[] = [
     {
@@ -266,7 +269,7 @@ export function FamilyFollowUpTable({
           closures={closures}
           parentLeadId={lead.parent_lead_id}
           pipelineStatus={lead.status}
-          plannedBooking={plannedByChild.get(lead.child_lead_id)}
+          plannedBookings={plannedByChild.get(lead.child_lead_id) || []}
           pricePlans={pricePlans}
           seatCapacities={seatCapacities}
           seatHolds={seatHolds}

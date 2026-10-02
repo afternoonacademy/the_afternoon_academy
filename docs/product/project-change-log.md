@@ -306,3 +306,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - The initial planned-place email now combines all recurring places and exact service dates in one message. The default template wording is multi-day aware; existing admin-customized templates are not overwritten.
 - Cleared initial payment activates every saved recurring place for the child in one payment action, creates one standing placement per recurring day and creates the exact dated Operations seats from the combined selected-session set.
 - Renewals use the same one-calendar interaction across all of the learner's active standing places. Renewal email date lines include the table and time so multi-day attendance is unambiguous.
+
+<!-- Multi-day learner planner preview trigger -->

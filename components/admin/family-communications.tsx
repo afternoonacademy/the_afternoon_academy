@@ -16,6 +16,7 @@ export type FamilyCommunication = {
   bounced_at: string | null
   failed_at: string | null
   delivery_detail: string | null
+  error_message: string | null
   created_at: string
   child_leads?: { first_name: string | null } | { first_name: string | null }[] | null
   learners?: { first_name: string | null } | { first_name: string | null }[] | null
@@ -124,7 +125,7 @@ export function FamilyCommunications({
                   </summary>
 
                   <div className="border-t bg-muted/10 p-4 text-sm">
-                    {item.delivery_detail ? (
+                    {item.delivery_detail || item.error_message ? (
                       <p
                         className={
                           item.status === "bounced" || item.status === "failed"
@@ -132,7 +133,7 @@ export function FamilyCommunications({
                             : "mb-3 text-muted-foreground"
                         }
                       >
-                        {item.delivery_detail}
+                        {item.delivery_detail || item.error_message}
                       </p>
                     ) : null}
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

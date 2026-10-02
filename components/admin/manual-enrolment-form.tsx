@@ -1,48 +1,282 @@
 "use client"
 
 import { useActionState, useMemo, useState } from "react"
-import { recordManualEnrolment, type ManualEnrolmentActionState } from "@/actions/update-lead-status"
+import { LoaderCircle } from "lucide-react"
+
+import {
+  recordExactManualEnrolment,
+  type ExactManualEnrolmentState,
+} from "@/actions/paid-period"
+import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import type { AcademyClosure, PaidPeriodPlacement } from "@/lib/paid-period"
 
-type Child = { id: string; first_name: string | null; child_age: number | null }
-type Slot = { id: string; weekday: number; table_number: number; academy_table_id: string; starts_at: string }
+type Child = {
+  id: string
+  first_name: string | null
+  child_age: number | null
+}
+
+type Slot = {
+  id: string
+  weekday: number
+  table_number: number
+  academy_table_id: string
+  starts_at: string
+  duration_minutes: number
+  teacher_name: string | null
+  focus: string | null
+}
+
 type TakenSeat = { key: string; childName: string }
 type PricePlan = { id: string; name: string; price_cents: number }
-const initialState: ManualEnrolmentActionState = {}
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-export function ManualEnrolmentForm({ parentLeadId, childOptions, slots, takenSeats, seatCapacities, pricePlans }: { parentLeadId: string; childOptions: Child[]; slots: Slot[]; takenSeats: TakenSeat[]; seatCapacities: Record<string, number>; pricePlans: PricePlan[] }) {
-  const today = new Date().toISOString().slice(0, 10)
-  const [state, formAction, pending] = useActionState(recordManualEnrolment, initialState)
-  const [weekday, setWeekday] = useState("")
-  const [startsAt, setStartsAt] = useState("")
-  const [tableNumber, setTableNumber] = useState("")
-  const times = useMemo(() => [...new Set(slots.filter((slot) => String(slot.weekday) === weekday).map((slot) => slot.starts_at.slice(0, 5)))], [slots, weekday])
-  const tableSlots = slots.filter((slot) => String(slot.weekday) === weekday && slot.starts_at.slice(0, 5) === startsAt)
-  const selectedSlot = tableSlots.find((slot) => String(slot.table_number) === tableNumber)
-  const templateId = selectedSlot?.id || ""
-  const seats = Array.from({ length: selectedSlot ? seatCapacities[selectedSlot.academy_table_id] || 0 : 0 }, (_, index) => index + 1)
-  const takenSeat = (seat: number) => selectedSlot ? takenSeats.find(({ key }) => key === `${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`) : undefined
+const initialState: ExactManualEnrolmentState = {}
+const days = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+]
 
-  return <form action={formAction} className="space-y-3">
-    <input name="parentLeadId" type="hidden" value={parentLeadId} />
-    <p className="text-sm text-muted-foreground">Use this only after you have personally agreed the place and checked the bank transfer. This creates the paid seat and dated sessions; it does not email the parent.</p>
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <div><Label>Child</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="childLeadId" required><option value="">Choose child</option>{childOptions.map((child) => <option key={child.id} value={child.id}>{child.first_name || "Child"}{child.child_age ? ` · age ${child.child_age}` : ""}</option>)}</select></div>
-      <div><Label>Day</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={weekday} onChange={(event) => { setWeekday(event.target.value); setStartsAt(""); setTableNumber("") }} required><option value="">Choose day</option>{days.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></div>
-      <div><Label>Start time</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={startsAt} onChange={(event) => { setStartsAt(event.target.value); setTableNumber("") }} disabled={!weekday} required><option value="">Choose time</option>{times.map((time) => <option key={time} value={time}>{time}</option>)}</select></div>
-      <div><Label>Table</Label><select className="h-10 w-full rounded-md border bg-background px-3" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} disabled={!startsAt} required><option value="">Choose table</option>{tableSlots.map((slot) => <option key={slot.id} value={slot.table_number}>TAA1 Table {slot.table_number}</option>)}</select><input name="templateId" type="hidden" value={templateId} /></div>
-      <div><Label>Seat</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="seatNumber" disabled={!selectedSlot} required><option value="">{selectedSlot ? "Choose available seat" : "Choose table first"}</option>{seats.map((seat) => { const held = takenSeat(seat); return <option disabled={Boolean(held)} key={seat} value={seat}>{held ? `Seat ${seat} — ${held.childName}` : `Seat ${seat} — available`}</option> })}</select>{selectedSlot && seats.some((seat) => takenSeat(seat)) ? <p className="mt-1 text-xs text-muted-foreground">Already held: {seats.flatMap((seat) => { const held = takenSeat(seat); return held ? [`Seat ${seat}: ${held.childName}`] : [] }).join(" · ")}</p> : null}</div>
-      <div><Label>Price plan</Label><select className="h-10 w-full rounded-md border bg-background px-3" name="pricePlanId" required><option value="">Choose price plan</option>{pricePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · €{(plan.price_cents / 100).toFixed(2)} per session</option>)}</select><p className="mt-1 text-xs text-muted-foreground">This belongs to the learner’s place, not the timetable.</p></div>
-      <div><Label>Payment received on</Label><Input name="receivedOn" defaultValue={today} required type="date" /></div>
-      <div><Label>Seat start date</Label><Input name="periodStart" defaultValue={today} required type="date" /></div>
-      <div><Label>Seat end date</Label><Input name="periodEnd" required type="date" /></div>
-    </div>
-    <label className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm"><input name="paymentReceived" required type="checkbox" value="yes" /> I have checked and recorded this payment manually.</label>
-    <Button className={pending ? "brand-loading w-full" : "w-full"} disabled={pending}>{pending ? "Recording payment and seat…" : "Record payment and activate seat"}</Button>
-    {state.error ? <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{state.error}</p> : null}
-    {state.success ? <p className="rounded-md border border-emerald-400 bg-emerald-50 p-3 text-sm text-emerald-800" role="status">{state.success}</p> : null}
-  </form>
+const iso = (date: Date) => date.toISOString().slice(0, 10)
+
+export function ManualEnrolmentForm({
+  parentLeadId,
+  childOptions,
+  slots,
+  takenSeats,
+  seatCapacities,
+  pricePlans,
+  closures,
+}: {
+  parentLeadId: string
+  childOptions: Child[]
+  slots: Slot[]
+  takenSeats: TakenSeat[]
+  seatCapacities: Record<string, number>
+  pricePlans: PricePlan[]
+  closures: AcademyClosure[]
+}) {
+  const today = iso(new Date())
+  const suggestionEndDate = new Date()
+  suggestionEndDate.setUTCDate(suggestionEndDate.getUTCDate() + 35)
+  const suggestionEnd = iso(suggestionEndDate)
+
+  const [state, formAction, pending] = useActionState(
+    recordExactManualEnrolment,
+    initialState,
+  )
+  const [childLeadId, setChildLeadId] = useState("")
+  const [templateId, setTemplateId] = useState("")
+  const [seatNumber, setSeatNumber] = useState("")
+  const [pricePlanId, setPricePlanId] = useState("")
+
+  const selectedChild = childOptions.find((child) => child.id === childLeadId)
+  const selectedSlot = slots.find((slot) => slot.id === templateId)
+  const selectedPlan = pricePlans.find((plan) => plan.id === pricePlanId)
+
+  const seats = Array.from(
+    {
+      length: selectedSlot
+        ? seatCapacities[selectedSlot.academy_table_id] || 0
+        : 0,
+    },
+    (_, index) => index + 1,
+  )
+
+  const takenSeat = (seat: number) =>
+    selectedSlot
+      ? takenSeats.find(
+          ({ key }) =>
+            key ===
+            `${selectedSlot.weekday}:${selectedSlot.academy_table_id}:${selectedSlot.starts_at}:${seat}`,
+        )
+      : undefined
+
+  const builderPlacements = useMemo<PaidPeriodPlacement[]>(() => {
+    if (!selectedChild || !selectedSlot || !selectedPlan || !seatNumber) return []
+    return [
+      {
+        placementId: selectedSlot.id,
+        learnerId: null,
+        learnerName: selectedChild.first_name || "Child",
+        childLeadId: selectedChild.id,
+        weekday: selectedSlot.weekday,
+        academyTableId: selectedSlot.academy_table_id,
+        tableNumber: selectedSlot.table_number,
+        seatNumber: Number(seatNumber),
+        startsAt: selectedSlot.starts_at.slice(0, 5),
+        durationMinutes: selectedSlot.duration_minutes,
+        teacherName: selectedSlot.teacher_name,
+        focus: selectedSlot.focus,
+        pricePlanId: selectedPlan.id,
+        pricePlanName: selectedPlan.name,
+        priceCents: selectedPlan.price_cents,
+      },
+    ]
+  }, [pricePlanId, seatNumber, selectedChild, selectedPlan, selectedSlot])
+
+  return (
+    <form action={formAction} className="space-y-5">
+      <input name="parentLeadId" type="hidden" value={parentLeadId} />
+      <input name="templateId" type="hidden" value={templateId} />
+      <input name="seatNumber" type="hidden" value={seatNumber} />
+      <input name="pricePlanId" type="hidden" value={pricePlanId} />
+
+      <p className="text-sm text-muted-foreground">
+        Use this only after you have personally checked the bank transfer. The
+        exact dates below become the paid entitlement and the dated Operations
+        seats. No parent email is sent automatically.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <Label>Child</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3"
+            name="childLeadId"
+            onChange={(event) => setChildLeadId(event.target.value)}
+            required
+            value={childLeadId}
+          >
+            <option value="">Choose child</option>
+            {childOptions.map((child) => (
+              <option key={child.id} value={child.id}>
+                {child.first_name || "Child"}
+                {child.child_age ? ` · age ${child.child_age}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label>Recurring delivery place</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3"
+            disabled={!childLeadId}
+            onChange={(event) => {
+              setTemplateId(event.target.value)
+              setSeatNumber("")
+            }}
+            required
+            value={templateId}
+          >
+            <option value="">Choose table and time</option>
+            {slots.map((slot) => (
+              <option key={slot.id} value={slot.id}>
+                {days[slot.weekday]} · {slot.starts_at.slice(0, 5)} · Table{" "}
+                {slot.table_number}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The weekday comes from the actual recurring Academy place; it is not
+            a separate billing field.
+          </p>
+        </div>
+
+        <div>
+          <Label>Seat</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3"
+            disabled={!selectedSlot}
+            onChange={(event) => setSeatNumber(event.target.value)}
+            required
+            value={seatNumber}
+          >
+            <option value="">
+              {selectedSlot ? "Choose available seat" : "Choose place first"}
+            </option>
+            {seats.map((seat) => {
+              const held = takenSeat(seat)
+              return (
+                <option disabled={Boolean(held)} key={seat} value={seat}>
+                  {held
+                    ? `Seat ${seat} — ${held.childName}`
+                    : `Seat ${seat} — available`}
+                </option>
+              )
+            })}
+          </select>
+        </div>
+
+        <div>
+          <Label>Price plan</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3"
+            onChange={(event) => setPricePlanId(event.target.value)}
+            required
+            value={pricePlanId}
+          >
+            <option value="">Choose price plan</option>
+            {pricePlans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name} · €{(plan.price_cents / 100).toFixed(2)} per session
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The plan belongs to this learner’s recurring place. It does not
+            automatically move the learner to another group.
+          </p>
+        </div>
+
+        <div>
+          <Label>Payment received on</Label>
+          <Input name="receivedOn" defaultValue={today} required type="date" />
+        </div>
+      </div>
+
+      <PaidPeriodBuilder
+        closures={closures}
+        placements={builderPlacements}
+        suggestionEnd={suggestionEnd}
+        suggestionStart={today}
+      />
+
+      <label className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm">
+        <input
+          name="paymentReceived"
+          required
+          type="checkbox"
+          value="yes"
+        />
+        I have manually confirmed the payment and reviewed the exact paid dates.
+      </label>
+
+      <Button className="w-full" disabled={pending || !builderPlacements.length}>
+        {pending ? (
+          <>
+            <LoaderCircle className="size-4 animate-spin" />
+            Recording payment and dated seats…
+          </>
+        ) : (
+          "Record payment and activate exact dated seats"
+        )}
+      </Button>
+
+      {state.error ? (
+        <p
+          className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          role="alert"
+        >
+          {state.error}
+        </p>
+      ) : null}
+      {state.success ? (
+        <p
+          className="rounded-md border border-emerald-400 bg-emerald-50 p-3 text-sm text-emerald-800"
+          role="status"
+        >
+          {state.success}
+        </p>
+      ) : null}
+    </form>
+  )
 }

@@ -85,6 +85,9 @@ export function ManualEnrolmentForm({
   const selectedPlan = pricePlans.find((plan) => plan.id === pricePlanId)
 
 
+  const plannedSessionTotal =
+    plannedPlace?.sessions.reduce((sum, session) => sum + session.priceCents, 0) || 0
+
   const builderPlacements = useMemo<PaidPeriodPlacement[]>(() => {
     if (!selectedChild || !selectedSlot || !selectedPlan) return []
     return [
@@ -107,6 +110,106 @@ export function ManualEnrolmentForm({
       },
     ]
   }, [plannedPlace?.seatNumber, pricePlanId, selectedChild, selectedPlan, selectedSlot])
+
+  if (plannedPlace && fixedChild && selectedSlot && selectedPlan) {
+    const plannedDates = plannedPlace.sessions.map((session) => session.date)
+
+    return (
+      <form action={formAction} className="space-y-4">
+        <input name="parentLeadId" type="hidden" value={parentLeadId} />
+        <input name="childLeadId" type="hidden" value={fixedChild.id} />
+        <input name="templateId" type="hidden" value={plannedPlace.templateId} />
+        <input name="pricePlanId" type="hidden" value={plannedPlace.pricePlanId} />
+        <input
+          name="selectedSessions"
+          type="hidden"
+          value={JSON.stringify(plannedPlace.sessions)}
+        />
+
+        <div className="rounded-xl border bg-muted/20 p-4">
+          <p className="text-lg font-semibold">
+            {fixedChild.first_name || "Child"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Table {selectedSlot.table_number} · {selectedSlot.starts_at.slice(0, 5)} ·
+            Operations seat assigned when payment clears
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {selectedPlan.name} · €{(selectedPlan.price_cents / 100).toFixed(2)} per session
+          </p>
+
+          <div className="mt-4 border-t pt-4">
+            <p className="text-sm font-semibold">Planned paid dates</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {plannedDates.map((date) => (
+                <span
+                  className="rounded-md border bg-background px-2.5 py-1 text-sm"
+                  key={date}
+                >
+                  {new Intl.DateTimeFormat("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                  }).format(new Date(date + "T12:00:00Z"))}
+                </span>
+              ))}
+            </div>
+            <p className="mt-3 font-semibold">
+              {plannedPlace.sessions.length} session
+              {plannedPlace.sessions.length === 1 ? "" : "s"} · €
+              {(plannedSessionTotal / 100).toFixed(2)}
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-xs">
+          <Label>Payment received on</Label>
+          <Input name="receivedOn" defaultValue={today} required type="date" />
+        </div>
+
+        <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
+          <input
+            className="mt-0.5"
+            name="paymentReceived"
+            required
+            type="checkbox"
+            value="yes"
+          />
+          <span>
+            I confirm the payment has cleared for the planned amount and dates
+            shown above.
+          </span>
+        </label>
+
+        <Button className="w-full" disabled={pending}>
+          {pending ? (
+            <>
+              <LoaderCircle className="size-4 animate-spin" />
+              Confirming payment and activating dates…
+            </>
+          ) : (
+            `Confirm payment & activate ${plannedPlace.sessions.length} date${plannedPlace.sessions.length === 1 ? "" : "s"}`
+          )}
+        </Button>
+
+        {state.error ? (
+          <p
+            className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+            role="alert"
+          >
+            {state.error}
+          </p>
+        ) : null}
+        {state.success ? (
+          <p
+            className="rounded-md border border-emerald-400 bg-emerald-50 p-3 text-sm text-emerald-800"
+            role="status"
+          >
+            {state.success}
+          </p>
+        ) : null}
+      </form>
+    )
+  }
 
   return (
     <form action={formAction} className="space-y-5">

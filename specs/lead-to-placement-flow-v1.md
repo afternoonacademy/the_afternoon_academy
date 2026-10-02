@@ -140,3 +140,14 @@ Make the daily TAA1 delivery view mobile-first. Two permanent tables of six seat
 - Each submitted child creates its own `child_leads` row and its own `timetable_preferences` row under the shared parent lead.
 - Support choices are never copied automatically from one sibling to another.
 - The legacy abbreviated “another child” name/age/year section is retired.
+
+
+## Child-first follow-up and activation — 2 October 2026
+
+- The Family follow-up queue is the operational review step before any initial payment activation.
+- Each row represents one child response, even when siblings share a parent lead.
+- The queue shows the child name, requested support, requested sessions per week and availability.
+- **Add payment & dates** is a child-level action beside **Details**; it opens the exact-date paid-period builder already scoped to that child.
+- Siblings are activated independently. Recording payment for one child must not imply that another sibling has been offered, paid or enrolled.
+- A family lead reaches `converted` only once every child in that family enquiry has at least one paid child entitlement. Partial child activation retains the family in follow-up.
+- The separate family-level payment table is removed from the active Leads workflow to avoid implying that all siblings must be activated together.

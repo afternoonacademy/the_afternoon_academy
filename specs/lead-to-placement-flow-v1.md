@@ -216,3 +216,8 @@ A planned/contacted place can be released, returning the recurring capacity mark
 ### Planned-place email template
 
 The email used for **Session planned → Contacted — awaiting payment** is stored as `academy_email_templates.template_key = planned_place_offer` and is editable in Academy Setup → Email templates. The send action renders the stored subject/body with the reviewed child/place/date/price/payment placeholders. Status advances only after successful delivery; failed sends leave the child at Session planned.
+
+
+### Compact cleared-payment confirmation
+
+Once a child is **Contacted — awaiting payment**, the initial activation flow no longer reopens the paid-period date picker. The saved planned-place snapshot is displayed read-only: child, table/time, price plan, planned service dates, session count and total. Admin records the payment received date, confirms that the planned amount has cleared, and clicks **Confirm payment & activate N dates**. The server still revalidates the saved plan, closures and dated capacity before creating the paid entitlement and Operations places.

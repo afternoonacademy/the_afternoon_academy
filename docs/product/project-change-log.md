@@ -382,3 +382,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 ## 2 October 2026 — Saved renewal weekday recall
 
 - Saved renewal-plan date chips now include the weekday before each date, alongside table and start time, matching the recurring-place summary for faster admin recall.
+
+<!-- Trigger Vercel preview for renewal weekday quick-recall changes -->

@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requireAdmin } from "@/lib/auth/require-admin"
+import { allocateDatedOperationsSeat, assertPaidPeriodCapacity, type DatedCapacityRequest } from "@/lib/delivery-capacity"
 import { getResend, emailFrom } from "@/lib/resend"
 import { supabaseService } from "@/lib/supabase/service"
 
@@ -100,13 +101,115 @@ export async function sendRenewalEmail(formData: FormData) {
 }
 
 export async function allowPendingRenewalAttendance(formData: FormData) {
-  const { user } = await requireAdmin(); const parsed = caseSchema.extend({ throughDate: z.string().date() }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), throughDate: formData.get("throughDate") }); if (!parsed.success) throw new Error("Choose the date through which attendance may continue")
-  const value = parsed.data; const start = iso(new Date()); if (value.throughDate < start) throw new Error("Choose a future continuation date"); const supabase = supabaseService(); const { dates } = await buildRenewalDates(value.parentLeadId, start, value.throughDate)
-  const [{ data: learners }, { data: placements }, { data: renewal }] = await Promise.all([supabase.from("learners").select("id").eq("parent_lead_id", value.parentLeadId).eq("status", "active"), supabase.from("standing_placements").select("learner_id,weekday,table_number,academy_table_id,seat_number,starts_at,duration_minutes,teacher_name,focus").eq("status", "active"), supabase.from("renewal_cases").select("status").eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId).single()])
-  if (!renewal || renewal.status === "renewed" || renewal.status === "not_renewing") throw new Error("This renewal cannot continue attendance"); const learnerIds = new Set((learners || []).map((learner) => learner.id))
-  for (const placement of (placements || []).filter((item) => learnerIds.has(item.learner_id))) for (const serviceDate of dates.filter((day) => new Date(`${day}T12:00:00Z`).getUTCDay() === placement.weekday)) { const { data: session, error: sessionError } = await supabase.from("delivery_sessions").upsert({ service_date: serviceDate, table_number: placement.table_number, academy_table_id: placement.academy_table_id, starts_at: placement.starts_at, duration_minutes: placement.duration_minutes, teacher_name: placement.teacher_name, focus: placement.focus, status: "scheduled", created_by: user.id, updated_by: user.id }, { onConflict: "service_date,academy_table_id,starts_at" }).select("id").single(); if (sessionError || !session) throw new Error("Could not prepare the pending-payment delivery session"); const { data: occupied } = await supabase.from("delivery_seats").select("learner_id").eq("delivery_session_id", session.id).eq("seat_number", placement.seat_number).in("status", ["scheduled", "payment_pending"]).maybeSingle(); if (occupied && occupied.learner_id !== placement.learner_id) throw new Error("A reserved seat is occupied for one of these dates"); const { error: seatError } = await supabase.from("delivery_seats").upsert({ delivery_session_id: session.id, learner_id: placement.learner_id, seat_number: placement.seat_number, status: "payment_pending", note: "Renewal payment pending", updated_by: user.id }, { onConflict: "delivery_session_id,learner_id" }); if (seatError) throw new Error("Could not prepare a pending-payment seat") }
-  const { error } = await supabase.from("renewal_cases").update({ provisional_delivery_until: value.throughDate, provisional_delivery_enabled_at: new Date().toISOString(), provisional_delivery_enabled_by: user.id, updated_by: user.id }).eq("id", value.caseId); if (error) throw new Error("Attendance was prepared, but its payment-pending marker could not be saved")
-  revalidatePath("/admin"); revalidatePath("/admin/renewals")
+  const { user } = await requireAdmin()
+  const parsed = caseSchema
+    .extend({ throughDate: z.string().date() })
+    .safeParse({
+      caseId: formData.get("caseId"),
+      parentLeadId: formData.get("parentLeadId"),
+      throughDate: formData.get("throughDate"),
+    })
+  if (!parsed.success) {
+    throw new Error("Choose the date through which attendance may continue")
+  }
+
+  const value = parsed.data
+  const start = iso(new Date())
+  if (value.throughDate < start) {
+    throw new Error("Choose a future continuation date")
+  }
+
+  const supabase = supabaseService()
+  const { dates } = await buildRenewalDates(
+    value.parentLeadId,
+    start,
+    value.throughDate,
+  )
+  const [{ data: learners }, { data: placements }, { data: renewal }] =
+    await Promise.all([
+      supabase
+        .from("learners")
+        .select("id")
+        .eq("parent_lead_id", value.parentLeadId)
+        .eq("status", "active"),
+      supabase
+        .from("standing_placements")
+        .select(
+          "id,learner_id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus",
+        )
+        .eq("status", "active"),
+      supabase
+        .from("renewal_cases")
+        .select("status")
+        .eq("id", value.caseId)
+        .eq("parent_lead_id", value.parentLeadId)
+        .single(),
+    ])
+
+  if (
+    !renewal ||
+    renewal.status === "renewed" ||
+    renewal.status === "not_renewing"
+  ) {
+    throw new Error("This renewal cannot continue attendance")
+  }
+
+  const learnerIds = new Set((learners || []).map((learner) => learner.id))
+  const requests: (DatedCapacityRequest & { learnerId: string })[] = []
+
+  for (const placement of (placements || []).filter((item) =>
+    learnerIds.has(item.learner_id),
+  )) {
+    for (const serviceDate of dates.filter(
+      (day) =>
+        new Date(`${day}T12:00:00Z`).getUTCDay() === placement.weekday,
+    )) {
+      requests.push({
+        learnerId: placement.learner_id,
+        placementId: placement.id,
+        date: serviceDate,
+        academyTableId: placement.academy_table_id,
+        tableNumber: placement.table_number,
+        startsAt: placement.starts_at.slice(0, 5),
+        durationMinutes: placement.duration_minutes,
+        teacherName: placement.teacher_name,
+        focus: placement.focus,
+      })
+    }
+  }
+
+  await assertPaidPeriodCapacity(requests, supabase)
+
+  for (const request of requests) {
+    await allocateDatedOperationsSeat({
+      session: request,
+      learnerId: request.learnerId,
+      userId: user.id,
+      status: "payment_pending",
+      note: "Renewal payment pending",
+      supabase,
+    })
+  }
+
+  const { error } = await supabase
+    .from("renewal_cases")
+    .update({
+      provisional_delivery_until: value.throughDate,
+      provisional_delivery_enabled_at: new Date().toISOString(),
+      provisional_delivery_enabled_by: user.id,
+      updated_by: user.id,
+    })
+    .eq("id", value.caseId)
+
+  if (error) {
+    throw new Error(
+      "Attendance was prepared, but its payment-pending marker could not be saved",
+    )
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/renewals")
 }
+
 
 export async function closeRenewal(formData: FormData) { const { user } = await requireAdmin(); const parsed = caseSchema.extend({ note: z.string().trim().max(500).optional() }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), note: formData.get("note") || undefined }); if (!parsed.success) throw new Error("Please check the renewal outcome"); const { error } = await supabaseService().from("renewal_cases").update({ status: "not_renewing", outcome_note: parsed.data.note || null, closed_at: new Date().toISOString(), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId); if (error) throw new Error("Could not close this renewal"); revalidatePath("/admin/renewals") }

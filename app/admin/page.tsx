@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-const iso = (date: Date) => date.toISOString().slice(0, 10);
+// Operations view includes renewal-due recurring capacity.\nconst iso = (date: Date) => date.toISOString().slice(0, 10);
 const move = (date: string, days: number) => {
   const value = new Date(`${date}T12:00:00`);
   value.setDate(value.getDate() + days);

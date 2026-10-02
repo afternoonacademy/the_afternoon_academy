@@ -182,3 +182,13 @@ TAA will use a manual bank-transfer flow in the first release rather than Stripe
 ### Historical roadmap effect
 
 This is Phase 1 operating infrastructure that prepares, but does not replace, Phase 2’s evidence-led parent experience.
+
+## 2 October 2026 — Unified exact-date paid-period builder
+
+- Family Pipeline payment activation and Renewals now share one exact-date paid-period interaction.
+- Expected recurring service dates preload from the learner's agreed/active standing place; Academy closures are visibly blocked with their reasons, while open-date replacements are explicit.
+- Selected sessions retain learner, placement, date, table, time, seat, delivery metadata, copied per-session price and recurring/replacement status.
+- Renewal quotes and editable parent renewal drafts are calculated from the exact selected sessions.
+- Cleared-payment activation revalidates closures and dated seat availability before creating Operations seats; the existing explicit date-bounded `payment_pending` continuation remains the only unpaid exception.
+- Existing renewal JSON remains readable; historical payment and attendance records are not rewritten.
+- Payment entitlement exact-session storage is introduced additively; period start/end remain derived audit/compatibility fields.

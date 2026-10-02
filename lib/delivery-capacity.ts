@@ -1,8 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import type { PaidPeriodSession } from "@/lib/paid-period"
-
 const ACTIVE_SEAT_STATUSES = ["scheduled", "payment_pending"]
+
+export type DatedCapacityRequest = {
+  learnerId?: string | null
+  childLeadId?: string | null
+  placementId: string
+  date: string
+  academyTableId: string
+  tableNumber: number
+  startsAt: string
+  durationMinutes: number
+  teacherName: string | null
+  focus: string | null
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -12,11 +23,11 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T12:00:00Z`))
 }
 
-function sessionKey(session: PaidPeriodSession) {
+function sessionKey(session: DatedCapacityRequest) {
   return `${session.date}|${session.academyTableId}|${session.startsAt}`
 }
 
-function requestLearnerKey(session: PaidPeriodSession) {
+function requestLearnerKey(session: DatedCapacityRequest) {
   return session.learnerId || session.childLeadId || session.placementId
 }
 
@@ -39,7 +50,7 @@ async function getCapacity(
 
 async function getDeliverySessionId(
   supabase: SupabaseClient,
-  session: PaidPeriodSession,
+  session: DatedCapacityRequest,
 ) {
   const { data, error } = await supabase
     .from("delivery_sessions")
@@ -54,10 +65,10 @@ async function getDeliverySessionId(
 }
 
 export async function assertPaidPeriodCapacity(
-  sessions: PaidPeriodSession[],
+  sessions: DatedCapacityRequest[],
   supabase: SupabaseClient,
 ) {
-  const groups = new Map<string, PaidPeriodSession[]>()
+  const groups = new Map<string, DatedCapacityRequest[]>()
 
   for (const session of sessions) {
     const key = sessionKey(session)
@@ -116,7 +127,7 @@ export async function allocateDatedOperationsSeat({
   note,
   supabase,
 }: {
-  session: PaidPeriodSession
+  session: DatedCapacityRequest
   learnerId: string
   userId: string
   status: "scheduled" | "payment_pending"

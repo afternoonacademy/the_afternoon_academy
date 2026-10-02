@@ -166,6 +166,11 @@ export default async function AdminLeadsPage() {
     renewalRows.flatMap((row) => (row.childLeadId ? [row.childLeadId] : [])),
   )
 
+  const learnerChildLeadIds = new Set(
+    (lifecycleLearners || [])
+      .filter((learner) => Boolean(learner.child_lead_id))
+      .map((learner) => learner.child_lead_id as string),
+  )
   const activeLearnerChildLeadIds = new Set(
     (lifecycleLearners || [])
       .filter((learner) => learner.status === "active" && learner.child_lead_id)
@@ -286,7 +291,7 @@ export default async function AdminLeadsPage() {
 
   for (const lead of childPipelineRows) {
     if (lead.status !== "closed") continue
-    if (activeLearnerChildLeadIds.has(lead.child_lead_id)) continue
+    if (learnerChildLeadIds.has(lead.child_lead_id)) continue
     archiveRowsByKey.set("lead:" + lead.child_lead_id, {
       key: "lead:" + lead.child_lead_id,
       learnerId: null,

@@ -11,6 +11,7 @@ import {
   sendRenewalEmail,
   startChildRenewalCase,
 } from "@/actions/renewals"
+import { InfoTip } from "@/components/admin/info-tip"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
@@ -181,12 +182,14 @@ function RenewalActions({
       <section className="rounded-xl border bg-background p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="font-semibold">Recurring place remains reserved</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {row.learnerName} keeps this recurring capacity after the paid
-              period ends. It is not offered to another family unless an admin
-              explicitly releases it.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold">Recurring place remains reserved</p>
+              <InfoTip label="About recurring capacity">
+                {row.learnerName} keeps this recurring capacity after the paid
+                period ends. It is not offered to another family unless an admin
+                explicitly releases it.
+              </InfoTip>
+            </div>
           </div>
           <Badge variant={row.recurringCapacityHeld ? "default" : "destructive"}>
             {row.recurringCapacityHeld
@@ -217,11 +220,14 @@ function RenewalActions({
 
       {!row.caseId ? (
         <section className="rounded-xl border bg-background p-4">
-          <p className="font-semibold">1 · Plan the next paid period</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Last paid service: {date(row.lastPaidServiceDate)}. Start the
-            renewal using the learner’s current recurring place and price plan.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold">1 · Plan the next paid period</p>
+            <InfoTip label="About starting this renewal">
+              Last paid service: {date(row.lastPaidServiceDate)}. Start the
+              renewal using the learner’s current recurring place and price
+              plan.
+            </InfoTip>
+          </div>
           <div className="mt-4 max-w-sm">
             <SaveActionForm
               action={startChildRenewalCase}
@@ -249,11 +255,14 @@ function RenewalActions({
       {row.caseId && (editing || !row.selectedSessions.length) ? (
         <section className="rounded-xl border bg-background p-4">
           <div className="mb-4">
-            <p className="font-semibold">1 · Plan renewal dates</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              The learner’s existing table/time is the default. Review the exact
-              next dates, closures and price plan before contacting the parent.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold">1 · Plan renewal dates</p>
+              <InfoTip label="About planning renewal dates">
+                The learner’s existing table/time is the default. Review the
+                exact next dates, closures and price plan before contacting the
+                parent.
+              </InfoTip>
+            </div>
           </div>
           <SaveActionForm
             action={prepareExactRenewalDraft}
@@ -322,12 +331,14 @@ function RenewalActions({
       row.status === "renewal_planned" &&
       !editing ? (
         <section className="rounded-xl border bg-background p-4">
-          <p className="font-semibold">2 · Contact parent</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Send the Academy renewal email generated from the saved renewal
-            template and these exact dates. A successful send changes this
-            learner to Contacted — awaiting payment.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold">2 · Contact parent</p>
+            <InfoTip label="About contacting the parent">
+              Send the Academy renewal email generated from the saved renewal
+              template and these exact dates. A successful send changes this
+              learner to Contacted — awaiting payment.
+            </InfoTip>
+          </div>
           <div className="mt-4 max-w-sm">
             <SaveActionForm
               action={sendRenewalEmail}
@@ -355,11 +366,13 @@ function RenewalActions({
       row.selectedSessions.length &&
       row.status === "renewal_contacted" ? (
         <section className="rounded-xl border bg-background p-4">
-          <p className="font-semibold">3 · Confirm cleared renewal payment</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The recurring place is still reserved. Confirm the transfer only
-            after the planned amount has cleared.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold">3 · Confirm cleared renewal payment</p>
+            <InfoTip label="About confirming renewal payment">
+              The recurring place is still reserved. Confirm the transfer only
+              after the planned amount has cleared.
+            </InfoTip>
+          </div>
 
           <div className="mt-4 rounded-lg border bg-muted/20 p-4">
             <p className="font-semibold">{row.learnerName}</p>
@@ -416,12 +429,14 @@ function RenewalActions({
       ) : null}
 
       <section className="rounded-xl border border-destructive/20 bg-background p-4">
-          <p className="font-semibold">Release recurring place</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use this only when the parent cancels or staff decide to release the
-            place for non-payment. This ends the standing placement and returns
-            the capacity to the Family Pipeline.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold">Release recurring place</p>
+            <InfoTip label="About releasing recurring capacity">
+              Use this only when the parent cancels or staff decide to release
+              the place for non-payment. This ends the standing placement and
+              returns the capacity to the Family Pipeline.
+            </InfoTip>
+          </div>
           <div className="mt-4 max-w-xl">
             <SaveActionForm
               action={releaseRenewalPlace}

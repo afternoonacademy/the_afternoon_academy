@@ -278,6 +278,7 @@ export function ChildPlaceWorkflow({
       {!isPaid && editing ? (
         <SaveActionForm
           action={recordPlannedChildPlace}
+          onSuccess={() => setEditing(false)}
           submitLabel={
             plannedBookings.length
               ? "Update planned places"

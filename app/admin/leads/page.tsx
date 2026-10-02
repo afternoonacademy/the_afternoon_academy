@@ -104,7 +104,7 @@ export default async function AdminLeadsPage() {
   const childById = new Map(
     (familyChildren || []).map((child) => [child.id, child]),
   )
-  const followUpLeads = leads.map((lead) => {
+  const childPipelineRows = leads.map((lead) => {
     const child = childById.get(lead.child_lead_id)
     return {
       ...lead,
@@ -113,6 +113,9 @@ export default async function AdminLeadsPage() {
       status: child?.pipeline_status || "new",
     }
   })
+  const followUpLeads = childPipelineRows.filter(
+    (lead) => !["paid", "closed"].includes(lead.status),
+  )
 
   const seatHolds = (activeBookings || []).map((booking) => {
     const relatedChild = Array.isArray(booking.child_leads)
@@ -156,7 +159,7 @@ export default async function AdminLeadsPage() {
         <Link className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90" href="/admin/leads/new">Add family lead</Link>
       </div>
 
-      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{followUpLeads.filter((lead) => lead.status === status).length}</p></div>)}</div>
+      <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">{pipeline.map(([label, status]) => <div className="px-4 py-3" key={status}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{childPipelineRows.filter((lead) => lead.status === status).length}</p></div>)}</div>
 
       <section className="border-t pt-6">
         <h3 className="text-xl font-bold tracking-tight">2 · Family follow-up queue · {followUpLeads.length} child responses</h3>

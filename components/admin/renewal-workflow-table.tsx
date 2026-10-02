@@ -457,6 +457,49 @@ function RenewalActions({
       row.selectedSessions.length &&
       row.status === "renewal_contacted" ? (
         <section className="rounded-xl border bg-background p-4">
+          {row.emailDeliveryStatus ? (
+            <div
+              className={
+                "mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm " +
+                (row.emailDeliveryStatus === "bounced" ||
+                row.emailDeliveryStatus === "failed"
+                  ? "border-destructive/40 bg-destructive/10"
+                  : row.emailDeliveryStatus === "delivered"
+                    ? "border-emerald-300 bg-emerald-50"
+                    : "bg-muted/20")
+              }
+            >
+              <div>
+                <p className="font-semibold">
+                  Parent email ·{" "}
+                  {row.emailDeliveryStatus === "delivered"
+                    ? "Delivered"
+                    : row.emailDeliveryStatus === "bounced"
+                      ? "Bounced"
+                      : row.emailDeliveryStatus === "failed"
+                        ? "Failed"
+                        : row.emailDeliveryStatus === "delayed"
+                          ? "Delivery delayed"
+                          : "Sent"}
+                </p>
+                {row.emailDeliveryDetail ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {row.emailDeliveryDetail}
+                  </p>
+                ) : null}
+              </div>
+              {row.emailDeliveryAt ? (
+                <span className="text-xs text-muted-foreground">
+                  {new Intl.DateTimeFormat("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(row.emailDeliveryAt))}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           <div className="flex items-center gap-1.5">
             <p className="font-semibold">3 · Confirm cleared renewal payment</p>
             <InfoTip label="About confirming renewal payment">

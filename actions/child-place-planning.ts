@@ -441,6 +441,7 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
     .from("email_delivery_log")
     .insert({
       parent_lead_id: parsed.data.parentLeadId,
+      child_lead_id: parsed.data.childLeadId,
       email_kind: "planned_place",
       recipient_email: parent.email,
       idempotency_key: idempotencyKey,

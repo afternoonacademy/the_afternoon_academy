@@ -70,22 +70,10 @@ export default async function AdminLeadsPage() {
     .order("weekday")
     .order("starts_at")
     .order("table_number")
-  const [{ data: activeBookings }, { data: academyTables }, { data: pricePlans }, { data: academyClosures }] = await Promise.all([
-    supabaseAdmin.from("accepted_bookings").select("weekday, academy_table_id, starts_at, seat_number, learner_id").in("status", ["accepted_awaiting_payment", "paid_active"]),
-    supabaseAdmin.from("academy_tables").select("id, seat_capacity").eq("status", "active"),
+  const [{ data: pricePlans }, { data: academyClosures }] = await Promise.all([
     supabaseAdmin.from("session_price_plans").select("id,name,price_cents").eq("status", "active").order("price_cents"),
     supabaseAdmin.from("academy_closures").select("starts_on,ends_on,reason").order("starts_on"),
   ])
-  const learnerIds = (activeBookings || []).flatMap((booking) => booking.learner_id ? [booking.learner_id] : [])
-  const { data: bookedLearners } = learnerIds.length
-    ? await supabaseAdmin.from("learners").select("id, first_name").in("id", learnerIds)
-    : { data: [] as { id: string; first_name: string | null }[] }
-  const learnerNames = new Map((bookedLearners || []).map((learner) => [learner.id, learner.first_name || "Booked learner"]))
-  const takenSeats = (activeBookings || []).map((booking) => ({
-    key: `${booking.weekday}:${booking.academy_table_id}:${booking.starts_at}:${booking.seat_number}`,
-    childName: booking.learner_id ? learnerNames.get(booking.learner_id) || "Booked learner" : "Held place",
-  }))
-  const seatCapacities = Object.fromEntries((academyTables || []).map((table) => [table.id, table.seat_capacity]))
   const closures = (academyClosures || []).map((closure) => ({ startsOn: closure.starts_on, endsOn: closure.ends_on, reason: closure.reason }))
 
   const childrenByParent = new Map<string, NonNullable<typeof familyChildren>>()
@@ -108,8 +96,8 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6">
         <h3 className="text-xl font-bold tracking-tight">3 · Confirm payment, then activate a dated place</h3>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment, recurring seat and dated service period in one action.</p>
-          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} pricePlans={pricePlans || []} seatCapacities={seatCapacities} slots={bookableSlots || []} takenSeats={takenSeats} closures={closures} />
+          <p className="text-sm text-muted-foreground">Select a family row after you have personally confirmed the transfer. The expanded form records the payment and exact service dates in one action. Capacity is checked per dated table/time, and an Operations seat is assigned only after payment is confirmed.</p>
+          <PaymentActivationTable families={paymentFamilies.map((lead) => ({ ...lead, children: childrenByParent.get(lead.id) || [] }))} pricePlans={pricePlans || []} slots={bookableSlots || []} closures={closures} />
         </div>
       </section>
       <section className="border-t pt-6">

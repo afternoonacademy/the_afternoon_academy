@@ -37,6 +37,167 @@ async function buildRenewalDates(parentLeadId: string, periodStart: string, peri
 }
 const applyTemplate = (template: string, values: Record<string, string>) => Object.entries(values).reduce((result, [key, value]) => result.replaceAll(`{{${key}}}`, value), template)
 
+export async function startChildRenewalCase(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z
+    .object({
+      parentLeadId: z.string().uuid(),
+      learnerId: z.string().uuid(),
+      standingPlacementId: z.string().uuid(),
+      sourcePaymentEntitlementId: z.string().uuid(),
+      dueOn: z.string().date(),
+    })
+    .safeParse({
+      parentLeadId: formData.get("parentLeadId"),
+      learnerId: formData.get("learnerId"),
+      standingPlacementId: formData.get("standingPlacementId"),
+      sourcePaymentEntitlementId: formData.get("sourcePaymentEntitlementId"),
+      dueOn: formData.get("dueOn"),
+    })
+
+  if (!parsed.success) throw new Error("This renewal is no longer available")
+
+  const value = parsed.data
+  const supabase = supabaseService()
+  const [{ data: learner }, { data: placement }, { data: existing }] =
+    await Promise.all([
+      supabase
+        .from("learners")
+        .select("id,parent_lead_id,status")
+        .eq("id", value.learnerId)
+        .maybeSingle(),
+      supabase
+        .from("standing_placements")
+        .select("id,learner_id,status")
+        .eq("id", value.standingPlacementId)
+        .maybeSingle(),
+      supabase
+        .from("renewal_cases")
+        .select("id")
+        .eq("learner_id", value.learnerId)
+        .eq("source_payment_entitlement_id", value.sourcePaymentEntitlementId)
+        .maybeSingle(),
+    ])
+
+  if (
+    !learner ||
+    learner.parent_lead_id !== value.parentLeadId ||
+    learner.status !== "active" ||
+    !placement ||
+    placement.learner_id !== value.learnerId ||
+    placement.status !== "active"
+  ) {
+    throw new Error("The learner’s recurring place is no longer active")
+  }
+
+  const payload = {
+    parent_lead_id: value.parentLeadId,
+    learner_id: value.learnerId,
+    standing_placement_id: value.standingPlacementId,
+    source_payment_entitlement_id: value.sourcePaymentEntitlementId,
+    due_on: value.dueOn,
+    status: value.dueOn < iso(new Date()) ? "overdue" : "ready_to_send",
+    updated_by: user.id,
+  }
+
+  const result = existing
+    ? await supabase.from("renewal_cases").update(payload).eq("id", existing.id)
+    : await supabase.from("renewal_cases").insert(payload)
+
+  if (result.error) throw new Error("Could not open the renewal")
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
+}
+
+export async function releaseRenewalPlace(formData: FormData) {
+  const { user } = await requireAdmin()
+  const parsed = z
+    .object({
+      caseId: z.string().uuid(),
+      parentLeadId: z.string().uuid(),
+      learnerId: z.string().uuid(),
+      reason: z.string().trim().min(2).max(500),
+    })
+    .safeParse({
+      caseId: formData.get("caseId"),
+      parentLeadId: formData.get("parentLeadId"),
+      learnerId: formData.get("learnerId"),
+      reason: formData.get("reason"),
+    })
+
+  if (!parsed.success) {
+    throw new Error("Add a reason before releasing the recurring place")
+  }
+
+  const value = parsed.data
+  const supabase = supabaseService()
+  const { data: renewal } = await supabase
+    .from("renewal_cases")
+    .select("id,learner_id,status")
+    .eq("id", value.caseId)
+    .eq("parent_lead_id", value.parentLeadId)
+    .maybeSingle()
+
+  if (!renewal || renewal.learner_id !== value.learnerId) {
+    throw new Error("This renewal is no longer available")
+  }
+  if (renewal.status === "renewed") {
+    throw new Error("This renewal has already been paid")
+  }
+
+  const releasedAt = new Date().toISOString()
+  const [bookingResult, placementResult, renewalResult] = await Promise.all([
+    supabase
+      .from("accepted_bookings")
+      .update({ status: "cancelled" })
+      .eq("learner_id", value.learnerId)
+      .in("status", [
+        "paid_active",
+        "session_planned",
+        "contacted",
+        "accepted_awaiting_payment",
+      ]),
+    supabase
+      .from("standing_placements")
+      .update({
+        status: "ended",
+        effective_to: iso(new Date()),
+        updated_by: user.id,
+      })
+      .eq("learner_id", value.learnerId)
+      .eq("status", "active"),
+    supabase
+      .from("renewal_cases")
+      .update({
+        status: "not_renewing",
+        outcome_note: value.reason,
+        capacity_released_at: releasedAt,
+        capacity_released_by: user.id,
+        capacity_release_reason: value.reason,
+        closed_at: releasedAt,
+        updated_by: user.id,
+      })
+      .eq("id", value.caseId),
+  ])
+
+  if (bookingResult.error || placementResult.error || renewalResult.error) {
+    console.error("Renewal capacity release failed", {
+      bookingError: bookingResult.error,
+      placementError: placementResult.error,
+      renewalError: renewalResult.error,
+    })
+    throw new Error("Could not release the learner’s recurring place")
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
+}
+
 export async function startRenewalCase(formData: FormData) {
   const { user } = await requireAdmin()
   const parsed = z.object({ parentLeadId: z.string().uuid(), sourcePaymentEntitlementId: z.string().uuid(), dueOn: z.string().date() }).safeParse({ parentLeadId: formData.get("parentLeadId"), sourcePaymentEntitlementId: formData.get("sourcePaymentEntitlementId"), dueOn: formData.get("dueOn") })
@@ -44,6 +205,7 @@ export async function startRenewalCase(formData: FormData) {
   const { error } = await supabaseService().from("renewal_cases").upsert({ parent_lead_id: parsed.data.parentLeadId, source_payment_entitlement_id: parsed.data.sourcePaymentEntitlementId, due_on: parsed.data.dueOn, status: parsed.data.dueOn < iso(new Date()) ? "overdue" : "ready_to_send", updated_by: user.id }, { onConflict: "parent_lead_id,source_payment_entitlement_id" })
   if (error) throw new Error("Could not open the renewal")
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function prepareRenewalDraft(formData: FormData) {
@@ -55,6 +217,7 @@ export async function prepareRenewalDraft(formData: FormData) {
   const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const values = { parent_name: parent.parent_name, learner_names: service.learnerNames, service_dates: service.sessions.map((session) => `${formatDate(session.date)} · ${session.startsAt}`).join("\n"), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100) }
   const { error } = await supabase.from("renewal_cases").update({ proposed_period_start: value.periodStart, proposed_period_end: value.periodEnd, proposed_session_price_plan_id: value.pricePlanId, proposed_amount_cents: amountCents, proposed_service_dates: service.dates, selected_sessions: service.sessions, selected_session_count: service.sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId)
   if (error) throw new Error("Could not prepare the renewal email"); revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function updateRenewalSelection(formData: FormData) {
@@ -77,6 +240,7 @@ export async function updateRenewalSelection(formData: FormData) {
   const { error } = await supabase.from("renewal_cases").update({ proposed_amount_cents: amountCents, proposed_service_dates: [...new Set(sessions.map((session) => session.date))].sort(), selected_sessions: sessions, selected_session_count: sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId)
   if (error) throw new Error("Could not update the selected sessions")
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function addRenewalReplacement(formData: FormData) {
@@ -87,6 +251,7 @@ export async function addRenewalReplacement(formData: FormData) {
   const learner = Array.isArray(placement.learners) ? placement.learners[0] : placement.learners; const sessions = Array.isArray(renewal.selected_sessions) ? renewal.selected_sessions : []; if (sessions.some((item: any) => item.placementId === placement.id && item.date === value.replacementDate)) throw new Error("That learner already has this date in the renewal")
   const next = [...sessions, { placementId: placement.id, learnerId: placement.learner_id, learnerName: learner.first_name || "Learner", date: value.replacementDate, startsAt: placement.starts_at.slice(0, 5), priceCents: pricePlan.price_cents, academyTableId: placement.academy_table_id, tableNumber: placement.table_number, seatNumber: null, durationMinutes: placement.duration_minutes, teacherName: placement.teacher_name, focus: placement.focus, replacement: true }]; const amount = next.reduce((sum: number, item: any) => sum + item.priceCents, 0)
   const { error } = await supabase.from("renewal_cases").update({ selected_sessions: next, selected_session_count: next.length, proposed_amount_cents: amount, proposed_service_dates: [...new Set(next.map((item: any) => item.date))].sort(), updated_by: user.id }).eq("id", value.caseId); if (error) throw new Error("Could not add the replacement session"); revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function sendRenewalEmail(formData: FormData) {
@@ -98,6 +263,7 @@ export async function sendRenewalEmail(formData: FormData) {
   const { data: log, error: logError } = existing ? { data: existing, error: null } : await supabase.from("email_delivery_log").insert({ parent_lead_id: value.parentLeadId, email_kind: "renewal_reminder", recipient_email: parent.email, idempotency_key: key, subject: value.subject, body_text: value.body, created_by: user.id }).select("id").single(); if (logError || !log) throw new Error("Could not prepare the renewal email")
   try { const result = await getResend().emails.send({ from: emailFrom, to: [parent.email], subject: value.subject, html: emailHtml(value.body), text: value.body }, { headers: { "Idempotency-Key": key } }); if (result.error) throw new Error(result.error.message); await Promise.all([supabase.from("email_delivery_log").update({ status: "sent", resend_email_id: result.data?.id || null, sent_at: new Date().toISOString(), subject: value.subject, body_text: value.body }).eq("id", log.id), supabase.from("renewal_cases").update({ status: "awaiting_payment", email_sent_at: new Date().toISOString(), last_contact_at: new Date().toISOString(), draft_subject: value.subject, draft_body: value.body, updated_by: user.id }).eq("id", renewal.id)]) } catch (error) { await supabase.from("email_delivery_log").update({ status: "failed", error_message: error instanceof Error ? error.message.slice(0, 500) : "Send failed" }).eq("id", log.id); throw new Error("The renewal email could not be sent") }
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 export async function allowPendingRenewalAttendance(formData: FormData) {
@@ -209,7 +375,9 @@ export async function allowPendingRenewalAttendance(formData: FormData) {
 
   revalidatePath("/admin")
   revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads")
 }
 
 
-export async function closeRenewal(formData: FormData) { const { user } = await requireAdmin(); const parsed = caseSchema.extend({ note: z.string().trim().max(500).optional() }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), note: formData.get("note") || undefined }); if (!parsed.success) throw new Error("Please check the renewal outcome"); const { error } = await supabaseService().from("renewal_cases").update({ status: "not_renewing", outcome_note: parsed.data.note || null, closed_at: new Date().toISOString(), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId); if (error) throw new Error("Could not close this renewal"); revalidatePath("/admin/renewals") }
+export async function closeRenewal(formData: FormData) { const { user } = await requireAdmin(); const parsed = caseSchema.extend({ note: z.string().trim().max(500).optional() }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), note: formData.get("note") || undefined }); if (!parsed.success) throw new Error("Please check the renewal outcome"); const { error } = await supabaseService().from("renewal_cases").update({ status: "not_renewing", outcome_note: parsed.data.note || null, closed_at: new Date().toISOString(), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId); if (error) throw new Error("Could not close this renewal"); revalidatePath("/admin/renewals")
+  revalidatePath("/admin/leads") }

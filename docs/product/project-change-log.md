@@ -199,3 +199,14 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 
 - Fixed dated Operations-seat creation to avoid PostgREST `ON CONFLICT` against partial unique indexes. The paid-period activation path now reuses an existing active learner/session seat when present, otherwise performs a normal insert and relies on the existing partial uniqueness constraints for race-safe conflict detection.
 - Reset the affected test family back to its pre-payment baseline after the failed preview activation: no accepted booking, learner, payment entitlement or standing placement remains for the test attempt; the parent lead remains `contacted`.
+
+
+## 2 October 2026 — First-come-first-served dated capacity
+
+- Corrected the paid-period model so numbered seats are no longer treated as learner-owned recurring reservations.
+- Family Pipeline no longer asks staff to choose a recurring seat before payment.
+- Renewal drafts no longer inherit/display a standing-placement seat as reserved.
+- Capacity is checked against actual dated Operations seats for the selected table/time.
+- Cleared payment assigns the first available seat independently on each paid date; unpaid renewals reserve nothing.
+- Payment-pending continuation remains an explicit date-bounded exception and now allocates available dated capacity dynamically instead of relying on a standing seat number.
+- Existing standing-placement seat values are retained as compatibility/history data for now and are ignored by the new paid-period allocation path.

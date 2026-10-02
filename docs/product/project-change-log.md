@@ -293,3 +293,5 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Added a read-only **Current booking & payment** summary at the top of each Learner Workspace. It shows learner/year, active recurring place(s), current price plan/session price, payment/renewal status, paid-through date and exact booked paid dates where available. Renewal-due/payment-pending learners also show that their recurring place remains held until explicitly released.
 
 <!-- Vercel preview rebuild trigger after learner workspace JSON typing fix -->
+
+<!-- Vercel preview rebuild retry after verified Operations iso helper fix -->

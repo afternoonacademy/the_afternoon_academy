@@ -146,3 +146,8 @@ Enable and approve Vercel AI Gateway before treating family-update drafting as a
 ### Unified exact-date paid periods — October 2026
 
 Family Pipeline payment activation and Renewals use the same exact-date paid-period builder. Staff choose the learner's recurring place and then the precise paid service dates; expected recurring dates preload, Academy closures are visibly blocked, and open-date replacements are explicit. The selected-session structure is the source for the quote, editable renewal email, payment entitlement metadata and dated Operations seats. Period start/end remain derived compatibility fields. Price plans stay attached to the learner's recurring place and never move a learner between groups automatically.
+
+
+### Dated capacity, not recurring seat ownership — October 2026
+
+Treat numbered seats as an Operations/capacity mechanism only. Families keep a recurring table/time arrangement, not a permanent seat number. Unpaid renewals do not reserve capacity. Exact paid dates allocate the first available dated seat when cleared payment is confirmed; explicit payment-pending continuation remains the only date-bounded unpaid exception.

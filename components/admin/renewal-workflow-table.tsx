@@ -7,186 +7,148 @@ import {
   recordExactRenewalPayment,
 } from "@/actions/paid-period"
 import {
-  allowPendingRenewalAttendance,
-  closeRenewal,
+  releaseRenewalPlace,
   sendRenewalEmail,
-  startRenewalCase,
+  startChildRenewalCase,
 } from "@/actions/renewals"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type {
-  AcademyClosure,
-  PaidPeriodPlacement,
-  PaidPeriodSession,
-} from "@/lib/paid-period"
+import type { FamilyRenewalRow } from "@/lib/admin/family-renewals"
 
-type LegacyRenewalSession = {
-  date: string
-  startsAt: string
-  priceCents: number
-}
-
-export type RenewalWorkflowRow = {
-  sourcePaymentEntitlementId: string
-  parentLeadId: string
-  parentName: string
-  email: string
-  learnerNames: string[]
-  periodEnd: string
-  lastPaidServiceDate: string
-  caseId: string | null
-  status:
-    | "ready_to_send"
-    | "awaiting_payment"
-    | "overdue"
-    | "renewed"
-    | "not_renewing"
-  emailSentAt: string | null
-  proposedPeriodStart: string | null
-  proposedPeriodEnd: string | null
-  proposedAmountCents: number | null
-  proposedServiceDates: string[]
-  selectedSessions: PaidPeriodSession[]
-  legacySelectedSessions: LegacyRenewalSession[]
-  placements: PaidPeriodPlacement[]
-  closures: AcademyClosure[]
-  draftSubject: string | null
-  draftBody: string | null
-  provisionalDeliveryUntil: string | null
-}
+type PricePlan = { id: string; name: string; price_cents: number }
 
 const date = (value: string) =>
   new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
-  }).format(new Date(`${value}T12:00:00Z`))
+  }).format(new Date(value + "T12:00:00Z"))
 
 const iso = (value: Date) => value.toISOString().slice(0, 10)
-const price = (cents: number) =>
+
+const money = (cents: number) =>
   new Intl.NumberFormat("en-IE", {
     style: "currency",
     currency: "EUR",
   }).format(cents / 100)
 
-const statusLabel: Record<RenewalWorkflowRow["status"], string> = {
-  ready_to_send: "Prepare email",
-  awaiting_payment: "Awaiting funds",
-  overdue: "Overdue",
-  renewed: "Renewed",
-  not_renewing: "Not renewing",
+const statusLabel: Record<FamilyRenewalRow["status"], string> = {
+  needs_renewal: "Needs renewal",
+  renewal_planned: "Renewal planned",
+  renewal_contacted: "Contacted — awaiting payment",
 }
-
-type PricePlan = { id: string; name: string; price_cents: number }
 
 export function RenewalWorkflowTable({
   rows,
   pricePlans,
 }: {
-  rows: RenewalWorkflowRow[]
+  rows: FamilyRenewalRow[]
   pricePlans: PricePlan[]
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  const toggle = (id: string) => setExpanded(expanded === id ? null : id)
 
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border md:block">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead className="border-b bg-muted/30 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Family</th>
-              <th className="px-4 py-3 font-medium">Learner(s)</th>
-              <th className="px-4 py-3 font-medium">Last paid session</th>
-              <th className="px-4 py-3 font-medium">Renewal status</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3 font-medium">Contact</th>
+              <th className="w-[170px] px-4 py-3 font-medium">Learner</th>
+              <th className="w-[150px] px-4 py-3 font-medium">Last paid</th>
+              <th className="w-[220px] px-4 py-3 font-medium">Status</th>
+              <th className="w-[100px] px-4 py-3" />
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <>
-                <tr
-                  className="border-b last:border-0 hover:bg-muted/30"
-                  key={row.sourcePaymentEntitlementId}
-                >
-                  <td className="px-4 py-3">
-                    <p className="font-semibold">{row.parentName}</p>
-                    <p className="text-xs text-muted-foreground">{row.email}</p>
-                  </td>
-                  <td className="px-4 py-3">{row.learnerNames.join(", ")}</td>
-                  <td className="px-4 py-3 font-medium">
-                    {date(row.lastPaidServiceDate)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      variant={
-                        row.status === "overdue"
-                          ? "destructive"
-                          : row.status === "renewed"
-                            ? "default"
-                            : "secondary"
-                      }
-                    >
-                      {statusLabel[row.status]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      onClick={() => toggle(row.sourcePaymentEntitlementId)}
-                      size="sm"
-                      type="button"
-                      variant="ghost"
-                    >
-                      {expanded === row.sourcePaymentEntitlementId
-                        ? "Close"
-                        : "Open"}
-                    </Button>
-                  </td>
-                </tr>
-                {expanded === row.sourcePaymentEntitlementId ? (
-                  <tr key={`${row.sourcePaymentEntitlementId}-detail`}>
-                    <td className="bg-muted/20 px-4 py-5" colSpan={5}>
-                      <RenewalActions pricePlans={pricePlans} row={row} />
+            {rows.map((row) => {
+              const open = expanded === row.learnerId
+              return (
+                <>
+                  <tr
+                    className="border-b last:border-0 hover:bg-muted/30"
+                    key={row.learnerId}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold">{row.parentName}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {row.email}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 font-semibold">{row.learnerName}</td>
+                    <td className="px-4 py-3">{date(row.lastPaidServiceDate)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary">{statusLabel[row.status]}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        onClick={() =>
+                          setExpanded((current) =>
+                            current === row.learnerId ? null : row.learnerId,
+                          )
+                        }
+                        size="sm"
+                        type="button"
+                        variant={open ? "secondary" : "ghost"}
+                      >
+                        {open ? "Close" : "Details"}
+                      </Button>
                     </td>
                   </tr>
-                ) : null}
-              </>
-            ))}
+                  {open ? (
+                    <tr key={row.learnerId + "-details"}>
+                      <td className="bg-muted/20 px-4 py-5" colSpan={5}>
+                        <RenewalActions pricePlans={pricePlans} row={row} />
+                      </td>
+                    </tr>
+                  ) : null}
+                </>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
       <div className="divide-y border-y md:hidden">
-        {rows.map((row) => (
-          <div className="py-4" key={row.sourcePaymentEntitlementId}>
-            <button
-              className="flex w-full items-start justify-between gap-3 text-left"
-              onClick={() => toggle(row.sourcePaymentEntitlementId)}
-              type="button"
-            >
-              <span>
-                <span className="block font-semibold">{row.parentName}</span>
-                <span className="block text-sm text-muted-foreground">
-                  {row.learnerNames.join(", ")} · last paid{" "}
-                  {date(row.lastPaidServiceDate)}
-                </span>
-              </span>
-              <Badge
-                variant={row.status === "overdue" ? "destructive" : "secondary"}
+        {rows.map((row) => {
+          const open = expanded === row.learnerId
+          return (
+            <div className="py-4" key={row.learnerId}>
+              <button
+                className="flex w-full items-start justify-between gap-3 text-left"
+                onClick={() =>
+                  setExpanded((current) =>
+                    current === row.learnerId ? null : row.learnerId,
+                  )
+                }
+                type="button"
               >
-                {statusLabel[row.status]}
-              </Badge>
-            </button>
-            {expanded === row.sourcePaymentEntitlementId ? (
-              <div className="mt-4 border-t pt-4">
-                <RenewalActions pricePlans={pricePlans} row={row} />
-              </div>
-            ) : null}
-          </div>
-        ))}
+                <span>
+                  <span className="block font-semibold">
+                    {row.learnerName} · {row.parentName}
+                  </span>
+                  <span className="block text-sm text-muted-foreground">
+                    Last paid {date(row.lastPaidServiceDate)}
+                  </span>
+                  <span className="mt-2 inline-block">
+                    <Badge variant="secondary">{statusLabel[row.status]}</Badge>
+                  </span>
+                </span>
+                <span className="text-sm font-semibold text-primary">
+                  {open ? "Close" : "Details"}
+                </span>
+              </button>
+              {open ? (
+                <div className="mt-4 border-t pt-4">
+                  <RenewalActions pricePlans={pricePlans} row={row} />
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
       </div>
     </>
   )
@@ -196,238 +158,288 @@ function RenewalActions({
   row,
   pricePlans,
 }: {
-  row: RenewalWorkflowRow
+  row: FamilyRenewalRow
   pricePlans: PricePlan[]
 }) {
-  const nextStart = new Date(`${row.lastPaidServiceDate}T12:00:00Z`)
+  const [editing, setEditing] = useState(row.status === "needs_renewal")
+
+  const nextStart = new Date(row.lastPaidServiceDate + "T12:00:00Z")
   nextStart.setUTCDate(nextStart.getUTCDate() + 1)
   const nextEnd = new Date(nextStart)
   nextEnd.setUTCDate(nextEnd.getUTCDate() + 31)
   const suggestionStart = row.proposedPeriodStart || iso(nextStart)
   const suggestionEnd = row.proposedPeriodEnd || iso(nextEnd)
 
-  if (!row.caseId) {
-    return (
-      <div>
-        <p className="font-semibold">Open this renewal</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Last paid service date: {date(row.lastPaidServiceDate)}. Opening the
-          case keeps this family in the queue until renewed or closed.
-        </p>
-        <div className="mt-3 max-w-sm">
-          <SaveActionForm
-            action={startRenewalCase}
-            submitLabel="Start renewal"
-            successMessage="Renewal opened"
-          >
-            <input
-              name="parentLeadId"
-              type="hidden"
-              value={row.parentLeadId}
-            />
-            <input
-              name="sourcePaymentEntitlementId"
-              type="hidden"
-              value={row.sourcePaymentEntitlementId}
-            />
-            <input name="dueOn" type="hidden" value={row.periodEnd} />
-          </SaveActionForm>
-        </div>
-      </div>
-    )
-  }
+  const amount =
+    row.proposedAmountCents ??
+    row.selectedSessions.reduce((sum, session) => sum + session.priceCents, 0)
+
+  const firstPlacement = row.placements[0]
 
   return (
-    <div className="space-y-7">
-      <section>
-        <div className="mb-4">
-          <p className="font-semibold">1 · Build the exact next paid period</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Last paid service: {date(row.lastPaidServiceDate)}. Normal recurring
-            dates are preselected from each learner’s active place. Closed dates
-            are blocked; select another open date to add an explicit replacement.
-          </p>
+    <div className="space-y-6">
+      <section className="rounded-xl border bg-background p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="font-semibold">Recurring place remains reserved</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {row.learnerName} keeps this recurring capacity after the paid
+              period ends. It is not offered to another family unless an admin
+              explicitly releases it.
+            </p>
+          </div>
+          <Badge variant={row.recurringCapacityHeld ? "default" : "destructive"}>
+            {row.recurringCapacityHeld
+              ? "Capacity reserved"
+              : "Check recurring capacity hold"}
+          </Badge>
         </div>
 
-        {row.legacySelectedSessions.length ? (
-          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-            <p className="font-semibold">Historical renewal selection</p>
-            <p className="mt-1">
-              This case contains an older date/time/price selection. It remains
-              readable below. Saving the builder will replace the working quote
-              with the new structured exact-session format without rewriting the
-              historical payment records.
-            </p>
-            <ul className="mt-2 space-y-1">
-              {row.legacySelectedSessions.map((session, index) => (
-                <li key={`${session.date}-${session.startsAt}-${index}`}>
-                  {date(session.date)} · {session.startsAt} ·{" "}
-                  {price(session.priceCents)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <SaveActionForm
-          action={prepareExactRenewalDraft}
-          submitLabel="Save exact sessions & prepare email"
-          successMessage="Renewal dates and email draft prepared"
-        >
-          <input name="caseId" type="hidden" value={row.caseId} />
-          <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
-          <PaidPeriodBuilder
-            key={`${row.caseId}:${JSON.stringify(row.selectedSessions)}:${suggestionStart}:${suggestionEnd}`}
-            allowPricePlanChange
-            closures={row.closures}
-            initialSessions={row.selectedSessions}
-            placements={row.placements}
-            pricePlans={pricePlans}
-            suggestionEnd={suggestionEnd}
-            suggestionStart={suggestionStart}
-          />
-        </SaveActionForm>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {row.placements.map((placement) => (
+            <div className="rounded-lg border p-3" key={placement.placementId}>
+              <p className="font-semibold">
+                Table {placement.tableNumber} · {placement.startsAt}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {placement.pricePlanName} · {money(placement.priceCents)} / session
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Capacity seat{" "}
+                {placement.seatNumber
+                  ? placement.seatNumber
+                  : "held by recurring booking"}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      {!row.caseId ? (
         <section className="rounded-xl border bg-background p-4">
-          <p className="font-semibold">2 · Review and send</p>
-          {row.draftSubject && row.draftBody ? (
-            <div className="mt-3">
-              <SaveActionForm
-                action={sendRenewalEmail}
-                submitLabel={row.emailSentAt ? "Email sent" : "Send renewal email"}
-                successMessage="Renewal email sent"
-              >
-                <input name="caseId" type="hidden" value={row.caseId} />
-                <input
-                  name="parentLeadId"
-                  type="hidden"
-                  value={row.parentLeadId}
-                />
-                <Input
-                  defaultValue={row.draftSubject}
-                  name="subject"
-                  required
-                />
-                <textarea
-                  className="min-h-56 w-full rounded-md border bg-background p-3 text-sm"
-                  defaultValue={row.draftBody}
-                  name="body"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  The draft is built from the exact selected sessions and total.
-                  You can edit the message before sending.
-                </p>
-              </SaveActionForm>
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Save the exact paid sessions first. The editable renewal email is
-              generated from that selection.
-            </p>
-          )}
-        </section>
-
-        <section className="rounded-xl border bg-background p-4">
-          <p className="font-semibold">3 · Funds cleared or continuity decision</p>
+          <p className="font-semibold">1 · Plan the next paid period</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Operations seats become paid only after you manually confirm cleared
-            funds. Late-payment continuation remains explicit and date-bounded.
+            Last paid service: {date(row.lastPaidServiceDate)}. Start the
+            renewal using the learner’s current recurring place and price plan.
           </p>
+          <div className="mt-4 max-w-sm">
+            <SaveActionForm
+              action={startChildRenewalCase}
+              submitLabel="Start renewal plan"
+              successMessage="Renewal opened"
+            >
+              <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+              <input name="learnerId" type="hidden" value={row.learnerId} />
+              <input
+                name="standingPlacementId"
+                type="hidden"
+                value={firstPlacement?.placementId || ""}
+              />
+              <input
+                name="sourcePaymentEntitlementId"
+                type="hidden"
+                value={row.sourcePaymentEntitlementId}
+              />
+              <input name="dueOn" type="hidden" value={row.periodEnd} />
+            </SaveActionForm>
+          </div>
+        </section>
+      ) : null}
 
-          {row.selectedSessions.length ? (
-            <div className="mt-4 border-b pb-4">
-              <p className="text-sm font-semibold">
-                Confirm cleared payment ·{" "}
-                {price(
-                  row.proposedAmountCents ??
-                    row.selectedSessions.reduce(
-                      (sum, session) => sum + session.priceCents,
-                      0,
-                    ),
-                )}
+      {row.caseId && (editing || !row.selectedSessions.length) ? (
+        <section className="rounded-xl border bg-background p-4">
+          <div className="mb-4">
+            <p className="font-semibold">1 · Plan renewal dates</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The learner’s existing table/time is the default. Review the exact
+              next dates, closures and price plan before contacting the parent.
+            </p>
+          </div>
+          <SaveActionForm
+            action={prepareExactRenewalDraft}
+            submitLabel="Record renewal plan"
+            successMessage="Renewal plan saved"
+          >
+            <input name="caseId" type="hidden" value={row.caseId} />
+            <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+            <PaidPeriodBuilder
+              allowPricePlanChange
+              closures={row.closures}
+              initialSessions={row.selectedSessions}
+              placements={row.placements}
+              pricePlans={pricePlans}
+              purpose="plan"
+              suggestionEnd={suggestionEnd}
+              suggestionStart={suggestionStart}
+            />
+          </SaveActionForm>
+        </section>
+      ) : null}
+
+      {row.caseId && row.selectedSessions.length && !editing ? (
+        <section className="rounded-xl border bg-background p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="font-semibold">Saved renewal plan</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {row.selectedSessions.length} session
+                {row.selectedSessions.length === 1 ? "" : "s"} · {money(amount)}
               </p>
-              <div className="mt-2">
-                <SaveActionForm
-                  action={recordExactRenewalPayment}
-                  submitLabel="Confirm payment & activate dated seats"
-                  successMessage="Renewal payment confirmed and dated seats activated"
-                >
-                  <input name="caseId" type="hidden" value={row.caseId} />
-                  <input
-                    name="parentLeadId"
-                    type="hidden"
-                    value={row.parentLeadId}
-                  />
-                  <input
-                    name="selectedSessions"
-                    type="hidden"
-                    value={JSON.stringify(row.selectedSessions)}
-                  />
-                  <Input
-                    defaultValue={iso(new Date())}
-                    name="receivedOn"
-                    required
-                    type="date"
-                  />
-                  <Input name="bankReference" placeholder="Bank reference" />
-                  <Input name="note" placeholder="Optional payment note" />
-                </SaveActionForm>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {row.selectedSessions.map((session) => (
+                  <span
+                    className="rounded-md border bg-muted/20 px-2.5 py-1 text-xs"
+                    key={
+                      session.placementId +
+                      ":" +
+                      session.date +
+                      ":" +
+                      session.startsAt
+                    }
+                  >
+                    {date(session.date)} · {session.startsAt}
+                  </span>
+                ))}
               </div>
             </div>
-          ) : null}
-
-          <div className="mt-4 border-b pb-4">
-            <p className="text-sm font-semibold">Payment pending continuation</p>
-            <div className="mt-2">
-              <SaveActionForm
-                action={allowPendingRenewalAttendance}
-                submitLabel="Continue as payment pending"
-                successMessage="Payment-pending attendance prepared"
+            {row.status !== "renewal_contacted" ? (
+              <Button
+                onClick={() => setEditing(true)}
+                size="sm"
+                type="button"
+                variant="outline"
               >
-                <input name="caseId" type="hidden" value={row.caseId} />
-                <input
-                  name="parentLeadId"
-                  type="hidden"
-                  value={row.parentLeadId}
-                />
-                <Input
-                  defaultValue={row.provisionalDeliveryUntil || suggestionStart}
-                  name="throughDate"
-                  required
-                  type="date"
-                />
-              </SaveActionForm>
-            </div>
-            {row.provisionalDeliveryUntil ? (
-              <p className="mt-2 text-sm font-medium text-amber-700">
-                Pending attendance through {date(row.provisionalDeliveryUntil)}
-              </p>
+                Edit renewal plan
+              </Button>
             ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {row.caseId &&
+      row.selectedSessions.length &&
+      row.status === "renewal_planned" &&
+      !editing ? (
+        <section className="rounded-xl border bg-background p-4">
+          <p className="font-semibold">2 · Contact parent</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Send the Academy renewal email generated from the saved renewal
+            template and these exact dates. A successful send changes this
+            learner to Contacted — awaiting payment.
+          </p>
+          <div className="mt-4 max-w-sm">
+            <SaveActionForm
+              action={sendRenewalEmail}
+              submitLabel="Email renewal to parent"
+              successMessage="Renewal sent — awaiting payment"
+            >
+              <input name="caseId" type="hidden" value={row.caseId} />
+              <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+              <input
+                name="subject"
+                type="hidden"
+                value={(row as FamilyRenewalRow & { draftSubject?: string | null }).draftSubject || ""}
+              />
+              <input
+                name="body"
+                type="hidden"
+                value={(row as FamilyRenewalRow & { draftBody?: string | null }).draftBody || ""}
+              />
+            </SaveActionForm>
+          </div>
+        </section>
+      ) : null}
+
+      {row.caseId &&
+      row.selectedSessions.length &&
+      row.status === "renewal_contacted" ? (
+        <section className="rounded-xl border bg-background p-4">
+          <p className="font-semibold">3 · Confirm cleared renewal payment</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            The recurring place is still reserved. Confirm the transfer only
+            after the planned amount has cleared.
+          </p>
+
+          <div className="mt-4 rounded-lg border bg-muted/20 p-4">
+            <p className="font-semibold">{row.learnerName}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {row.selectedSessions.length} planned session
+              {row.selectedSessions.length === 1 ? "" : "s"} · {money(amount)}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {row.selectedSessions.map((session) => (
+                <span
+                  className="rounded-md border bg-background px-2.5 py-1 text-xs"
+                  key={session.placementId + ":" + session.date}
+                >
+                  {date(session.date)}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="mt-4">
-            <p className="text-sm font-semibold">Family is not renewing</p>
-            <div className="mt-2">
-              <SaveActionForm
-                action={closeRenewal}
-                submitLabel="Mark not renewing"
-                successMessage="Renewal closed"
-              >
-                <input name="caseId" type="hidden" value={row.caseId} />
-                <input
-                  name="parentLeadId"
-                  type="hidden"
-                  value={row.parentLeadId}
-                />
-                <Input name="note" placeholder="Optional non-renewal reason" />
-              </SaveActionForm>
-            </div>
+            <SaveActionForm
+              action={recordExactRenewalPayment}
+              submitLabel={
+                "Confirm payment & activate " +
+                row.selectedSessions.length +
+                " date" +
+                (row.selectedSessions.length === 1 ? "" : "s")
+              }
+              successMessage="Renewal payment confirmed"
+            >
+              <input name="caseId" type="hidden" value={row.caseId} />
+              <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+              <input
+                name="selectedSessions"
+                type="hidden"
+                value={JSON.stringify(row.selectedSessions)}
+              />
+              <Input
+                defaultValue={iso(new Date())}
+                name="receivedOn"
+                required
+                type="date"
+              />
+              <label className="flex items-start gap-3 rounded-md border p-3 text-sm">
+                <input className="mt-0.5" required type="checkbox" />
+                <span>
+                  I confirm the renewal payment has cleared for the planned
+                  amount and dates shown above.
+                </span>
+              </label>
+            </SaveActionForm>
           </div>
         </section>
-      </div>
+      ) : null}
+
+      {row.caseId ? (
+        <section className="rounded-xl border border-destructive/20 bg-background p-4">
+          <p className="font-semibold">Release recurring place</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Use this only when the parent cancels or staff decide to release the
+            place for non-payment. This ends the standing placement and returns
+            the capacity to the Family Pipeline.
+          </p>
+          <div className="mt-4 max-w-xl">
+            <SaveActionForm
+              action={releaseRenewalPlace}
+              submitLabel="Release recurring place"
+              successMessage="Recurring place released"
+            >
+              <input name="caseId" type="hidden" value={row.caseId} />
+              <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+              <input name="learnerId" type="hidden" value={row.learnerId} />
+              <Input
+                name="reason"
+                placeholder="Required reason — e.g. parent cancelled or non-payment"
+                required
+              />
+            </SaveActionForm>
+          </div>
+        </section>
+      ) : null}
     </div>
   )
 }

@@ -276,3 +276,13 @@ This is Phase 1 operating infrastructure that prepares, but does not replace, Ph
 - Renewal discovery now includes all overdue active learners, not only those whose previous paid period ended within the prior 120 days.
 
 <!-- Preview rebuild trigger: 2026-10-02 -->
+
+
+## 2 October 2026 — Renewal-due learners remain visible in Operations
+
+- Operations now surfaces active recurring learners on matching future service dates even when their latest paid entitlement has expired, provided their standing placement has not been released.
+- Renewal-due learners are labelled **Renewal due · place held**, count against table capacity, and remain available for Present/Absent attendance so teachers see the real expected room.
+- Viewing a day does not create fake payment records. A renewal-due seat is only materialised as `payment_pending` when attendance is recorded; the payment entitlement remains unpaid.
+- Dated capacity validation now counts active standing placements as reserved capacity and avoids allocating a new paid learner into capacity held by a recurring learner.
+- New initial standing placements retain the planned capacity-seat marker so future renewal capacity can be represented consistently.
+- Releasing a recurring place cancels future `payment_pending` Operations seats while preserving historical attendance/payment records.

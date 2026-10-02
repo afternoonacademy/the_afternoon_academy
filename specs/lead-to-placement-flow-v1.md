@@ -199,3 +199,15 @@ All mutations remain admin-only server actions using \`requireAdmin()\` and the 
 
 ### Tests / rollback
 Run lint, typecheck/build, targeted lifecycle checks and Supabase security advisors. Schema changes are additive/status-compatible and can be rolled back by reverting code while leaving the added nullable columns unused.
+
+
+### Implemented staged lifecycle
+
+The staged child flow is implemented as follows:
+
+1. **Lead received** — child enquiry exists; no capacity is reserved.
+2. **Session planned** — admin selects recurring table/time, price plan and a visible available capacity seat, reviews proposed exact dates, and records the plan. The recurring capacity position is held but no payment or dated Operations seats are created.
+3. **Contacted — awaiting payment** — admin sends the planned-place email from the saved plan. Only successful delivery advances the child.
+4. **Paid** — after funds clear, admin reviews the exact paid dates and confirms payment. Only then are payment entitlement, learner activation/standing placement and dated Operations seats created.
+
+A planned/contacted place can be released, returning the recurring capacity marker to available. The seat map shows names for active planned/contacted/paid recurring capacity records and does not imply a fixed physical chair.

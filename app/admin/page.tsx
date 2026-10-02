@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
@@ -73,6 +74,13 @@ export default async function AdminPage({
   const visibleSeats = (seats || []).filter((seat) =>
     sessionIds.has(seat.delivery_session_id),
   );
+  const expectedRenewalSeats = await loadRenewalExpectedSeatsForDate({
+    date,
+    sessions: sessions || [],
+    seats: visibleSeats,
+    tables: tables || [],
+    academyClosed: Boolean((closures || []).length),
+  });
   const link = (next: Record<string, string>) =>
     `/admin?${new URLSearchParams({ date, ...next })}`;
 
@@ -116,6 +124,7 @@ export default async function AdminPage({
         date={date}
         eligibleLearnerIds={learners?.map((learner) => learner.id) || []}
         learners={learners || []}
+        expectedRenewalSeats={expectedRenewalSeats}
         seats={visibleSeats}
         sessions={sessions || []}
         tables={tables || []}

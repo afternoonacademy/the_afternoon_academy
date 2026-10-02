@@ -8,8 +8,12 @@ import {
 } from "@tanstack/react-table"
 import { Fragment, useState } from "react"
 
-import { LeadActions } from "@/components/admin/lead-actions"
-import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
+import {
+  ChildPlaceWorkflow,
+  type PlannedBooking,
+  type RecurringSeatHold,
+} from "@/components/admin/child-place-workflow"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -59,7 +63,11 @@ type Slot = {
   focus: string | null
 }
 
-type PricePlan = { id: string; name: string; price_cents: number }
+type PricePlan = {
+  id: string
+  name: string
+  price_cents: number
+}
 
 const label = (value: string | null) =>
   value ? value.replaceAll("_", " ") : "—"
@@ -81,28 +89,38 @@ const frequencyLabel = (value: string | null) => {
   }
 }
 
+const statusLabel = (value: string) => {
+  if (value === "new") return "Lead received"
+  if (value === "session_planned") return "Session planned"
+  if (value === "contacted") return "Contacted — awaiting payment"
+  if (value === "paid") return "Paid"
+  if (value === "waitlist") return "Waitlist"
+  if (value === "closed") return "Closed"
+  return value.replaceAll("_", " ")
+}
+
 export function FamilyFollowUpTable({
   leads,
   slots,
   pricePlans,
   closures,
+  seatCapacities,
+  seatHolds,
+  plannedBookings,
 }: {
   leads: FollowUpLead[]
   slots: Slot[]
   pricePlans: PricePlan[]
   closures: AcademyClosure[]
+  seatCapacities: Record<string, number>
+  seatHolds: RecurringSeatHold[]
+  plannedBookings: PlannedBooking[]
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [paymentOpen, setPaymentOpen] = useState<string | null>(null)
 
-  const toggleDetails = (lead: FollowUpLead) => {
-    const next = expanded === lead.child_lead_id ? null : lead.child_lead_id
-    setExpanded(next)
-    if (!next) setPaymentOpen(null)
-  }
-
-  const canTakePayment = (status: string) =>
-    !["converted", "closed"].includes(status)
+  const plannedByChild = new Map(
+    plannedBookings.map((booking) => [booking.child_lead_id, booking]),
+  )
 
   const columns: ColumnDef<FollowUpLead>[] = [
     {
@@ -132,9 +150,19 @@ export function FamilyFollowUpTable({
     {
       header: "Support",
       cell: ({ row }) => (
-        <p className="max-w-[280px] capitalize">
+        <p className="max-w-[260px] capitalize">
           {row.original.support_needs?.map(label).join(", ") || "To confirm"}
         </p>
+      ),
+    },
+    {
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.status === "paid" ? "default" : "secondary"}
+        >
+          {statusLabel(row.original.status)}
+        </Badge>
       ),
     },
     {
@@ -143,7 +171,13 @@ export function FamilyFollowUpTable({
       cell: ({ row }) => (
         <div className="text-right">
           <Button
-            onClick={() => toggleDetails(row.original)}
+            onClick={() =>
+              setExpanded((current) =>
+                current === row.original.child_lead_id
+                  ? null
+                  : row.original.child_lead_id,
+              )
+            }
             size="sm"
             type="button"
             variant={
@@ -163,133 +197,84 @@ export function FamilyFollowUpTable({
     getCoreRowModel: getCoreRowModel(),
   })
 
-  const detailsPanel = (lead: FollowUpLead) => {
-    const showPayment = paymentOpen === lead.child_lead_id
-
-    return (
-      <div className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <p className="font-semibold">Availability</p>
-            <p className="mt-1 capitalize text-muted-foreground">
-              {lead.preferred_days?.join(", ") || "Flexible"}
-            </p>
-            <p className="text-muted-foreground">
-              {lead.preferred_times?.join(", ") || "Time to confirm"}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold">Sessions requested</p>
-            <p className="mt-1 text-muted-foreground">
-              {frequencyLabel(lead.preferred_frequency)}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold">School / curriculum</p>
-            <p className="mt-1 text-muted-foreground">
-              {lead.school_name || "Not recorded"}
-              {lead.school_year ? " · " + lead.school_year : ""}
-            </p>
-            <p className="capitalize text-muted-foreground">
-              {label(lead.curriculum)}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold">Family contact</p>
-            <p className="mt-1 text-muted-foreground">{lead.email}</p>
-            <p className="text-muted-foreground">
-              {lead.phone || "No phone"}
-              {lead.area ? " · " + lead.area : ""}
-            </p>
-          </div>
+  const detailsPanel = (lead: FollowUpLead) => (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="font-semibold">Availability</p>
+          <p className="mt-1 capitalize text-muted-foreground">
+            {lead.preferred_days?.join(", ") || "Flexible"}
+          </p>
+          <p className="text-muted-foreground">
+            {lead.preferred_times?.join(", ") || "Time to confirm"}
+          </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="font-semibold">Support context</p>
-            <p className="mt-1 capitalize text-muted-foreground">
-              {lead.support_needs?.map(label).join(", ") || "Not recorded"}
-              {lead.course_or_exam_board
-                ? " · Course: " + lead.course_or_exam_board
-                : ""}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold">Notes</p>
-            <p className="mt-1 text-muted-foreground">
-              {lead.notes || "No notes"}
-            </p>
-          </div>
+        <div>
+          <p className="font-semibold">Sessions requested</p>
+          <p className="mt-1 text-muted-foreground">
+            {frequencyLabel(lead.preferred_frequency)}
+          </p>
         </div>
 
-        <div className="flex flex-col gap-4 border-t pt-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="font-semibold">Follow-up status</p>
-            <div className="mt-2">
-              <LeadActions
-                leadId={lead.parent_lead_id}
-                parentName={lead.parent_name}
-                status={
-                  lead.status as Parameters<typeof LeadActions>[0]["status"]
-                }
-              />
-            </div>
-          </div>
-
-          {canTakePayment(lead.status) ? (
-            <Button
-              onClick={() =>
-                setPaymentOpen((current) =>
-                  current === lead.child_lead_id ? null : lead.child_lead_id,
-                )
-              }
-              type="button"
-              variant={showPayment ? "secondary" : "default"}
-            >
-              {showPayment ? "Close payment & dates" : "Add payment & dates"}
-            </Button>
-          ) : null}
+        <div>
+          <p className="font-semibold">School / curriculum</p>
+          <p className="mt-1 text-muted-foreground">
+            {lead.school_name || "Not recorded"}
+            {lead.school_year ? " · " + lead.school_year : ""}
+          </p>
+          <p className="capitalize text-muted-foreground">
+            {label(lead.curriculum)}
+          </p>
         </div>
 
-        {showPayment ? (
-          <div className="border-t pt-5">
-            <div className="mb-4">
-              <p className="font-semibold">
-                Record payment for {lead.child_first_name || "this child"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                This activates only this child’s exact paid dates. Siblings
-                remain independent until their own place and payment are
-                confirmed.
-              </p>
-            </div>
-            <ManualEnrolmentForm
-              childOptions={[
-                {
-                  id: lead.child_lead_id,
-                  first_name: lead.child_first_name,
-                  child_age: lead.child_age,
-                },
-              ]}
-              fixedChild={{
-                id: lead.child_lead_id,
-                first_name: lead.child_first_name,
-                child_age: lead.child_age,
-              }}
-              parentLeadId={lead.parent_lead_id}
-              pricePlans={pricePlans}
-              slots={slots}
-              closures={closures}
-            />
-          </div>
-        ) : null}
+        <div>
+          <p className="font-semibold">Family contact</p>
+          <p className="mt-1 text-muted-foreground">{lead.email}</p>
+          <p className="text-muted-foreground">
+            {lead.phone || "No phone"}
+            {lead.area ? " · " + lead.area : ""}
+          </p>
+        </div>
       </div>
-    )
-  }
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="font-semibold">Support context</p>
+          <p className="mt-1 capitalize text-muted-foreground">
+            {lead.support_needs?.map(label).join(", ") || "Not recorded"}
+            {lead.course_or_exam_board
+              ? " · Course: " + lead.course_or_exam_board
+              : ""}
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold">Notes</p>
+          <p className="mt-1 text-muted-foreground">
+            {lead.notes || "No notes"}
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t pt-5">
+        <ChildPlaceWorkflow
+          child={{
+            id: lead.child_lead_id,
+            first_name: lead.child_first_name,
+            child_age: lead.child_age,
+          }}
+          closures={closures}
+          parentLeadId={lead.parent_lead_id}
+          pipelineStatus={lead.status}
+          plannedBooking={plannedByChild.get(lead.child_lead_id)}
+          pricePlans={pricePlans}
+          seatCapacities={seatCapacities}
+          seatHolds={seatHolds}
+          slots={slots}
+        />
+      </div>
+    </div>
+  )
 
   return (
     <>
@@ -303,12 +288,14 @@ export function FamilyFollowUpTable({
                     key={header.id}
                     className={
                       header.id === "details"
-                        ? "w-[110px]"
+                        ? "w-[100px]"
                         : header.id === "child"
-                          ? "w-[170px]"
-                          : header.id === "support"
-                            ? "w-[32%]"
-                            : ""
+                          ? "w-[150px]"
+                          : header.id === "status"
+                            ? "w-[210px]"
+                            : header.id === "support"
+                              ? "w-[28%]"
+                              : ""
                     }
                   >
                     {header.isPlaceholder
@@ -327,7 +314,6 @@ export function FamilyFollowUpTable({
             {table.getRowModel().rows.map((row) => {
               const lead = row.original
               const isOpen = expanded === lead.child_lead_id
-
               return (
                 <Fragment key={row.id}>
                   <TableRow className="hover:bg-muted/40">
@@ -340,7 +326,6 @@ export function FamilyFollowUpTable({
                       </TableCell>
                     ))}
                   </TableRow>
-
                   {isOpen ? (
                     <TableRow>
                       <TableCell
@@ -365,7 +350,11 @@ export function FamilyFollowUpTable({
             <div className="py-4" key={lead.child_lead_id}>
               <button
                 className="flex w-full items-start justify-between gap-3 text-left"
-                onClick={() => toggleDetails(lead)}
+                onClick={() =>
+                  setExpanded((current) =>
+                    current === lead.child_lead_id ? null : lead.child_lead_id,
+                  )
+                }
                 type="button"
               >
                 <span className="min-w-0">
@@ -377,6 +366,13 @@ export function FamilyFollowUpTable({
                   </span>
                   <span className="mt-1 block capitalize">
                     {lead.support_needs?.map(label).join(", ") || "To confirm"}
+                  </span>
+                  <span className="mt-2 inline-block">
+                    <Badge
+                      variant={lead.status === "paid" ? "default" : "secondary"}
+                    >
+                      {statusLabel(lead.status)}
+                    </Badge>
                   </span>
                 </span>
                 <span className="shrink-0 text-sm font-semibold text-primary">

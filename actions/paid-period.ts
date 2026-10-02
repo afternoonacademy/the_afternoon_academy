@@ -151,14 +151,17 @@ export async function recordExactManualEnrolment(
       parentLeadId: formData.get("parentLeadId"),
       childLeadId: formData.get("childLeadId"),
       templateId: formData.get("templateId"),
-      seatNumber: formData.get("seatNumber"),
       pricePlanId: formData.get("pricePlanId"),
       receivedOn: formData.get("receivedOn"),
       paymentReceived: formData.get("paymentReceived"),
       selectedSessions: formData.get("selectedSessions"),
     })
-    if (!parsed.success)
-      return { error: "Check the child, recurring place, payment and selected service dates." }
+    if (!parsed.success) {
+      return {
+        error:
+          "Check the child, recurring place, payment and selected service dates.",
+      }
+    }
 
     const value = parsed.data
     const submitted = parseSessions(value.selectedSessions)
@@ -191,39 +194,51 @@ export async function recordExactManualEnrolment(
         .maybeSingle(),
       supabase
         .from("academy_tables")
-        .select("id,seat_capacity,status")
-        .eq("id", submitted[0]?.academyTableId || "00000000-0000-0000-0000-000000000000")
+        .select("id,status")
+        .eq(
+          "id",
+          submitted[0]?.academyTableId ||
+            "00000000-0000-0000-0000-000000000000",
+        )
         .maybeSingle(),
     ])
 
-    if (childError || !child || child.parent_lead_id !== value.parentLeadId)
+    if (childError || !child || child.parent_lead_id !== value.parentLeadId) {
       return { error: "That child does not belong to this family." }
-    if (!child.first_name)
-      return { error: "Add the child’s first name before recording their place." }
-    if (templateError || !template)
+    }
+    if (!child.first_name) {
+      return {
+        error: "Add the child’s first name before recording their place.",
+      }
+    }
+    if (templateError || !template) {
       return { error: "That recurring Academy place is no longer available." }
-    if (pricePlanError || !pricePlan)
+    }
+    if (pricePlanError || !pricePlan) {
       return { error: "Choose an active price plan for this learner." }
+    }
     if (
       tableError ||
       !table ||
       table.id !== template.academy_table_id ||
-      table.status !== "active" ||
-      value.seatNumber > table.seat_capacity
-    )
-      return { error: "Choose an available seat on the active Academy table." }
+      table.status !== "active"
+    ) {
+      return { error: "That Academy table is no longer available." }
+    }
 
     const serverSessions: PaidPeriodSession[] = submitted.map((item) => {
       if (
         item.placementId !== template.id ||
         item.academyTableId !== template.academy_table_id ||
         item.tableNumber !== template.table_number ||
-        item.seatNumber !== value.seatNumber ||
         item.startsAt !== template.starts_at.slice(0, 5) ||
         item.pricePlanId !== pricePlan.id
       ) {
-        throw new Error("The selected paid dates no longer match the chosen recurring place")
+        throw new Error(
+          "The selected paid dates no longer match the chosen recurring place",
+        )
       }
+
       return {
         learnerId: null,
         learnerName: child.first_name,
@@ -232,7 +247,7 @@ export async function recordExactManualEnrolment(
         date: item.date,
         academyTableId: template.academy_table_id,
         tableNumber: template.table_number,
-        seatNumber: value.seatNumber,
+        seatNumber: null,
         startsAt: template.starts_at.slice(0, 5),
         durationMinutes: template.duration_minutes,
         teacherName: template.teacher_name,
@@ -241,47 +256,18 @@ export async function recordExactManualEnrolment(
         pricePlanName: pricePlan.name,
         priceCents: pricePlan.price_cents,
         replacement:
-          new Date(`${item.date}T12:00:00Z`).getUTCDay() !== template.weekday,
+          new Date(`${item.date}T12:00:00Z`).getUTCDay() !==
+          template.weekday,
       }
     })
 
     await assertDatesOpen(serverSessions, supabase)
-    await assertDatedSeatAvailability(serverSessions, supabase)
-
-    const { data: recurringOccupied, error: recurringError } = await supabase
-      .from("accepted_bookings")
-      .select("id")
-      .eq("weekday", template.weekday)
-      .eq("academy_table_id", template.academy_table_id)
-      .eq("starts_at", template.starts_at)
-      .eq("seat_number", value.seatNumber)
-      .in("status", ["accepted_awaiting_payment", "paid_active"])
-      .maybeSingle()
-    if (recurringError) return { error: "Could not verify the recurring seat." }
-    if (recurringOccupied)
-      return { error: "That recurring seat is already in use. Choose another seat." }
+    await assertPaidPeriodCapacity(serverSessions, supabase)
 
     const summary = paidPeriodSummary(serverSessions)
-    if (!summary.periodStart || !summary.periodEnd)
+    if (!summary.periodStart || !summary.periodEnd) {
       return { error: "Choose at least one paid service date." }
-
-    const { data: booking, error: bookingError } = await supabase
-      .from("accepted_bookings")
-      .insert({
-        parent_lead_id: value.parentLeadId,
-        child_lead_id: value.childLeadId,
-        weekday: template.weekday,
-        table_number: template.table_number,
-        academy_table_id: template.academy_table_id,
-        seat_number: value.seatNumber,
-        starts_at: template.starts_at,
-        duration_minutes: template.duration_minutes,
-        accepted_by: user.id,
-      })
-      .select("id")
-      .single()
-    if (bookingError || !booking)
-      return { error: "Could not save the recurring seat." }
+    }
 
     const { data: payment, error: paymentError } = await supabase
       .from("payment_entitlements")
@@ -302,33 +288,12 @@ export async function recordExactManualEnrolment(
       )
       .select("id")
       .single()
+
     if (paymentError || !payment) {
-      const { error: rollbackBookingError } = await supabase
-        .from("accepted_bookings")
-        .delete()
-        .eq("id", booking.id)
-        .eq("status", "accepted_awaiting_payment")
-        .is("payment_entitlement_id", null)
-
-      if (rollbackBookingError) {
-        console.error("Manual enrolment payment failed and booking rollback failed", {
-          paymentError,
-          rollbackBookingError,
-          bookingId: booking.id,
-        })
-        return {
-          error:
-            "The payment record could not be created, and the temporary recurring-seat hold could not be cleared automatically. Check this family before retrying.",
-        }
-      }
-
-      console.error("Manual enrolment payment record failed; temporary booking rolled back", {
-        paymentError,
-        bookingId: booking.id,
-      })
+      console.error("Manual paid-period record failed", { paymentError })
       return {
         error:
-          "The payment record could not be created. The temporary recurring-seat hold was cleared, so you can safely retry after checking the payment details.",
+          "The payment record could not be created. No recurring seat has been reserved; check the payment details and retry.",
       }
     }
 
@@ -337,6 +302,7 @@ export async function recordExactManualEnrolment(
       .select("id")
       .eq("child_lead_id", value.childLeadId)
       .maybeSingle()
+
     if (!learner) {
       const { data: created, error } = await supabase
         .from("learners")
@@ -350,22 +316,26 @@ export async function recordExactManualEnrolment(
         })
         .select("id")
         .single()
-      if (error || !created)
+
+      if (error || !created) {
         return {
           error:
             "Payment was recorded, but the learner could not be created. Check the record before retrying.",
         }
+      }
       learner = created
     } else {
       const { error } = await supabase
         .from("learners")
         .update({ status: "active" })
         .eq("id", learner.id)
-      if (error)
+
+      if (error) {
         return {
           error:
             "Payment was recorded, but the learner could not be activated. Check the record before retrying.",
         }
+      }
     }
 
     const datedSessions = serverSessions.map((session) => ({
@@ -389,11 +359,13 @@ export async function recordExactManualEnrolment(
         },
         { onConflict: "learner_id,period_start,period_end" },
       )
-    if (childPaymentError)
+
+    if (childPaymentError) {
       return {
         error:
           "Payment was recorded, but the child payment entitlement could not be activated. Check the record before retrying.",
       }
+    }
 
     const { error: endError } = await supabase
       .from("standing_placements")
@@ -405,11 +377,13 @@ export async function recordExactManualEnrolment(
       .eq("learner_id", learner.id)
       .eq("weekday", template.weekday)
       .eq("status", "active")
-    if (endError)
+
+    if (endError) {
       return {
         error:
           "Payment was recorded, but the previous standing place could not be updated. Check the record before retrying.",
       }
+    }
 
     const { data: placement, error: placementError } = await supabase
       .from("standing_placements")
@@ -418,7 +392,7 @@ export async function recordExactManualEnrolment(
         weekday: template.weekday,
         table_number: template.table_number,
         academy_table_id: template.academy_table_id,
-        seat_number: value.seatNumber,
+        seat_number: null,
         starts_at: template.starts_at,
         duration_minutes: template.duration_minutes,
         teacher_name: template.teacher_name,
@@ -430,45 +404,43 @@ export async function recordExactManualEnrolment(
       })
       .select("id")
       .single()
-    if (placementError || !placement)
+
+    if (placementError || !placement) {
       return {
         error:
           "Payment was recorded, but the standing place could not be activated. Check the record before retrying.",
       }
+    }
 
     const exactSessions = datedSessions.map((session) => ({
       ...session,
       placementId: placement.id,
+      seatNumber: null,
     }))
 
-    await createDatedOperationsSeats(exactSessions, learner.id, user.id, supabase)
+    const allocatedSessions = await createDatedOperationsSeats(
+      exactSessions,
+      learner.id,
+      user.id,
+      supabase,
+    )
 
     await Promise.all([
       supabase
         .from("payment_entitlements")
         .update({
-          selected_sessions: exactSessions,
-          selected_session_count: exactSessions.length,
+          selected_sessions: allocatedSessions,
+          selected_session_count: allocatedSessions.length,
         })
         .eq("id", payment.id),
       supabase
         .from("child_payment_entitlements")
         .update({
-          selected_sessions: exactSessions,
-          selected_session_count: exactSessions.length,
+          selected_sessions: allocatedSessions,
+          selected_session_count: allocatedSessions.length,
         })
         .eq("payment_entitlement_id", payment.id)
         .eq("learner_id", learner.id),
-      supabase
-        .from("accepted_bookings")
-        .update({
-          learner_id: learner.id,
-          payment_entitlement_id: payment.id,
-          status: "paid_active",
-          paid_at: new Date().toISOString(),
-          paid_by: user.id,
-        })
-        .eq("id", booking.id),
       supabase
         .from("parent_leads")
         .update({
@@ -486,8 +458,9 @@ export async function recordExactManualEnrolment(
     revalidatePath("/admin/learners")
     revalidatePath("/admin/sessions")
     revalidatePath("/admin/payments")
+
     return {
-      success: `Payment recorded. ${serverSessions.length} exact dated Operations seat${serverSessions.length === 1 ? "" : "s"} activated. No parent email was sent automatically.`,
+      success: `Payment recorded. ${allocatedSessions.length} dated Operations place${allocatedSessions.length === 1 ? "" : "s"} allocated from current capacity. No parent email was sent automatically.`,
     }
   } catch (error) {
     console.error("Exact manual enrolment failed:", error)

@@ -249,20 +249,36 @@ export function PaidPeriodBuilder({
 
   function resetLearner(groupPlacements: PaidPeriodPlacement[]) {
     const ids = new Set(groupPlacements.map((item) => item.placementId))
-    const expected = groupPlacements.flatMap((placement) =>
-      expectedDatesForPlacement(
-        placement,
-        suggestionStart,
-        suggestionEnd,
-        closures,
-      ).map((date) => sessionFromPlacement(placement, date, false)),
-    )
-    setSessions((current) =>
-      sortPaidPeriodSessions([
+    setSessions((current) => {
+      const currentPlanByPlacement = new Map(
+        current
+          .filter((session) => ids.has(session.placementId))
+          .map((session) => [
+            session.placementId,
+            {
+              pricePlanId: session.pricePlanId,
+              pricePlanName: session.pricePlanName,
+              priceCents: session.priceCents,
+            },
+          ]),
+      )
+      const expected = groupPlacements.flatMap((placement) => {
+        const currentPlan = currentPlanByPlacement.get(placement.placementId)
+        const pricedPlacement = currentPlan
+          ? { ...placement, ...currentPlan }
+          : placement
+        return expectedDatesForPlacement(
+          pricedPlacement,
+          suggestionStart,
+          suggestionEnd,
+          closures,
+        ).map((date) => sessionFromPlacement(pricedPlacement, date, false))
+      })
+      return sortPaidPeriodSessions([
         ...current.filter((session) => !ids.has(session.placementId)),
         ...expected,
-      ]),
-    )
+      ])
+    })
   }
 
   function changePlan(placement: PaidPeriodPlacement, pricePlanId: string) {

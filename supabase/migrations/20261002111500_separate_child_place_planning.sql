@@ -57,3 +57,28 @@ set pipeline_status = case
   ) then 'waitlist'
   else 'new'
 end;
+
+
+alter table public.accepted_bookings
+  add column if not exists planned_sessions jsonb,
+  add column if not exists planned_amount_cents integer check (planned_amount_cents is null or planned_amount_cents >= 0),
+  add column if not exists planned_period_start date,
+  add column if not exists planned_period_end date,
+  add column if not exists contacted_at timestamptz,
+  add column if not exists contacted_by uuid references auth.users(id) on delete set null;
+
+alter table public.accepted_bookings
+  drop constraint if exists accepted_bookings_planned_sessions_array;
+alter table public.accepted_bookings
+  add constraint accepted_bookings_planned_sessions_array
+  check (planned_sessions is null or jsonb_typeof(planned_sessions)='array') not valid;
+
+alter table public.accepted_bookings
+  drop constraint if exists accepted_bookings_planned_period_check;
+alter table public.accepted_bookings
+  add constraint accepted_bookings_planned_period_check
+  check (
+    planned_period_start is null or
+    planned_period_end is null or
+    planned_period_end >= planned_period_start
+  ) not valid;

@@ -251,3 +251,8 @@ Movement is lifecycle-driven rather than copy-based: **Lead → Customer → Ren
 ### Renewal-due Operations expectation
 
 A learner in **Needs renewal / Renewal planned / Contacted — awaiting payment** remains expected in the Operations room whenever their active standing placement matches the selected service date. The tile is visibly labelled **Renewal due · place held**, is included in the table capacity count, and supports teacher attendance. This is an operational expectation derived from the active recurring place, not evidence of payment. A teacher attendance action materialises a `payment_pending` dated seat when required for auditability. Explicit **Release recurring place** removes future expectations.
+
+
+### Multi-day initial place planning
+
+A child may be offered more than one recurring Academy day in the same initial pipeline cycle. Admin can add multiple recurring place rows, each with its own table/time, capacity seat and price plan, then review all expected dates in one combined learner calendar. Saving the plan creates/updates one recurring capacity booking per selected place. The parent receives one planned-place email listing every recurring place and all exact service dates. Cleared payment creates one active learner, one standing placement per recurring day, one combined paid entitlement and the exact dated Operations seats.

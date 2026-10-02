@@ -37,6 +37,16 @@ const money = (cents: number) =>
     currency: "EUR",
   }).format(cents / 100)
 
+const weekdayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+]
+
 const statusLabel: Record<FamilyRenewalRow["status"], string> = {
   needs_renewal: "Needs renewal",
   renewal_planned: "Renewal planned",
@@ -187,6 +197,13 @@ function RenewalActions({
     row.selectedSessions.reduce((sum, session) => sum + session.priceCents, 0)
 
   const firstPlacement = row.placements[0]
+  const recurringDays = [
+    ...new Set(
+      row.placements.map(
+        (placement) => weekdayNames[placement.weekday] || "Recurring day",
+      ),
+    ),
+  ].join(" & ")
 
   return (
     <div className="space-y-6">
@@ -194,7 +211,10 @@ function RenewalActions({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex items-center gap-1.5">
-              <p className="font-semibold">Recurring place remains reserved</p>
+              <p className="font-semibold">
+                Recurring place remains reserved
+                {recurringDays ? ` · ${recurringDays}` : ""}
+              </p>
               <InfoTip label="About recurring capacity">
                 {row.learnerName} keeps this recurring capacity after the paid
                 period ends. It is not offered to another family unless an admin
@@ -213,7 +233,8 @@ function RenewalActions({
           {row.placements.map((placement) => (
             <div className="rounded-lg border p-3" key={placement.placementId}>
               <p className="font-semibold">
-                Table {placement.tableNumber} · {placement.startsAt}
+                {weekdayNames[placement.weekday]} · Table {placement.tableNumber} ·{" "}
+                {placement.startsAt}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {placement.pricePlanName} · {money(placement.priceCents)} / session

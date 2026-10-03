@@ -424,3 +424,11 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Restored `AGENTS.md` as the permanent repository engineering/agent rules file.
 - Marked the controlled-restart launch-operations work as completed in the roadmap.
 - Left the next Phase 1 work explicit rather than treating the whole product roadmap as complete.
+
+
+## 3 October 2026 — Renewal payment can bypass reminder email
+
+- Added **Payment already received** to the saved renewal-plan stage for parents who pay before a reminder is sent.
+- The action deliberately skips Resend and creates no renewal email history; it runs the same cleared-payment activation against the saved exact dates.
+- Successful payment closes the expanded renewal row and returns the learner to the paid customer state after refresh.
+- Hardened family-level payment entitlement handling for sibling renewals that cover the same period: each learner keeps an independent child entitlement while the family payment audit now combines both learners' exact sessions and total instead of being overwritten by the second payment confirmation.

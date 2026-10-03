@@ -439,3 +439,13 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Fixed Family Pipeline renewal discovery so it chooses each learner's latest paid child entitlement before applying the renewal-window cutoff.
 - Previously, the query discarded paid periods beyond the 21-day renewal horizon first. A learner renewed through a later date could therefore fall back to an older expired entitlement and immediately remain in the Renewals queue.
 - After cleared renewal payment, a learner whose new paid-through date is outside the renewal window now leaves Renewals and returns to Customers with the new paid-through date visible.
+
+
+## 3 October 2026 — English/Spanish Focus Group parity
+
+- Brought the Spanish homepage into product parity with the English homepage for the IGCSE Chemistry Focus Group.
+- Added the Spanish public route `/es/focus-groups/igcse-chemistry` with equivalent pricing, suitability, benefits, location and interest-registration content.
+- Paired the English and Spanish Focus Group pages with direct locale switching and language alternates.
+- Localized the Focus Group interest form, validation feedback, parent acknowledgement email and Spanish thank-you routing while retaining the same existing lead/family data model.
+- Clarified on both homepages that the Homework Club serves ages 4–12 while the IGCSE Chemistry Focus Group serves Years 10–11.
+- Confirmed both main homepages continue to use the same multi-child family enquiry form, so siblings can be included in one submission with independent requirements.

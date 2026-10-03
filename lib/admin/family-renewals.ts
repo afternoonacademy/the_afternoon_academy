@@ -80,7 +80,6 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
         "payment_entitlement_id,learner_id,period_end,learners(id,child_lead_id,first_name,parent_lead_id,status,parent_leads(id,parent_name,email))",
       )
       .eq("status", "paid")
-.lte("period_end", iso(horizon))
       .order("period_end", { ascending: false }),
     supabaseAdmin
       .from("renewal_cases")
@@ -196,6 +195,12 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
 
   const rows: FamilyRenewalRow[] = []
   for (const entitlement of latestByLearner.values()) {
+    // Decide renewal eligibility from the learner's true latest paid period.
+    // Do not discard future/current paid periods before choosing the latest
+    // entitlement, otherwise a just-renewed learner can fall back to an older
+    // expired entitlement and immediately reappear in Renewals.
+    if (entitlement.period_end > iso(horizon)) continue
+
     const learner = relation(entitlement.learners)
     const parent = learner ? relation(learner.parent_leads) : null
     if (!learner || learner.status !== "active" || !parent) continue

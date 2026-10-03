@@ -460,6 +460,58 @@ function RenewalActions({
               <input name="subject" type="hidden" value={emailSubject} />
               <input name="body" type="hidden" value={emailBody} />
             </SaveActionForm>
+
+            <div className="rounded-xl border bg-muted/10 p-4">
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold">Payment already received?</p>
+                <InfoTip label="About skipping the renewal email">
+                  Use this when the parent has already paid before a renewal
+                  reminder was needed. No renewal email is sent or logged.
+                </InfoTip>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Confirm the cleared transfer and activate the saved paid dates
+                directly.
+              </p>
+              <div className="mt-4">
+                <SaveActionForm
+                  action={recordExactRenewalPayment}
+                  onSuccess={onComplete}
+                  submitLabel="Payment already received"
+                  successMessage="Renewal payment confirmed"
+                >
+                  <input name="caseId" type="hidden" value={row.caseId} />
+                  <input
+                    name="parentLeadId"
+                    type="hidden"
+                    value={row.parentLeadId}
+                  />
+                  <input
+                    name="selectedSessions"
+                    type="hidden"
+                    value={JSON.stringify(row.selectedSessions)}
+                  />
+                  <input
+                    name="note"
+                    type="hidden"
+                    value="Payment received before renewal email was required"
+                  />
+                  <Input
+                    defaultValue={iso(new Date())}
+                    name="receivedOn"
+                    required
+                    type="date"
+                  />
+                  <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
+                    <input className="mt-0.5" required type="checkbox" />
+                    <span>
+                      I confirm the payment has cleared for the planned amount
+                      and dates shown above.
+                    </span>
+                  </label>
+                </SaveActionForm>
+              </div>
+            </div>
           </div>
         </section>
       ) : null}
@@ -543,6 +595,7 @@ function RenewalActions({
           <div className="mt-4">
             <SaveActionForm
               action={recordExactRenewalPayment}
+              onSuccess={onComplete}
               submitLabel={
                 "Confirm payment & activate " +
                 row.selectedSessions.length +

@@ -730,6 +730,28 @@ export async function recordExactRenewalPayment(formData: FormData) {
     .filter(Boolean)
     .join(" · ")
 
+  const { data: existingPayment } = await supabase
+    .from("payment_entitlements")
+    .select("id,selected_sessions")
+    .eq("parent_lead_id", parsed.data.parentLeadId)
+    .eq("period_start", summary.periodStart)
+    .eq("period_end", summary.periodEnd)
+    .maybeSingle()
+
+  const existingFamilySessions = Array.isArray(existingPayment?.selected_sessions)
+    ? parseSessions(JSON.stringify(existingPayment.selected_sessions))
+    : []
+  const otherLearnerSessions = existingFamilySessions.filter(
+    (session) => session.learnerId !== renewal.learner_id,
+  )
+  const familySessionsBeforeAllocation = sortPaidPeriodSessions([
+    ...otherLearnerSessions,
+    ...saved,
+  ])
+  const familySummaryBeforeAllocation = paidPeriodSummary(
+    familySessionsBeforeAllocation,
+  )
+
   const { data: payment, error: paymentError } = await supabase
     .from("payment_entitlements")
     .upsert(
@@ -739,21 +761,26 @@ export async function recordExactRenewalPayment(formData: FormData) {
         period_end: summary.periodEnd,
         sessions_per_week: Math.max(
           1,
-          new Set(saved.map((session) => session.placementId)).size,
+          new Set(
+            familySessionsBeforeAllocation.map(
+              (session) => session.placementId,
+            ),
+          ).size,
         ),
         status: "paid",
-        amount_cents: summary.amountCents,
+        amount_cents: familySummaryBeforeAllocation.amountCents,
         received_at: `${parsed.data.receivedOn}T12:00:00Z`,
         recorded_by: user.id,
         note: ledgerNote || null,
-        selected_sessions: saved,
-        selected_session_count: saved.length,
+        selected_sessions: familySessionsBeforeAllocation,
+        selected_session_count: familySessionsBeforeAllocation.length,
       },
       { onConflict: "parent_lead_id,period_start,period_end" },
     )
     .select("id")
     .single()
-  if (paymentError || !payment) throw new Error("Could not record the received payment")
+  if (paymentError || !payment)
+    throw new Error("Could not record the received payment")
 
   const allocatedSessions: PaidPeriodSession[] = []
 
@@ -795,11 +822,17 @@ export async function recordExactRenewalPayment(formData: FormData) {
   }
 
   const finalSessions = sortPaidPeriodSessions(allocatedSessions)
+  const familyFinalSessions = sortPaidPeriodSessions([
+    ...otherLearnerSessions,
+    ...finalSessions,
+  ])
+  const familyFinalSummary = paidPeriodSummary(familyFinalSessions)
   const { error: paymentSessionError } = await supabase
     .from("payment_entitlements")
     .update({
-      selected_sessions: finalSessions,
-      selected_session_count: finalSessions.length,
+      amount_cents: familyFinalSummary.amountCents,
+      selected_sessions: familyFinalSessions,
+      selected_session_count: familyFinalSessions.length,
     })
     .eq("id", payment.id)
 

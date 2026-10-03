@@ -161,3 +161,15 @@ A successful planning submit must visibly advance the workflow.
 ## Parent renewal email review — 2 October 2026
 
 Before a renewal email can be sent, the Contact parent step must display the fully rendered recipient, subject and body generated from the current Academy Setup renewal template and the saved exact selected sessions. Staff may edit the subject/body for that individual email before sending. Individual edits must not modify the reusable Academy Setup template. The exact displayed/edited content is the content submitted to the email send action.
+
+
+## Payment received before renewal reminder — 3 October 2026
+
+A renewal email is not a prerequisite for recording a genuine cleared payment.
+
+- When a renewal plan has saved exact dates, admin may choose **Payment already received** instead of emailing the parent.
+- The bypass requires the same cleared-payment date and explicit confirmation as the normal contacted-payment path.
+- No renewal email or delivery-log record is created by the bypass.
+- Payment activation uses the saved exact sessions, creates/updates the learner payment entitlement, activates the dated Operations places and completes the renewal case as `renewed`.
+- When siblings share the same family paid period, the family-level payment entitlement preserves and aggregates both learners' selected sessions rather than allowing the second learner renewal to overwrite the first.
+- The learner-specific child payment entitlements remain independent.

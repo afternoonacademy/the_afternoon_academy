@@ -256,3 +256,12 @@ A learner in **Needs renewal / Renewal planned / Contacted — awaiting payment*
 ### Multi-day initial place planning
 
 A child may be offered more than one recurring Academy day in the same initial pipeline cycle. Admin can add multiple recurring place rows, each with its own table/time, capacity seat and price plan, then review all expected dates in one combined learner calendar. Saving the plan creates/updates one recurring capacity booking per selected place. The parent receives one planned-place email listing every recurring place and all exact service dates. Cleared payment creates one active learner, one standing placement per recurring day, one combined paid entitlement and the exact dated Operations seats.
+
+
+## Public-language parity — 3 October 2026
+
+- The English and Spanish homepages must expose the same current Academy product categories and conversion paths.
+- The IGCSE Chemistry Focus Group is available from both homepages and has equivalent English and Spanish detail pages.
+- Locale switching on a Focus Group page must keep the visitor on the equivalent Focus Group page rather than returning them to the generic homepage.
+- Both main landing pages use the same repeatable family enquiry form, allowing one parent submission to include multiple children with independent support needs, school context, days, times and frequency.
+- The Focus Group-specific interest form remains a single-student interest register, but its public copy, validation feedback, acknowledgement email and thank-you destination follow the page language.

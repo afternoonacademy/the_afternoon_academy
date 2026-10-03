@@ -43,10 +43,9 @@ export async function submitFocusGroupInterest(
     return {
       success: false,
       message:
-        parsed.error.issues[0]?.message ||
-        (language === "es"
+        language === "es"
           ? "Revisa el formulario e inténtalo de nuevo."
-          : "Please check the form."),
+          : parsed.error.issues[0]?.message || "Please check the form.",
     }
   }
   const data = parsed.data
@@ -54,16 +53,42 @@ export async function submitFocusGroupInterest(
     parent_name: data.parentName, email: data.email, phone: data.phone, school_name: data.schoolName,
     interest_level: "very_interested", consent_contact: true, source: data.language === "es" ? "focus_group_igcse_chemistry_es" : "focus_group_igcse_chemistry", status: "new", enquiry_type: "focus_group",
   }).select("id").single()
-  if (parentError || !parent) return { success: false, message: "We could not save your enquiry. Please try again." }
+  if (parentError || !parent) {
+    return {
+      success: false,
+      message:
+        data.language === "es"
+          ? "No hemos podido guardar tu solicitud. Inténtalo de nuevo."
+          : "We could not save your enquiry. Please try again.",
+    }
+  }
   const { data: child, error: childError } = await supabaseAdmin.from("child_leads").insert({
     parent_lead_id: parent.id, first_name: data.childFirstName, school_year: data.schoolYear, curriculum: "british",
     support_needs: ["igcse_chemistry"], notes: data.notes || null, focus_group_code: "igcse_chemistry",
     focus_group_preferred_session: data.preferredSession,
   }).select("id").single()
-  if (childError || !child) { await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id); return { success: false, message: "We could not save the student's details. Please try again." } }
+  if (childError || !child) {
+    await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id)
+    return {
+      success: false,
+      message:
+        data.language === "es"
+          ? "No hemos podido guardar los datos del alumno/a. Inténtalo de nuevo."
+          : "We could not save the student's details. Please try again.",
+    }
+  }
   const preferredTimes = data.preferredSession === "either" ? ["17:00-17:50", "18:00-18:50"] : [data.preferredSession]
   const { error: timingError } = await supabaseAdmin.from("timetable_preferences").insert({ child_lead_id: child.id, preferred_days: [], preferred_times: preferredTimes, preferred_frequency: "not_sure" })
-  if (timingError) { await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id); return { success: false, message: "We could not save your session preference. Please try again." } }
+  if (timingError) {
+    await supabaseAdmin.from("parent_leads").delete().eq("id", parent.id)
+    return {
+      success: false,
+      message:
+        data.language === "es"
+          ? "No hemos podido guardar tu preferencia de horario. Inténtalo de nuevo."
+          : "We could not save your session preference. Please try again.",
+    }
+  }
 
   const emailData = {
     parentName: data.parentName,

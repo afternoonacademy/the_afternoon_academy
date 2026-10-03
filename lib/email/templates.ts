@@ -12,7 +12,6 @@ type LeadEmailChild = {
   preferredTimes: string[]
   preferredFrequency: string
   notes?: string
-  language?: EmailLanguage
 }
 
 type LeadEmailData = {
@@ -42,6 +41,7 @@ type FocusGroupInterestEmailData = {
   schoolYear: "Year 10" | "Year 11"
   preferredSession: "17:00-17:50" | "18:00-18:50" | "either"
   notes?: string
+  language?: EmailLanguage
 }
 
 function formatValue(value: string) {

@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { resend, resendFromEmail } from "@/lib/email/resend"
+import { loadPlannedPlaceEmailDraft } from "@/lib/email/planned-place-email-server"
 import {
   paidPeriodSummary,
   sortPaidPeriodSessions,
@@ -330,6 +331,27 @@ export async function releasePlannedChildPlace(formData: FormData) {
 }
 
 
+export async function previewPlannedPlaceEmail(
+  parentLeadId: string,
+  childLeadId: string,
+) {
+  await requireAdmin()
+
+  const parsed = childActionSchema.safeParse({
+    parentLeadId,
+    childLeadId,
+  })
+  if (!parsed.success) throw new Error("Could not identify this child")
+
+  const draft = await loadPlannedPlaceEmailDraft(parsed.data)
+
+  return {
+    to: draft.to,
+    subject: draft.subject,
+    body: draft.body,
+  }
+}
+
 export async function sendPlannedPlaceEmail(formData: FormData) {
   const { user } = await requireAdmin()
   const parsed = childActionSchema.safeParse({
@@ -339,113 +361,19 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
   if (!parsed.success) throw new Error("Could not identify this child")
   if (!resend) throw new Error("Email sending is not configured")
 
+  const draft = await loadPlannedPlaceEmailDraft(parsed.data)
   const supabase = supabaseService()
-  const [
-    { data: parent },
-    { data: child },
-    { data: bookings },
-    { data: emailTemplate },
-  ] = await Promise.all([
-    supabase.from("parent_leads").select("parent_name,email").eq("id", parsed.data.parentLeadId).single(),
-    supabase.from("child_leads").select("parent_lead_id,first_name").eq("id", parsed.data.childLeadId).single(),
-    supabase
-      .from("accepted_bookings")
-      .select("id,status,weekday,table_number,seat_number,starts_at,planned_sessions,planned_amount_cents,session_price_plan_id,session_price_plans(name,price_cents)")
-      .eq("parent_lead_id", parsed.data.parentLeadId)
-      .eq("child_lead_id", parsed.data.childLeadId)
-      .in("status", ["session_planned", "contacted"])
-      .order("weekday")
-      .order("starts_at"),
-    supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "planned_place_offer").maybeSingle(),
-  ])
+  const safeHtml = draft.body
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
 
-  if (!parent || !child || child.parent_lead_id !== parsed.data.parentLeadId || !(bookings || []).length) {
-    throw new Error("Plan the child’s recurring place before sending the parent email")
-  }
-
-  const sessions = sortPaidPeriodSessions(
-    (bookings || []).flatMap((booking) =>
-      parseSessions(JSON.stringify(booking.planned_sessions || [])),
-    ),
-  )
-  const total = paidPeriodSummary(sessions).amountCents
-  const recurringPlaces = (bookings || [])
-    .map((booking) => {
-      const relation = Array.isArray(booking.session_price_plans)
-        ? booking.session_price_plans[0]
-        : booking.session_price_plans
-      return (
-        weekdayNames[booking.weekday] +
-        " · " +
-        String(booking.starts_at).slice(0, 5) +
-        " · Table " +
-        booking.table_number +
-        (relation
-          ? " · " +
-            relation.name +
-            " · " +
-            money(relation.price_cents) +
-            " / session"
-          : "")
-      )
-    })
-    .join("\n")
-
-  const planNames = [
-    ...new Set(
-      (bookings || []).map((booking) => {
-        const relation = Array.isArray(booking.session_price_plans)
-          ? booking.session_price_plans[0]
-          : booking.session_price_plans
-        return relation?.name || "Academy session"
-      }),
-    ),
-  ]
-  const sessionPrices = [...new Set(sessions.map((session) => money(session.priceCents)))]
-  const datesText = sessions
-    .map(
-      (session) =>
-        formatDate(session.date) +
-        " · " +
-        session.startsAt +
-        " · Table " +
-        session.tableNumber +
-        " · " +
-        session.pricePlanName +
-        " · " +
-        money(session.priceCents) +
-        customerFacingSessionSuffix(session),
-    )
-    .join("\n")
-
-  const bankName = process.env.TAA_BANK_ACCOUNT_NAME || ""
-  const iban = process.env.TAA_BANK_IBAN || ""
-  const childName = child.first_name || "your child"
-  const paymentReference = child.first_name || parent.parent_name
-  const paymentDetails =
-    bankName && iban
-      ? "Payment details:\nAccount name: " + bankName + "\nIBAN: " + iban
-      : "Please use the usual Academy bank-transfer details."
-
-  const values: Record<string, string> = {
-    parent_name: parent.parent_name,
-    child_name: childName,
-    recurring_place: recurringPlaces,
-    price_plan_name: planNames.join(" / "),
-    session_price: sessionPrices.length === 1 ? sessionPrices[0] : sessionPrices.join(" / "),
-    service_dates: datesText,
-    session_count: String(sessions.length),
-    amount_due: money(total),
-    payment_details: paymentDetails,
-    payment_reference: paymentReference,
-  }
-
-  const subject = applyTemplate(emailTemplate?.subject_template || defaultPlannedPlaceSubject, values)
-  const body = applyTemplate(emailTemplate?.body_template || defaultPlannedPlaceBody, values)
-  const safeHtml = body.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-
-  const bookingIds = (bookings || []).map((booking) => booking.id)
-  const idempotencyKey = "planned-place-" + bookingIds.sort().join("-") + "-" + randomBytes(4).toString("hex")
+  const bookingIds = [...draft.bookingIds].sort()
+  const idempotencyKey =
+    "planned-place-" +
+    bookingIds.join("-") +
+    "-" +
+    randomBytes(4).toString("hex")
 
   const { data: deliveryLog } = await supabase
     .from("email_delivery_log")
@@ -453,10 +381,10 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
       parent_lead_id: parsed.data.parentLeadId,
       child_lead_id: parsed.data.childLeadId,
       email_kind: "planned_place",
-      recipient_email: parent.email,
+      recipient_email: draft.to,
       idempotency_key: idempotencyKey,
-      subject,
-      body_text: body,
+      subject: draft.subject,
+      body_text: draft.body,
       created_by: user.id,
     })
     .select("id")
@@ -465,28 +393,60 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
   const { data: sendData, error: sendError } = await resend.emails.send(
     {
       from: resendFromEmail,
-      to: [parent.email],
-      subject,
-      text: body,
-      html: '<main style="font-family:Arial,sans-serif;line-height:1.6;max-width:640px;margin:auto;white-space:pre-line">' + safeHtml + "</main>",
+      to: [draft.to],
+      subject: draft.subject,
+      text: draft.body,
+      html:
+        '<main style="font-family:Arial,sans-serif;line-height:1.6;max-width:640px;margin:auto;white-space:pre-line">' +
+        safeHtml +
+        "</main>",
     },
     { headers: { "Idempotency-Key": idempotencyKey } },
   )
 
   if (sendError) {
     if (deliveryLog) {
-      await supabase.from("email_delivery_log").update({ status: "failed", failed_at: new Date().toISOString(), error_message: sendError.message.slice(0, 500) }).eq("id", deliveryLog.id)
+      await supabase
+        .from("email_delivery_log")
+        .update({
+          status: "failed",
+          failed_at: new Date().toISOString(),
+          error_message: sendError.message.slice(0, 500),
+        })
+        .eq("id", deliveryLog.id)
     }
-    throw new Error("The planned places are still saved, but the parent email could not be sent")
+    throw new Error(
+      "The planned places are still saved, but the parent email could not be sent",
+    )
   }
 
   const now = new Date().toISOString()
   await Promise.all([
-    supabase.from("accepted_bookings").update({ status: "contacted", contacted_at: now, contacted_by: user.id }).in("id", bookingIds),
-    supabase.from("child_leads").update({ pipeline_status: "contacted" }).eq("id", parsed.data.childLeadId),
-    supabase.from("parent_leads").update({ status: "contacted" }).eq("id", parsed.data.parentLeadId),
+    supabase
+      .from("accepted_bookings")
+      .update({
+        status: "contacted",
+        contacted_at: now,
+        contacted_by: user.id,
+      })
+      .in("id", bookingIds),
+    supabase
+      .from("child_leads")
+      .update({ pipeline_status: "contacted" })
+      .eq("id", parsed.data.childLeadId),
+    supabase
+      .from("parent_leads")
+      .update({ status: "contacted" })
+      .eq("id", parsed.data.parentLeadId),
     deliveryLog
-      ? supabase.from("email_delivery_log").update({ status: "sent", resend_email_id: sendData?.id || null, sent_at: now }).eq("id", deliveryLog.id)
+      ? supabase
+          .from("email_delivery_log")
+          .update({
+            status: "sent",
+            resend_email_id: sendData?.id || null,
+            sent_at: now,
+          })
+          .eq("id", deliveryLog.id)
       : Promise.resolve(),
   ])
 

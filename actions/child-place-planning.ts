@@ -12,6 +12,10 @@ import {
   type PaidPeriodSession,
 } from "@/lib/paid-period"
 import { supabaseService } from "@/lib/supabase/service"
+import {
+  customerFacingSessionSuffix,
+  initialPlanSessionOrigin,
+} from "@/lib/initial-plan-exceptions.mjs"
 
 const plannedSessionSchema = z.object({
   learnerId: z.string().uuid().nullable(),
@@ -30,6 +34,9 @@ const plannedSessionSchema = z.object({
   pricePlanName: z.string().trim().min(1).max(160),
   priceCents: z.coerce.number().int().min(0),
   replacement: z.boolean(),
+  sessionOrigin: z
+    .enum(["recurring", "pre_agreed_exception", "replacement"])
+    .optional(),
 })
 
 const plannedPlaceSchema = z.object({
@@ -235,7 +242,10 @@ export async function recordPlannedChildPlace(formData: FormData) {
         pricePlanId: pricePlan.id,
         pricePlanName: pricePlan.name,
         priceCents: pricePlan.price_cents,
-        replacement: new Date(item.date + "T12:00:00Z").getUTCDay() !== template.weekday,
+        replacement: false,
+        sessionOrigin: initialPlanSessionOrigin(
+          new Date(item.date + "T12:00:00Z").getUTCDay() !== template.weekday,
+        ),
       })
     }
   }
@@ -404,7 +414,7 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
         session.pricePlanName +
         " · " +
         money(session.priceCents) +
-        (session.replacement ? " · replacement" : ""),
+        customerFacingSessionSuffix(session),
     )
     .join("\n")
 

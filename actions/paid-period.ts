@@ -30,6 +30,9 @@ const selectedSessionSchema = z.object({
   pricePlanName: z.string().trim().min(1).max(160),
   priceCents: z.coerce.number().int().min(0),
   replacement: z.boolean(),
+  sessionOrigin: z
+    .enum(["recurring", "pre_agreed_exception", "replacement"])
+    .optional(),
 })
 
 const manualSchema = z.object({
@@ -290,8 +293,11 @@ export async function recordExactManualEnrolment(
         pricePlanId: pricePlan.id,
         pricePlanName: pricePlan.name,
         priceCents: pricePlan.price_cents,
-        replacement:
-          new Date(`${item.date}T12:00:00Z`).getUTCDay() !== template.weekday,
+        replacement: false,
+        sessionOrigin:
+          new Date(`${item.date}T12:00:00Z`).getUTCDay() !== template.weekday
+            ? "pre_agreed_exception"
+            : "recurring",
       }
     })
 
@@ -641,6 +647,10 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       priceCents: plan.price_cents,
       replacement:
         new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday,
+      sessionOrigin:
+        new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday
+          ? "replacement"
+          : "recurring",
     }
   })
 

@@ -169,12 +169,14 @@ export function PaidPeriodBuilder({
       const otherSessions = current.filter(
         (session) =>
           session.placementId !== placement.placementId ||
-          session.replacement,
+          session.replacement ||
+          session.sessionOrigin === "pre_agreed_exception",
       )
       const currentRecurring = current.filter(
         (session) =>
           session.placementId === placement.placementId &&
-          !session.replacement,
+          !session.replacement &&
+          session.sessionOrigin !== "pre_agreed_exception",
       )
       const currentByDate = new Map(
         currentRecurring.map((session) => [session.date, session]),
@@ -210,7 +212,12 @@ export function PaidPeriodBuilder({
     setSessions((current) =>
       sortPaidPeriodSessions([
         ...current,
-        sessionFromPlacement(placement, date, true),
+        sessionFromPlacement(
+          placement,
+          date,
+          purpose === "plan" ? false : true,
+          purpose === "plan" ? "pre_agreed_exception" : "replacement",
+        ),
       ]),
     )
     setReplacementDateByLearner((current) => ({
@@ -304,7 +311,7 @@ export function PaidPeriodBuilder({
             <div className="flex items-center gap-1.5">
               <p className="font-semibold">
                 {purpose === "plan"
-                  ? "Planned service dates"
+                  ? "Planned first-period service dates"
                   : "Exact paid service dates"}
               </p>
               <InfoTip label="About the paid-period calendar">
@@ -329,7 +336,8 @@ export function PaidPeriodBuilder({
               <p className="font-semibold">Academy closure dates</p>
               <p className="mt-1 text-sm">
                 Closure dates cannot be selected. Use the active recurring-day
-                tab to add any replacement for that specific place.
+                tab to add an agreed first-period date if you have arranged one
+                with the family.
               </p>
               <ul className="mt-2 space-y-1 text-sm">
                 {closureWarnings.map((closure) => (
@@ -357,10 +365,14 @@ export function PaidPeriodBuilder({
             activePlacement.placementId,
           )
           const activeRecurringSessions = activeSessions.filter(
-            (session) => !session.replacement,
+            (session) =>
+              !session.replacement &&
+              session.sessionOrigin !== "pre_agreed_exception",
           )
           const activeReplacementSessions = activeSessions.filter(
-            (session) => session.replacement,
+            (session) =>
+              session.replacement ||
+              session.sessionOrigin === "pre_agreed_exception",
           )
           const activeSelectedDates = activeRecurringSessions.map((session) =>
             toDate(session.date),
@@ -531,15 +543,17 @@ export function PaidPeriodBuilder({
                   <div className="space-y-4">
                     <div className="rounded-lg border bg-background p-3">
                       <p className="font-semibold">
-                        Add replacement for{" "}
+                        {purpose === "plan"
+                          ? "Add agreed first-period date for "
+                          : "Add replacement for "}
                         {longDays[activePlacement.weekday]} ·{" "}
                         {activePlacement.startsAt.slice(0, 5)} · Table{" "}
                         {activePlacement.tableNumber}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Any replacement added here is automatically tied to this
-                        active recurring place. There is no separate table/day
-                        selector.
+                        {purpose === "plan"
+                          ? "This is a one-off date agreed before the child starts. It affects only the first paid period and does not change the recurring schedule."
+                          : "Any replacement added here is automatically tied to this active recurring place. There is no separate table/day selector."}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <input
@@ -573,7 +587,7 @@ export function PaidPeriodBuilder({
                           type="button"
                           variant="outline"
                         >
-                          Add replacement
+                          {purpose === "plan" ? "Add agreed date" : "Add replacement"}
                         </Button>
                       </div>
                     </div>

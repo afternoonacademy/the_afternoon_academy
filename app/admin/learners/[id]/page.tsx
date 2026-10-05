@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { createLearnerGoal, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
@@ -37,7 +38,7 @@ export default async function LearnerPage({ params }: PageProps) {
     supabaseAdmin.from("learner_goals").select("*").eq("learner_id", id).order("created_at", { ascending: false }),
     supabaseAdmin
       .from("standing_placements")
-      .select("id,weekday,table_number,seat_number,starts_at,status,session_price_plans(name,price_cents)")
+      .select("id,weekday,table_number,seat_number,starts_at,status,effective_from,effective_to,session_price_plans(name,price_cents)")
       .eq("learner_id", id)
       .eq("status", "active")
       .order("weekday")
@@ -75,20 +76,25 @@ export default async function LearnerPage({ params }: PageProps) {
 
   const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   const activePlaces = standingResult.data || []
+  const currentPlaces = activePlaces.filter(
+    (place) =>
+      place.effective_from <= today &&
+      (!place.effective_to || place.effective_to >= today),
+  )
+  const futurePlaces = activePlaces.filter((place) => place.effective_from > today)
   const latestEntitlement = entitlementResult.data
   const renewal = renewalResult.data
 
   const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
-    ? latestEntitlement.selected_sessions
-        .map((session) => {
-          if (!session || typeof session !== "object" || Array.isArray(session)) {
-            return null
-          }
-          const date = (session as Record<string, unknown>).date
-          return typeof date === "string" ? date : null
-        })
-        .filter((date): date is string => Boolean(date))
-        .sort()
+    ? [...new Set(
+        latestEntitlement.selected_sessions
+          .map((session) => {
+            if (!session || typeof session !== "object" || Array.isArray(session)) return null
+            const date = (session as Record<string, unknown>).date
+            return typeof date === "string" ? date : null
+          })
+          .filter((date): date is string => Boolean(date)),
+      )].sort()
     : []
 
   const formatDate = (value: string) =>
@@ -155,9 +161,9 @@ export default async function LearnerPage({ params }: PageProps) {
           <div className="space-y-2 text-sm">
             <div>
               <p className="font-medium">Recurring place</p>
-              {activePlaces.length ? (
+              {currentPlaces.length ? (
                 <div className="mt-1 space-y-1 text-muted-foreground">
-                  {activePlaces.map((place) => {
+                  {currentPlaces.map((place) => {
                     const plan = Array.isArray(place.session_price_plans)
                       ? place.session_price_plans[0]
                       : place.session_price_plans
@@ -206,6 +212,19 @@ export default async function LearnerPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      <div className="rounded-xl border bg-muted/20 p-4 text-sm">
+        <p className="font-semibold">Family billing and timetable changes</p>
+        <p className="mt-1 text-muted-foreground">
+          Payments, family credit/debt and future paid-session changes are managed on the parent account.
+        </p>
+        <Link
+          className="mt-3 inline-block font-semibold text-primary hover:underline"
+          href={"/admin/families/" + learner.parent_lead_id}
+        >
+          Open family account
+        </Link>
+      </div>
 
       <Card>
         <CardContent className="pt-6">

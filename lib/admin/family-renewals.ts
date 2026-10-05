@@ -91,7 +91,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     supabaseAdmin
       .from("standing_placements")
       .select(
-        "id,learner_id,session_price_plan_id,weekday,academy_table_id,table_number,seat_number,starts_at,duration_minutes,teacher_name,focus,status,learners(first_name,parent_lead_id),session_price_plans(id,name,price_cents)",
+        "id,learner_id,session_price_plan_id,weekday,academy_table_id,table_number,seat_number,starts_at,duration_minutes,teacher_name,focus,status,effective_from,effective_to,learners(first_name,parent_lead_id),session_price_plans(id,name,price_cents)",
       )
       .eq("status", "active"),
     supabaseAdmin
@@ -138,6 +138,12 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
 
   const placementsByLearner = new Map<string, PaidPeriodPlacement[]>()
   for (const placement of placements || []) {
+    if (
+      placement.effective_from > todayIso ||
+      (placement.effective_to && placement.effective_to < todayIso)
+    ) {
+      continue
+    }
     const learner = relation(placement.learners)
     const plan = relation(placement.session_price_plans)
     if (!learner || !plan || !placement.session_price_plan_id) continue

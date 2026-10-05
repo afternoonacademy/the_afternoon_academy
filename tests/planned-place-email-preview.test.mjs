@@ -79,9 +79,9 @@ test("planned-place dates are grouped under the session name without repeating t
     output,
     [
       "General Homework Support",
-      "Thursday 1 October",
-      "Monday 5 October · replacement",
-      "Thursday 8 October",
+      "Thursday 1 October · 17:00",
+      "Monday 5 October · 17:00 · replacement",
+      "Thursday 8 October · 17:00",
     ].join("\n"),
   )
   assert.doesNotMatch(output, /Table 1/)

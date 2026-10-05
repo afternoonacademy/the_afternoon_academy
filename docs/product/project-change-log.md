@@ -504,3 +504,31 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Standardised bank-transfer references as child name plus the month/year covered by the period, for example `Mya October 2026`; multi-month periods use an explicit month range.
 - Kept the terminology distinction: pre-agreed first-period exceptions are shown as normal dates, while genuine renewal replacements continue to show `· replacement`.
 - Initial and renewal emails now share the same compact attendance-information conventions while retaining their different first-period/next-period wording.
+
+
+## 5 October 2026 — Flexible prepaid session changes and family account
+
+- Added effective-dated future-session changes while retaining upfront payment as the default commercial model.
+- Admin may change one future paid session or change the recurring place from an effective date; past/attended sessions remain historical and are not rewritten.
+- Cheaper future-session changes create family credit; dearer changes create family balance due.
+- Family balances are deliberately managed from the parent/family account and may be applied to either child in the same family only through an explicit admin action.
+- Credit/debt does not itself make an otherwise paid learner operationally unpaid and is not silently consumed by a later bill.
+- Learner Workspace no longer owns the financial adjustment workflow; it links to the family account.
+- Standing placements are interpreted by `effective_from` / `effective_to` so an old and new recurring place are not simultaneously treated as current.
+- Current family adjustment history is retained append-only in `parent_leads.account_adjustments`; this is an operational audit store, not permission for future code to overwrite prior entries.
+
+## 5 October 2026 — Academy closure form hardening
+
+- Traced a production `/admin/setup` 500 to an invalid closure date range being thrown through an unguarded server-action form.
+- Academy closure entry now uses the standard guarded save form so validation errors are shown to the admin rather than crashing the page.
+- Start/end fields are labelled; a blank end date means a one-day closure.
+- Reversed ranges are rejected explicitly and regression-tested.
+
+## 5 October 2026 — Parent communication template contract
+
+- Re-established `academy_email_templates` as the source of truth for editable planned-place and renewal wording.
+- Added one shared template contract that defines default subject/body text and the complete supported placeholder set used by the renderer and Academy Setup editor.
+- Both initial and renewal templates expose `{{period_heading}}`, `{{service_dates}}`, `{{session_count}}`, `{{amount_due}}`, `{{payment_details}}` and `{{payment_reference}}` as appropriate.
+- `{{service_dates}}` contains the grouped session name plus each date and start time. Initial pre-agreed exceptions remain unlabelled; genuine later replacements may show `· replacement`.
+- `{{payment_details}}` now means bank/business details only; `{{payment_reference}}` is separately editable in template layout and resolves to child/learner name plus the covered month/year.
+- Academy Setup now derives its placeholder help and default template text from the same contract as the send renderers, preventing the editor from drifting behind code changes.

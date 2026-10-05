@@ -6,11 +6,11 @@ import { Mail, Plus, Trash2, Users } from "lucide-react"
 import {
   recordPlannedChildPlace,
   releasePlannedChildPlace,
-  sendPlannedPlaceEmail,
 } from "@/actions/child-place-planning"
 import { InfoTip } from "@/components/admin/info-tip"
 import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
+import { PlannedPlaceEmailReview } from "@/components/admin/planned-place-email-review"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -550,14 +550,10 @@ export function ChildPlaceWorkflow({
             </div>
           </div>
           <div className="mt-4">
-            <SaveActionForm
-              action={sendPlannedPlaceEmail}
-              submitLabel="Email planned places to parent"
-              successMessage="Parent contacted — awaiting payment"
-            >
-              <input name="parentLeadId" type="hidden" value={parentLeadId} />
-              <input name="childLeadId" type="hidden" value={child.id} />
-            </SaveActionForm>
+            <PlannedPlaceEmailReview
+              childLeadId={child.id}
+              parentLeadId={parentLeadId}
+            />
           </div>
         </div>
       ) : null}

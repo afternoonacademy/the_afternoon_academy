@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { RenewalExpectedSeat } from "@/lib/admin/operations-renewal-expectations";
+import type { PlannedExpectedSeat } from "@/lib/admin/operations-planned-expectations";
 
 type Session = {
   id: string;
@@ -88,6 +89,7 @@ function TableCard({
   templates,
   seats,
   expectedRenewalSeats,
+  expectedPlannedSeats,
   learners,
   attendance,
 }: {
@@ -97,6 +99,7 @@ function TableCard({
   templates: WeeklyTemplate[];
   seats: Seat[];
   expectedRenewalSeats: RenewalExpectedSeat[];
+  expectedPlannedSeats: PlannedExpectedSeat[];
   learners: Learner[];
   attendance: Attendance[];
 }) {
@@ -108,9 +111,10 @@ function TableCard({
           ...sessions.map((session) => session.starts_at.slice(0, 5)),
           ...templates.map((template) => template.starts_at.slice(0, 5)),
           ...expectedRenewalSeats.map((seat) => seat.startsAt),
+          ...expectedPlannedSeats.map((seat) => seat.startsAt),
         ]),
       ].sort(),
-    [expectedRenewalSeats, sessions, templates],
+    [expectedPlannedSeats, expectedRenewalSeats, sessions, templates],
   );
   const [time, setTime] = useState(times[0]);
   const session = sessions.find(
@@ -120,6 +124,9 @@ function TableCard({
     (item) => item.starts_at.slice(0, 5) === time,
   );
   const renewalSeats = expectedRenewalSeats.filter(
+    (item) => item.startsAt === time,
+  );
+  const plannedSeats = expectedPlannedSeats.filter(
     (item) => item.startsAt === time,
   );
   const capacity = table.seat_capacity || 6;
@@ -138,15 +145,18 @@ function TableCard({
     session?.duration_minutes ||
     template?.duration_minutes ||
     renewalSeats[0]?.durationMinutes ||
+    plannedSeats[0]?.durationMinutes ||
     50;
   const focus =
     session?.focus ||
     template?.focus ||
     renewalSeats[0]?.focus ||
+    plannedSeats[0]?.focus ||
     "General homework support";
   const occupiedSeatNumbers = new Set([
     ...sessionSeats.map((seat) => seat.seat_number),
     ...renewalSeats.map((seat) => seat.seatNumber),
+    ...plannedSeats.map((seat) => seat.seatNumber),
   ]);
   const availableSeats = Array.from(
     { length: capacity },
@@ -156,8 +166,9 @@ function TableCard({
     ? updateDailyDeliverySession
     : saveAdhocDeliverySession;
   const expectedCount = new Set([
-    ...sessionSeats.map((seat) => seat.learner_id),
-    ...renewalSeats.map((seat) => seat.learnerId),
+    ...sessionSeats.map((seat) => "learner:" + seat.learner_id),
+    ...renewalSeats.map((seat) => "learner:" + seat.learnerId),
+    ...plannedSeats.map((seat) => "lead:" + seat.childLeadId),
   ]).size;
 
   return (
@@ -231,9 +242,11 @@ function TableCard({
         ·{" "}
         {renewalSeats.length
           ? "renewal-due learners remain expected until their recurring place is released"
-          : session
-            ? "dated session"
-            : "ready when a learner is added"}
+          : plannedSeats.length
+            ? "planned lead places remain held while payment is pending"
+            : session
+              ? "dated session"
+              : "ready when a learner is added"}
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -245,6 +258,9 @@ function TableCard({
             const renewalSeat = renewalSeats.find(
               (item) => item.seatNumber === seatNumber,
             );
+            const plannedSeat = plannedSeats.find(
+              (item) => item.seatNumber === seatNumber,
+            );
             const learnerId = seat?.learner_id || renewalSeat?.learnerId;
             const learner = learnerId
               ? learnerById.get(learnerId)
@@ -253,19 +269,40 @@ function TableCard({
               ? attendanceByLearner.get(learner.id)
               : undefined;
             const renewalDue = Boolean(renewalSeat && !seat);
+            const plannedOnly = Boolean(plannedSeat && !seat && !renewalSeat);
+            const occupied = Boolean(learner || plannedOnly);
 
             return (
               <div
                 className={
-                  learner
-                    ? renewalDue || seat?.status === "payment_pending"
-                      ? "min-h-28 rounded-2xl bg-amber-700 p-3 text-center text-xs text-white shadow-sm"
-                      : "min-h-28 rounded-2xl bg-[#26345f] p-3 text-center text-xs text-white shadow-sm"
+                  occupied
+                    ? plannedOnly
+                      ? "min-h-28 rounded-2xl bg-sky-700 p-3 text-center text-xs text-white shadow-sm"
+                      : renewalDue || seat?.status === "payment_pending"
+                        ? "min-h-28 rounded-2xl bg-amber-700 p-3 text-center text-xs text-white shadow-sm"
+                        : "min-h-28 rounded-2xl bg-[#26345f] p-3 text-center text-xs text-white shadow-sm"
                     : "min-h-28 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/60 p-3 text-center text-xs text-indigo-700"
                 }
                 key={seatNumber}
               >
-                {learner ? (
+                {plannedOnly && plannedSeat ? (
+                  <>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">
+                      Seat {seatNumber}
+                    </p>
+                    <p className="mt-1 font-semibold text-white">
+                      {plannedSeat.childName}
+                    </p>
+                    <p className="mt-1 text-[10px] text-sky-100">
+                      {plannedSeat.yearGroup
+                        ? String(plannedSeat.yearGroup)
+                        : "Year group not recorded"}
+                    </p>
+                    <p className="mt-1 text-[10px] font-bold text-sky-100">
+                      Planned · awaiting payment
+                    </p>
+                  </>
+                ) : learner ? (
                   <>
                     <p className="text-[10px] font-bold uppercase tracking-wide text-white/80">
                       Seat {seatNumber}
@@ -468,6 +505,7 @@ export function TodayDeliveryBoard({
   sessions,
   seats,
   expectedRenewalSeats,
+  expectedPlannedSeats,
   learners,
   attendance,
   tables,
@@ -477,6 +515,7 @@ export function TodayDeliveryBoard({
   sessions: Session[];
   seats: Seat[];
   expectedRenewalSeats: RenewalExpectedSeat[];
+  expectedPlannedSeats: PlannedExpectedSeat[];
   learners: Learner[];
   attendance: Attendance[];
   tables: AcademyTable[];
@@ -493,9 +532,9 @@ export function TodayDeliveryBoard({
         <div className="flex items-center gap-1.5">
           <CardTitle>Delivery room</CardTitle>
           <InfoTip label="About the Delivery room">
-            Paid learners and renewal-due recurring learners both appear in the
-            room plan. Renewal-due places count against capacity until an admin
-            releases the recurring place.
+            Paid learners, renewal-due recurring learners and planned lead
+            places all appear in the room plan. Planned and renewal-held places
+            count against capacity until they are paid or deliberately released.
           </InfoTip>
         </div>
       </CardHeader>
@@ -505,6 +544,9 @@ export function TodayDeliveryBoard({
             attendance={attendance}
             date={date}
             expectedRenewalSeats={expectedRenewalSeats.filter(
+              (seat) => seat.academyTableId === table.id,
+            )}
+            expectedPlannedSeats={expectedPlannedSeats.filter(
               (seat) => seat.academyTableId === table.id,
             )}
             key={table.id}

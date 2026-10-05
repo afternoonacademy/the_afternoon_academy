@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
 import { FamilyCommunications } from "@/components/admin/family-communications"
 import { SaveActionForm } from "@/components/admin/save-action-form"
+import { SessionChangeForm } from "@/components/admin/session-change-form"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -37,7 +38,7 @@ export default async function LearnerPage({ params }: PageProps) {
     supabaseAdmin.from("learner_goals").select("*").eq("learner_id", id).order("created_at", { ascending: false }),
     supabaseAdmin
       .from("standing_placements")
-      .select("id,weekday,table_number,seat_number,starts_at,status,session_price_plans(name,price_cents)")
+      .select("id,weekday,table_number,seat_number,starts_at,status,effective_from,effective_to,session_price_plans(name,price_cents)")
       .eq("learner_id", id)
       .eq("status", "active")
       .order("weekday")
@@ -65,6 +66,31 @@ export default async function LearnerPage({ params }: PageProps) {
   const profile = profileResult.data
   const today = new Date().toISOString().slice(0, 10)
 
+  const [
+    { data: changeTemplates },
+    { data: changePricePlans },
+    { data: parentAccount },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("weekly_table_templates")
+      .select("id,weekday,starts_at,table_number,focus")
+      .eq("status", "active")
+      .order("weekday")
+      .order("starts_at")
+      .order("table_number"),
+    supabaseAdmin
+      .from("session_price_plans")
+      .select("id,name,price_cents")
+      .eq("status", "active")
+      .order("price_cents")
+      .order("name"),
+    supabaseAdmin
+      .from("parent_leads")
+      .select("account_adjustments")
+      .eq("id", learner.parent_lead_id)
+      .maybeSingle(),
+  ])
+
   const { data: communications } = await supabaseAdmin
     .from("email_delivery_log")
     .select(
@@ -75,21 +101,60 @@ export default async function LearnerPage({ params }: PageProps) {
 
   const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   const activePlaces = standingResult.data || []
+  const currentPlaces = activePlaces.filter(
+    (place) =>
+      place.effective_from <= today &&
+      (!place.effective_to || place.effective_to >= today),
+  )
+  const futurePlaces = activePlaces.filter((place) => place.effective_from > today)
   const latestEntitlement = entitlementResult.data
   const renewal = renewalResult.data
 
-  const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
+  const paidSessionDetails = Array.isArray(latestEntitlement?.selected_sessions)
     ? latestEntitlement.selected_sessions
         .map((session) => {
           if (!session || typeof session !== "object" || Array.isArray(session)) {
             return null
           }
-          const date = (session as Record<string, unknown>).date
-          return typeof date === "string" ? date : null
+          const value = session as Record<string, unknown>
+          if (
+            typeof value.date !== "string" ||
+            typeof value.startsAt !== "string" ||
+            typeof value.priceCents !== "number" ||
+            typeof value.pricePlanName !== "string"
+          ) {
+            return null
+          }
+          return {
+            date: value.date,
+            startsAt: value.startsAt,
+            priceCents: value.priceCents,
+            pricePlanName: value.pricePlanName,
+          }
         })
-        .filter((date): date is string => Boolean(date))
-        .sort()
+        .filter(
+          (
+            session,
+          ): session is {
+            date: string
+            startsAt: string
+            priceCents: number
+            pricePlanName: string
+          } => Boolean(session),
+        )
+        .sort((a, b) => a.date.localeCompare(b.date) || a.startsAt.localeCompare(b.startsAt))
     : []
+
+  const paidDates = [...new Set(paidSessionDetails.map((session) => session.date))]
+
+  const accountAdjustments = Array.isArray(parentAccount?.account_adjustments)
+    ? (parentAccount.account_adjustments as Array<Record<string, unknown>>)
+    : []
+  const familyBalanceCents = accountAdjustments.reduce(
+    (total, entry) =>
+      total + (typeof entry.amountCents === "number" ? entry.amountCents : 0),
+    0,
+  )
 
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat("en-GB", {
@@ -155,9 +220,9 @@ export default async function LearnerPage({ params }: PageProps) {
           <div className="space-y-2 text-sm">
             <div>
               <p className="font-medium">Recurring place</p>
-              {activePlaces.length ? (
+              {currentPlaces.length ? (
                 <div className="mt-1 space-y-1 text-muted-foreground">
-                  {activePlaces.map((place) => {
+                  {currentPlaces.map((place) => {
                     const plan = Array.isArray(place.session_price_plans)
                       ? place.session_price_plans[0]
                       : place.session_price_plans
@@ -206,6 +271,86 @@ export default async function LearnerPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Family account & future sessions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="rounded-xl border bg-muted/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Family balance
+            </p>
+            <p className="mt-1 text-2xl font-bold">
+              {familyBalanceCents < 0
+                ? `€${(Math.abs(familyBalanceCents) / 100).toFixed(2)} credit`
+                : familyBalanceCents > 0
+                  ? `€${(familyBalanceCents / 100).toFixed(2)} due`
+                  : "Settled"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Credits and outstanding adjustments belong to the family. Admins
+              decide when they are applied to this learner or a sibling.
+            </p>
+            {accountAdjustments.length ? (
+              <div className="mt-3 space-y-2 text-sm">
+                {accountAdjustments.slice(-5).reverse().map((entry, index) => (
+                  <div className="rounded-md border bg-background px-3 py-2" key={String(entry.id || index)}>
+                    <p className="font-medium">
+                      {String(entry.originatingLearnerName || "Learner")} ·{" "}
+                      {typeof entry.amountCents === "number" && entry.amountCents < 0
+                        ? `€${(Math.abs(entry.amountCents) / 100).toFixed(2)} credit`
+                        : typeof entry.amountCents === "number" && entry.amountCents > 0
+                          ? `€${(entry.amountCents / 100).toFixed(2)} due`
+                          : "No balance change"}
+                    </p>
+                    {entry.reason ? (
+                      <p className="text-muted-foreground">{String(entry.reason)}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {futurePlaces.length ? (
+            <div className="rounded-md border bg-blue-50 px-3 py-2 text-sm text-blue-950">
+              <p className="font-semibold">Future recurring place already scheduled</p>
+              {futurePlaces.map((place) => (
+                <p key={place.id}>
+                  From {formatDate(place.effective_from)} · {weekdayNames[place.weekday]} ·{" "}
+                  {place.starts_at.slice(0, 5)} · Table {place.table_number}
+                </p>
+              ))}
+            </div>
+          ) : null}
+
+          {latestEntitlement?.period_end && paidSessionDetails.length ? (
+            <SessionChangeForm
+              learnerId={learner.id}
+              paidThrough={latestEntitlement.period_end}
+              sessions={paidSessionDetails}
+              templates={(changeTemplates || []).map((item) => ({
+                id: item.id,
+                weekday: item.weekday,
+                startsAt: item.starts_at,
+                tableNumber: item.table_number,
+                focus: item.focus,
+              }))}
+              plans={(changePricePlans || []).map((item) => ({
+                id: item.id,
+                name: item.name,
+                priceCents: item.price_cents,
+              }))}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              A current exact-date paid period is required before future paid
+              sessions can be changed.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="pt-6">

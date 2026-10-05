@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { supabaseService } from "@/lib/supabase/service"
+import { normalizeAcademyClosureRange } from "@/lib/academy-closure.mjs"
 
 export async function addBuilding(formData: FormData) {
  await requireAdmin(); const p=z.object({name:z.string().trim().min(2).max(120)}).safeParse({name:formData.get("name")}); if(!p.success) throw new Error("Enter a building name")
@@ -39,11 +40,19 @@ const closureSchema = z.object({
   startsOn: z.string().date(),
   endsOn: z.string().date(),
   reason: z.string().trim().min(2).max(160),
-}).refine((value) => value.endsOn >= value.startsOn, { message: "Closure end date must follow its start date" })
+})
 
 export async function addAcademyClosure(formData: FormData) {
   const { user } = await requireAdmin()
-  const parsed = closureSchema.safeParse({ startsOn: formData.get("startsOn"), endsOn: formData.get("endsOn"), reason: formData.get("reason") })
+  const range = normalizeAcademyClosureRange(
+    String(formData.get("startsOn") || ""),
+    String(formData.get("endsOn") || ""),
+  )
+  const parsed = closureSchema.safeParse({
+    startsOn: range.startsOn,
+    endsOn: range.endsOn,
+    reason: formData.get("reason"),
+  })
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || "Complete the closure details")
   const { error } = await supabaseService().from("academy_closures").insert({ starts_on: parsed.data.startsOn, ends_on: parsed.data.endsOn, reason: parsed.data.reason, created_by: user.id, updated_by: user.id })
   if (error) throw new Error("Could not save the Academy closure")

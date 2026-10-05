@@ -7,6 +7,7 @@ import { z } from "zod"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { resend, resendFromEmail } from "@/lib/email/resend"
 import { loadPlannedPlaceEmailDraft } from "@/lib/email/planned-place-email-server"
+import { normalizePlannedPlaceSendContent } from "@/lib/email/planned-place-email.mjs"
 import {
   paidPeriodSummary,
   sortPaidPeriodSessions,
@@ -354,21 +355,35 @@ export async function previewPlannedPlaceEmail(
 
 export async function sendPlannedPlaceEmail(formData: FormData) {
   const { user } = await requireAdmin()
-  const parsed = childActionSchema.safeParse({
-    parentLeadId: formData.get("parentLeadId"),
-    childLeadId: formData.get("childLeadId"),
-  })
-  if (!parsed.success) throw new Error("Could not identify this child")
+  const parsed = childActionSchema
+    .extend({
+      subject: z.string().trim().min(2).max(200),
+      body: z.string().trim().min(2).max(12000),
+    })
+    .safeParse({
+      parentLeadId: formData.get("parentLeadId"),
+      childLeadId: formData.get("childLeadId"),
+      subject: formData.get("subject"),
+      body: formData.get("body"),
+    })
+  if (!parsed.success) throw new Error("Check the email before sending")
   if (!resend) throw new Error("Email sending is not configured")
 
-  const draft = await loadPlannedPlaceEmailDraft(parsed.data)
+  const freshDraft = await loadPlannedPlaceEmailDraft({
+    parentLeadId: parsed.data.parentLeadId,
+    childLeadId: parsed.data.childLeadId,
+  })
+  const sendContent = normalizePlannedPlaceSendContent({
+    subject: parsed.data.subject,
+    body: parsed.data.body,
+  })
   const supabase = supabaseService()
-  const safeHtml = draft.body
+  const safeHtml = sendContent.body
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
 
-  const bookingIds = [...draft.bookingIds].sort()
+  const bookingIds = [...freshDraft.bookingIds].sort()
   const idempotencyKey =
     "planned-place-" +
     bookingIds.join("-") +
@@ -381,10 +396,10 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
       parent_lead_id: parsed.data.parentLeadId,
       child_lead_id: parsed.data.childLeadId,
       email_kind: "planned_place",
-      recipient_email: draft.to,
+      recipient_email: freshDraft.to,
       idempotency_key: idempotencyKey,
-      subject: draft.subject,
-      body_text: draft.body,
+      subject: sendContent.subject,
+      body_text: sendContent.body,
       created_by: user.id,
     })
     .select("id")
@@ -393,9 +408,9 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
   const { data: sendData, error: sendError } = await resend.emails.send(
     {
       from: resendFromEmail,
-      to: [draft.to],
-      subject: draft.subject,
-      text: draft.body,
+      to: [freshDraft.to],
+      subject: sendContent.subject,
+      text: sendContent.body,
       html:
         '<main style="font-family:Arial,sans-serif;line-height:1.6;max-width:640px;margin:auto;white-space:pre-line">' +
         safeHtml +
@@ -445,6 +460,8 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
             status: "sent",
             resend_email_id: sendData?.id || null,
             sent_at: now,
+            subject: sendContent.subject,
+            body_text: sendContent.body,
           })
           .eq("id", deliveryLog.id)
       : Promise.resolve(),

@@ -4,12 +4,14 @@ import {
   formatAcademyServiceGroups,
   formatPaymentReference,
 } from "@/lib/email/academy-period-email.mjs"
+import {
+  buildPaymentDetails,
+  renewalTemplateContract,
+} from "@/lib/email/parent-template-contract.mjs"
 
-export const defaultRenewalSubject =
-  "Renewal for {{learner_names}} at The Afternoon Academy"
+export const defaultRenewalSubject = renewalTemplateContract.defaultSubject
 
-export const defaultRenewalBody =
-  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
+export const defaultRenewalBody = renewalTemplateContract.defaultBody
 
 const money = (cents: number) =>
   new Intl.NumberFormat("en-IE", {
@@ -58,18 +60,13 @@ export function renderRenewalEmail({
     service_dates: formatRenewalServiceDates(sessions),
     session_count: String(sessions.length),
     amount_due: money(amountCents),
-    payment_details: [
-      process.env.TAA_BUSINESS_NAME
-        ? `Business name: ${process.env.TAA_BUSINESS_NAME}`
-        : null,
-      process.env.TAA_BANK_ACCOUNT_NAME
-        ? `Account name: ${process.env.TAA_BANK_ACCOUNT_NAME}`
-        : null,
-      process.env.TAA_BANK_IBAN ? `IBAN: ${process.env.TAA_BANK_IBAN}` : null,
-      `Payment reference: ${formatPaymentReference(learnerLabel, sessions)}`,
-    ]
-      .filter(Boolean)
-      .join("\n"),
+    payment_details:
+      buildPaymentDetails({
+        businessName: process.env.TAA_BUSINESS_NAME || "",
+        accountName: process.env.TAA_BANK_ACCOUNT_NAME || "",
+        iban: process.env.TAA_BANK_IBAN || "",
+      }) || "Please use the usual Academy bank-transfer details.",
+    payment_reference: formatPaymentReference(learnerLabel, sessions),
   }
 
   return {

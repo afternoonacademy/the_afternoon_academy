@@ -553,3 +553,12 @@ _Release note: PR #20 merged to the production branch._
 - If a saved planned booking is changed after a draft exists, the draft is regenerated from the latest booking information and marked with an admin-visible **Email updated** notice.
 - The notice explains that the booking changed and requires the admin to review the regenerated email before sending.
 - Sending still uses the exact subject/body shown in Family Pipeline and logs that sent copy in the communication history.
+
+
+## 5 October 2026 — Mobile admin navigation
+
+- Replaced the compressed mobile admin sidebar with a compact sticky Operations header and a dedicated Menu drawer.
+- Mobile navigation now exposes the full admin destination list vertically and closes after a destination is selected.
+- Mobile admin scrolling preserves native touch/momentum behaviour while visual scrollbars are hidden at phone widths.
+- The desktop left sidebar remains unchanged.
+- Reduced the mobile content-shell padding so Operations content starts closer to the header.

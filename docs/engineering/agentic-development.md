@@ -72,7 +72,7 @@ Production child data must not be copied into local or general-purpose AI contex
 
 - `AGENTS.md` = permanent instructions for how engineering agents behave in this repository.
 - `docs/product/` = durable product/business decisions and roadmap.
-- `docs/engineering/` = development/release architecture and standards.
+- `docs/engineering/` = development/release architecture and standards. `docs/engineering/current-baseline.md` is the concise handoff for the system as it exists now.
 - `docs/security/` = security, privacy, authorization, data, and AI boundaries.
 - `specs/` = precise feature contracts and acceptance criteria.
 - Git history/PRs = technical implementation history.

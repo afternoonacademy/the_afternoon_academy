@@ -476,3 +476,13 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - This allows plans such as **Private tuition · €30/session** and **Private tuition · €40/session** to coexist as separate commercial rates.
 - Existing plan selectors already show the plan name together with the per-session price, so same-name plans remain distinguishable to admins.
 - Updated Academy Setup guidance to explain that each rate should be created as its own plan.
+
+
+## 5 October 2026 — Pre-agreed first-period exceptions
+
+- Kept the recurring place as the long-term source of truth for new leads while allowing the initial planned paid period to contain explicitly agreed one-off dates.
+- Initial off-pattern dates are now recorded as `pre_agreed_exception` rather than customer-facing replacements.
+- Planned-place emails list the agreed first-period dates without the word **replacement**.
+- The initial planning UI now says **Add agreed first-period date** and explains that the date affects only the first paid period and does not alter the recurring schedule.
+- Payment activation preserves the pre-agreed exception in the exact paid-session history while the standing placement remains the selected recurring weekday/time.
+- Future renewals continue to regenerate from the standing recurring place, so first-period exceptions do not repeat automatically.

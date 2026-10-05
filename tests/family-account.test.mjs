@@ -13,3 +13,19 @@ test("dearer replacement creates a positive adjustment", () => {
 test("family account derives a signed balance", () => {
   assert.equal(familyAccountBalance([{ amountCents: -3000 }, { amountCents: 1000 }]), -2000)
 })
+
+
+test("applying family credit creates a positive offset", async () => {
+  const { settlementOffset } = await import("../lib/family-account.mjs")
+  assert.equal(settlementOffset(-3000, 2000), 2000)
+})
+
+test("collecting family debt creates a negative offset", async () => {
+  const { settlementOffset } = await import("../lib/family-account.mjs")
+  assert.equal(settlementOffset(3000, 2000), -2000)
+})
+
+test("cannot settle more than the available family balance", async () => {
+  const { settlementOffset } = await import("../lib/family-account.mjs")
+  assert.throws(() => settlementOffset(-3000, 4000), /available family balance/i)
+})

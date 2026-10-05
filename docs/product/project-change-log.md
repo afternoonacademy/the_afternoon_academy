@@ -486,3 +486,12 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - The initial planning UI now says **Add agreed first-period date** and explains that the date affects only the first paid period and does not alter the recurring schedule.
 - Payment activation preserves the pre-agreed exception in the exact paid-session history while the standing placement remains the selected recurring weekday/time.
 - Future renewals continue to regenerate from the standing recurring place, so first-period exceptions do not repeat automatically.
+
+
+## 5 October 2026 — Planned-place email review and compact formatting
+
+- Added an explicit **Review email** step after a planned place is saved, so admins can inspect the generated recipient, subject and full email body before sending.
+- Previewing the email does not send anything, create a communication log or change pipeline status.
+- Preview and send now use the same shared email builder to prevent content drift.
+- Planned service dates are grouped under the session/price-plan name and no longer repeat table number, session type or per-session price on every line.
+- Pre-agreed first-period exceptions continue to display as normal dates; genuine later replacements can still show `· replacement`.

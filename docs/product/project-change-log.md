@@ -532,3 +532,13 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - `{{service_dates}}` contains the grouped session name plus each date and start time. Initial pre-agreed exceptions remain unlabelled; genuine later replacements may show `· replacement`.
 - `{{payment_details}}` now means bank/business details only; `{{payment_reference}}` is separately editable in template layout and resolves to child/learner name plus the covered month/year.
 - Academy Setup now derives its placeholder help and default template text from the same contract as the send renderers, preventing the editor from drifting behind code changes.
+
+
+## 5 October 2026 — Planned Operations seats and one-off email editing
+
+- Planned lead places now appear in the Operations Hub on their exact planned service dates before payment, using the saved table, time and seat from the planned-period session list.
+- Planned lead seats count against visible room capacity and are labelled **Planned · awaiting payment**. They are not treated as paid learners and do not expose attendance controls until activation creates the learner/delivery seat.
+- Actual dated delivery seats remain authoritative; renewal-held and planned lead expectations are supporting occupancy states rather than duplicate paid seats.
+- The initial planned-place email review is now editable. The subject/body submitted from Family Pipeline are the exact values sent through Resend and written to the delivery log for that one communication.
+- One-off edits do not modify the reusable Academy Setup → Parent communication template.
+- Parent payment details now render with explicit semantics: **Bank name: Santander**, **Account name: JADIS SL**, then **IBAN**. The payment reference remains a separate template placeholder.

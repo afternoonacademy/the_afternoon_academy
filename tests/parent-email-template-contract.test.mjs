@@ -58,13 +58,13 @@ test("default parent templates keep payment reference editable and separate from
 test("payment details contain bank details only and never bake in a reference", () => {
   assert.equal(
     buildPaymentDetails({
-      businessName: "JADIS SL",
-      accountName: "Santander",
+      bankName: "Santander",
+      accountName: "JADIS SL",
       iban: "ES70 TEST",
     }),
     [
-      "Business name: JADIS SL",
-      "Account name: Santander",
+      "Bank name: Santander",
+      "Account name: JADIS SL",
       "IBAN: ES70 TEST",
     ].join("\n"),
   )

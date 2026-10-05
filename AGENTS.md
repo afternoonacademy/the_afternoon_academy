@@ -152,3 +152,12 @@ Treat the following as current production architecture unless a later roadmap/ch
 - `{{payment_reference}}` is separate and currently resolves to child/learner name plus the covered month/year.
 - Preview and send must use the same renderer so the reviewed content is the content sent.
 - Existing legacy initial-template placeholders (`{{recurring_place}}`, `{{price_plan_name}}`, `{{session_price}}`) remain supported for backwards compatibility, but new default wording should use the compact period contract.
+
+
+### Planned capacity and one-off email invariants
+
+- A planned lead place is operationally capacity-holding before payment. For exact dates present in the saved planned-period session list, Operations should show the child in the saved seat as **Planned · awaiting payment**.
+- Do not treat planned lead occupancy as paid attendance. No attendance action is available until activation creates the learner/delivery seat.
+- Planned Operations occupancy must use the exact saved `planned_sessions` dates so pre-agreed first-period exceptions appear correctly and are not converted into recurring dates.
+- Editing a generated initial parent email in Family Pipeline is a one-off communication override. Send and delivery-log content must use the submitted edited subject/body, while the Academy Setup template remains unchanged.
+- Parent email bank labels must distinguish bank name from account name. Current mapping: bank name from `TAA_BANK_ACCOUNT_NAME`, account name from `TAA_BUSINESS_NAME`, IBAN from `TAA_BANK_IBAN`.

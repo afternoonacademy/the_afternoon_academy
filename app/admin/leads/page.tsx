@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/family-lifecycle-tables"
 import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
+import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 type LeadOverviewRow = {
@@ -242,10 +243,7 @@ export default async function AdminLeadsPage() {
   const lifecycleToday = new Date().toISOString().slice(0, 10)
   const placesByLearner = new Map<string, string[]>()
   for (const placement of lifecyclePlacements || []) {
-    if (
-      placement.effective_from > lifecycleToday ||
-      (placement.effective_to && placement.effective_to < lifecycleToday)
-    ) {
+    if (placement.effective_to && placement.effective_to < lifecycleToday) {
       continue
     }
     const current = placesByLearner.get(placement.learner_id) || []
@@ -269,12 +267,15 @@ export default async function AdminLeadsPage() {
   )
 
   const customerRows: FamilyCustomerRow[] = (lifecycleLearners || [])
-    .filter(
-      (learner) =>
-        learner.status === "active" &&
-        !renewalLearnerIds.has(learner.id) &&
-        !closedRenewalByLearner.has(learner.id) &&
-        (placesByLearner.get(learner.id)?.length || 0) > 0,
+    .filter((learner) =>
+      shouldShowActiveCustomer({
+        learnerStatus: learner.status,
+        hasPaidEntitlement: paidThroughByLearner.has(learner.id),
+        hasCurrentOrUpcomingPlacement:
+          (placesByLearner.get(learner.id)?.length || 0) > 0,
+        isInRenewal: renewalLearnerIds.has(learner.id),
+        hasClosedRenewal: closedRenewalByLearner.has(learner.id),
+      }),
     )
     .map((learner) => {
       const parent = relation(learner.parent_leads)

@@ -48,7 +48,7 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <section className="mobile-scroll-surface min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-8">
+      <section className="mobile-scroll-surface min-w-0 flex-1 overflow-x-auto p-3 sm:p-4 md:p-8">
         {children}
       </section>
     </main>

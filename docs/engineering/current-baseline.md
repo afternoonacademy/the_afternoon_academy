@@ -134,3 +134,10 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - If the underlying planned booking changes, any existing draft is automatically replaced with newly generated content from the current booking and an admin-visible regeneration notice is set.
 - Editing the regenerated draft clears the notice because the admin has reviewed/changed the current version.
 - Reusable wording remains owned by `academy_email_templates`; persisted child-level drafts must never mutate those templates.
+
+
+## Customer lifecycle visibility
+
+- Once a learner is active, has paid entitlement and has a current or upcoming active standing placement, the learner belongs in Family Pipeline → Customers unless a renewal or closed-renewal state takes precedence.
+- Customer lifecycle visibility must not depend on the standing placement having reached its `effective_from` date. This avoids a gap between payment/activation and the first operational session.
+- Operations and attendance continue to respect the actual placement `effective_from` date; lifecycle visibility does not make a future placement operational early.

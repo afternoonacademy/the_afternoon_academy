@@ -4,6 +4,7 @@ import type {
   PaidPeriodSession,
 } from "@/lib/paid-period"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
+import { isRenewalDue } from "@/lib/admin/renewal-eligibility.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 const iso = (date: Date) => date.toISOString().slice(0, 10)
@@ -62,8 +63,7 @@ export type FamilyRenewalRow = {
 
 export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
   const today = new Date()
-  const horizon = new Date(today)
-  horizon.setUTCDate(horizon.getUTCDate() + 21)
+  const todayIso = iso(today)
   const [
     { data: entitlements },
     { data: cases },
@@ -195,11 +195,9 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
 
   const rows: FamilyRenewalRow[] = []
   for (const entitlement of latestByLearner.values()) {
-    // Decide renewal eligibility from the learner's true latest paid period.
-    // Do not discard future/current paid periods before choosing the latest
-    // entitlement, otherwise a just-renewed learner can fall back to an older
-    // expired entitlement and immediately reappear in Renewals.
-    if (entitlement.period_end > iso(horizon)) continue
+    // A learner enters Renewals on their final paid service date, not weeks
+    // beforehand. Until then they remain an active paid customer.
+    if (!isRenewalDue(entitlement.period_end, todayIso)) continue
 
     const learner = relation(entitlement.learners)
     const parent = learner ? relation(learner.parent_leads) : null

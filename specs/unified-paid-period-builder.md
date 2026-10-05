@@ -173,3 +173,14 @@ A renewal email is not a prerequisite for recording a genuine cleared payment.
 - Payment activation uses the saved exact sessions, creates/updates the learner payment entitlement, activates the dated Operations places and completes the renewal case as `renewed`.
 - When siblings share the same family paid period, the family-level payment entitlement preserves and aggregates both learners' selected sessions rather than allowing the second learner renewal to overwrite the first.
 - The learner-specific child payment entitlements remain independent.
+
+
+## Renewal eligibility timing — 5 October 2026
+
+Renewal workflow eligibility is based on the learner's actual latest paid-through date, not an advance warning window.
+
+- A learner remains in **Customers** while their latest paid period ends after today.
+- On the learner's final paid date, they become eligible for **Renewals → Needs renewal**.
+- Operations continues to show paid dated seats as paid for dates covered by an entitlement.
+- Future recurring capacity without paid coverage is shown separately as **Renewal due · place held**.
+- There is no automatic 21-day early renewal status. Staff may still deliberately start a renewal from the Renewals workflow once the learner is due.

@@ -4,7 +4,8 @@ update public.academy_email_templates
 set body_template = replace(
       body_template,
       '{{payment_details}}',
-      '{{payment_details}}' || E'\n\nPayment reference: {{payment_reference}}'
+      'Payment details:' || E'\n' || '{{payment_details}}' ||
+        E'\n\n' || 'Payment reference: {{payment_reference}}'
     ),
     updated_at = now()
 where template_key in ('planned_place_offer', 'renewal_reminder')

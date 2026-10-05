@@ -1,13 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { settleFamilyBalance } from "@/actions/family-account"
-import { SessionChangeForm } from "@/components/admin/session-change-form"
-import { SaveActionForm } from "@/components/admin/save-action-form"
+import { FamilyBalanceManager } from "@/components/admin/family-balance-manager"
+import { SessionChangeLauncher } from "@/components/admin/session-change-launcher"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 type PageProps = { params: Promise<{ id: string }> }
@@ -147,80 +144,25 @@ export default async function FamilyAccountPage({ params }: PageProps) {
           </div>
 
           {familyBalance !== 0 ? (
-            <SaveActionForm
-              action={settleFamilyBalance}
-              submitLabel="Record family account action"
-              successMessage="Family account updated"
-            >
-              <input name="parentLeadId" type="hidden" value={parent.id} />
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="actionType">What do you want to do?</Label>
-                  <select
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    id="actionType"
-                    name="actionType"
-                    defaultValue={familyBalance < 0 ? "apply_to_renewal" : "add_to_renewal"}
-                  >
-                    {familyBalance < 0 ? (
-                      <>
-                        <option value="apply_to_renewal">Apply credit to next prepared bill</option>
-                        <option value="record_refund">Record credit refunded</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="add_to_renewal">Add balance to next prepared bill</option>
-                        <option value="record_collected">Record balance collected now</option>
-                        <option value="waive_debt">Waive outstanding balance</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="learnerId">Apply to child</Label>
-                  <select
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    id="learnerId"
-                    name="learnerId"
-                    defaultValue={learners[0]?.id || ""}
-                  >
-                    {learners.map((learner) => (
-                      <option key={learner.id} value={learner.id}>
-                        {learner.first_name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted-foreground">
-                    Required when adding the balance to a prepared renewal. Refunds/waivers still retain the family audit trail.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="amountEuros">Amount</Label>
-                  <Input
-                    id="amountEuros"
-                    name="amountEuros"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    max={(Math.abs(familyBalance) / 100).toFixed(2)}
-                    defaultValue={(Math.abs(familyBalance) / 100).toFixed(2)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="familyActionReason">Reason / note</Label>
-                <Input
-                  id="familyActionReason"
-                  name="reason"
-                  maxLength={300}
-                  placeholder="e.g. Apply Alex's credit to Sam's November renewal"
-                />
-              </div>
-            </SaveActionForm>
+            <FamilyBalanceManager
+              familyBalanceCents={familyBalance}
+              learners={learners.map((learner) => ({
+                id: learner.id,
+                firstName: learner.first_name,
+              }))}
+              parentLeadId={parent.id}
+              preparedRenewalAmounts={Object.fromEntries(
+              learners.map((learner) => {
+                const renewal = renewals.find(
+                  (item) =>
+                    item.learner_id === learner.id &&
+                    item.status === "ready_to_send" &&
+                    !item.email_sent_at,
+                )
+                return [learner.id, renewal?.proposed_amount_cents ?? null]
+              }),
+            )}
+            />
           ) : null}
 
           <div>
@@ -365,7 +307,7 @@ export default async function FamilyAccountPage({ params }: PageProps) {
                 ) : null}
 
                 {entitlement?.period_end && sessions.length ? (
-                  <SessionChangeForm
+                  <SessionChangeLauncher
                     learnerId={learner.id}
                     paidThrough={entitlement.period_end}
                     sessions={sessions}

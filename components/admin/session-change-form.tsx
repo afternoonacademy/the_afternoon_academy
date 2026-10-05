@@ -65,18 +65,16 @@ export function SessionChangeForm({
   const firstFuture = sessions.find((session) => session.date >= today)?.date || today
   const [scope, setScope] = useState<"from_date" | "single_session">("from_date")
   const [effectiveDate, setEffectiveDate] = useState(firstFuture)
-  const [templateId, setTemplateId] = useState(templates[0]?.id || "")
-  const [planId, setPlanId] = useState(plans[0]?.id || "")
+  const [templateId, setTemplateId] = useState("")
+  const [planId, setPlanId] = useState("")
+  const [replacementDate, setReplacementDate] = useState("")
 
   const template = templates.find((item) => item.id === templateId)
   const plan = plans.find((item) => item.id === planId)
-  const defaultReplacementDate = template
-    ? nextDateForWeekday(effectiveDate, template.weekday)
-    : effectiveDate
-  const [replacementDate, setReplacementDate] = useState(defaultReplacementDate)
 
   const preview = useMemo(() => {
     if (!template || !plan) return null
+    if (scope === "single_session" && !replacementDate) return null
 
     const oldSessions =
       scope === "single_session"
@@ -160,11 +158,7 @@ export function SessionChangeForm({
             name="effectiveDate"
             onChange={(event) => {
               setEffectiveDate(event.target.value)
-              if (template) {
-                setReplacementDate(
-                  nextDateForWeekday(event.target.value, template.weekday),
-                )
-              }
+              setReplacementDate("")
             }}
             value={effectiveDate}
           >
@@ -186,15 +180,12 @@ export function SessionChangeForm({
             onChange={(event) => {
               const nextId = event.target.value
               setTemplateId(nextId)
-              const next = templates.find((item) => item.id === nextId)
-              if (next) {
-                setReplacementDate(
-                  nextDateForWeekday(effectiveDate, next.weekday),
-                )
-              }
+              setReplacementDate("")
             }}
+            required
             value={templateId}
           >
+            <option value="">Choose a destination session…</option>
             {templates.map((item) => (
               <option key={item.id} value={item.id}>
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][item.weekday]}
@@ -215,8 +206,10 @@ export function SessionChangeForm({
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             id="destinationRate"
             onChange={(event) => setPlanId(event.target.value)}
+            required
             value={planId}
           >
+            <option value="">Choose a session rate…</option>
             {plans.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name} · {money(item.priceCents)}/session
@@ -225,7 +218,7 @@ export function SessionChangeForm({
           </select>
         </div>
 
-        {scope === "single_session" ? (
+        {scope === "single_session" && template ? (
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="replacementDate">Replacement date</Label>
             <Input
@@ -234,9 +227,13 @@ export function SessionChangeForm({
               min={today}
               name="replacementDate"
               onChange={(event) => setReplacementDate(event.target.value)}
+              required
               type="date"
               value={replacementDate}
             />
+            <p className="text-xs text-muted-foreground">
+              Choose a {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][template.weekday]} within the current paid period.
+            </p>
           </div>
         ) : null}
       </div>
@@ -279,7 +276,11 @@ export function SessionChangeForm({
             </p>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+          No change is prepared yet. Choose a destination session and rate to see the dates and financial impact.
+        </p>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="changeReason">Reason / note</Label>
@@ -292,7 +293,13 @@ export function SessionChangeForm({
       </div>
 
       <label className="flex items-start gap-3 rounded-md border p-3 text-sm">
-        <input name="confirmChange" required type="checkbox" value="yes" />
+        <input
+          disabled={!preview}
+          name="confirmChange"
+          required
+          type="checkbox"
+          value="yes"
+        />
         <span>
           I have reviewed the future dates, destination and family balance
           adjustment.

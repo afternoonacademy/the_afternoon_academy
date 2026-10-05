@@ -1,23 +1,21 @@
 import type { PaidPeriodSession } from "@/lib/paid-period"
+import {
+  childPeriodHeading,
+  formatAcademyServiceGroups,
+  formatPaymentReference,
+} from "@/lib/email/academy-period-email.mjs"
 
 export const defaultRenewalSubject =
   "Renewal for {{learner_names}} at The Afternoon Academy"
 
 export const defaultRenewalBody =
-  "Hello {{parent_name}},\n\nWe hope you are well.\n\nYour next Academy period includes:\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
+  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 
 const money = (cents: number) =>
   new Intl.NumberFormat("en-IE", {
     style: "currency",
     currency: "EUR",
   }).format(cents / 100)
-
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(value + "T12:00:00Z"))
 
 export function applyEmailTemplate(
   template: string,
@@ -30,29 +28,7 @@ export function applyEmailTemplate(
 }
 
 export function formatRenewalServiceDates(sessions: PaidPeriodSession[]) {
-  const groups = new Map<string, PaidPeriodSession[]>()
-
-  for (const session of sessions) {
-    const serviceName =
-      session.pricePlanName || session.focus || "Academy sessions"
-    const current = groups.get(serviceName) || []
-    current.push(session)
-    groups.set(serviceName, current)
-  }
-
-  return [...groups.entries()]
-    .map(([serviceName, serviceSessions]) => {
-      const dates = [...serviceSessions]
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map(
-          (session) =>
-            `${formatDate(session.date)}${session.replacement ? " · replacement" : ""}`,
-        )
-        .join("\n")
-
-      return `${serviceName}\n${dates}`
-    })
-    .join("\n\n")
+  return formatAcademyServiceGroups(sessions, { initialPeriod: false })
 }
 
 export function renderRenewalEmail({
@@ -74,9 +50,11 @@ export function renderRenewalEmail({
     0,
   )
 
+  const learnerLabel = learnerNames.join(", ")
   const values: Record<string, string> = {
     parent_name: parentName.trim(),
-    learner_names: learnerNames.join(", "),
+    learner_names: learnerLabel,
+    period_heading: childPeriodHeading(learnerLabel, "renewal"),
     service_dates: formatRenewalServiceDates(sessions),
     session_count: String(sessions.length),
     amount_due: money(amountCents),
@@ -88,7 +66,7 @@ export function renderRenewalEmail({
         ? `Account name: ${process.env.TAA_BANK_ACCOUNT_NAME}`
         : null,
       process.env.TAA_BANK_IBAN ? `IBAN: ${process.env.TAA_BANK_IBAN}` : null,
-      `Payment reference: ${learnerNames.join(", ")}`,
+      `Payment reference: ${formatPaymentReference(learnerLabel, sessions)}`,
     ]
       .filter(Boolean)
       .join("\n"),

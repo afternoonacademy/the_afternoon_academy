@@ -562,3 +562,4 @@ _Release note: PR #20 merged to the production branch._
 - Mobile admin scrolling preserves native touch/momentum behaviour while visual scrollbars are hidden at phone widths.
 - The desktop left sidebar remains unchanged.
 - Reduced the mobile content-shell padding so Operations content starts closer to the header.
+- Fixed a Family Pipeline lifecycle gap: paid active learners with an upcoming standing placement now appear in Customers immediately, even before the placement effective date. Operations/attendance still respects the actual placement start date.

@@ -4,6 +4,7 @@ import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
+import { loadPlannedExpectedSeatsForDate } from "@/lib/admin/operations-planned-expectations";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Operations view includes renewal-due recurring capacity.
@@ -75,13 +76,19 @@ export default async function AdminPage({
   const visibleSeats = (seats || []).filter((seat) =>
     sessionIds.has(seat.delivery_session_id),
   );
-  const expectedRenewalSeats = await loadRenewalExpectedSeatsForDate({
-    date,
-    sessions: sessions || [],
-    seats: visibleSeats,
-    tables: tables || [],
-    academyClosed: Boolean((closures || []).length),
-  });
+  const [expectedRenewalSeats, expectedPlannedSeats] = await Promise.all([
+    loadRenewalExpectedSeatsForDate({
+      date,
+      sessions: sessions || [],
+      seats: visibleSeats,
+      tables: tables || [],
+      academyClosed: Boolean((closures || []).length),
+    }),
+    loadPlannedExpectedSeatsForDate({
+      date,
+      academyClosed: Boolean((closures || []).length),
+    }),
+  ]);
   const link = (next: Record<string, string>) =>
     `/admin?${new URLSearchParams({ date, ...next })}`;
 
@@ -126,6 +133,7 @@ export default async function AdminPage({
         eligibleLearnerIds={learners?.map((learner) => learner.id) || []}
         learners={learners || []}
         expectedRenewalSeats={expectedRenewalSeats}
+        expectedPlannedSeats={expectedPlannedSeats}
         seats={visibleSeats}
         sessions={sessions || []}
         tables={tables || []}

@@ -62,8 +62,8 @@ export function renderRenewalEmail({
     amount_due: money(amountCents),
     payment_details:
       buildPaymentDetails({
-        businessName: process.env.TAA_BUSINESS_NAME || "",
-        accountName: process.env.TAA_BANK_ACCOUNT_NAME || "",
+        bankName: process.env.TAA_BANK_ACCOUNT_NAME || "",
+        accountName: process.env.TAA_BUSINESS_NAME || "",
         iban: process.env.TAA_BANK_IBAN || "",
       }) || "Please use the usual Academy bank-transfer details.",
     payment_reference: formatPaymentReference(learnerLabel, sessions),

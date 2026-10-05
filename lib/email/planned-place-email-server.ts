@@ -6,7 +6,10 @@ import {
   sortPaidPeriodSessions,
   type PaidPeriodSession,
 } from "@/lib/paid-period"
-import {\n  formatPlannedSessionGroups,\n  renderPlannedPlaceEmailDraft,\n} from "@/lib/email/planned-place-email.mjs"
+import {
+  formatPlannedSessionGroups,
+  renderPlannedPlaceEmailDraft,
+} from "@/lib/email/planned-place-email.mjs"
 import { supabaseService } from "@/lib/supabase/service"
 
 const plannedSessionSchema = z.object({

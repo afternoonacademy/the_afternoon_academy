@@ -124,3 +124,30 @@ A feature is not done merely because the UI renders. It is done when the agreed 
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+
+## Current operations invariants — October 2026
+
+Treat the following as current production architecture unless a later roadmap/change-log entry explicitly supersedes it:
+
+- **Family Pipeline is the operational lifecycle surface.** Leads, paid customers, renewals and closed/archive states should not be duplicated into parallel admin systems.
+- **Parent/family account is the financial coordination surface.** Family-level credit/debt and future paid-session changes are managed from the family record. Learner pages may link to it but must not duplicate financial actions.
+- **Recurring place is the long-term timetable source of truth.** A first paid period may contain pre-agreed one-off exceptions without altering the standing recurring pattern. Future renewals regenerate from the effective standing placement, not from first-period exceptions.
+- **Exact dated sessions are the payment/delivery source of truth.** Quotes, paid entitlements, renewal selections and dated Operations seats must remain tied to the exact selected sessions and copied price.
+- **Post-payment timetable changes are explicit and auditable.** Future paid sessions may be changed one-off or from an effective date. A cheaper change creates family credit; a dearer change creates family balance due. Credit/debt is never silently applied to a sibling or future bill.
+- **Effective-dated standing placements preserve history.** Past/attended sessions are not rewritten when the learner changes day, time or commercial plan.
+- **Initial and renewal communication terminology differs intentionally.** Pre-agreed first-period exceptions are presented to parents as normal agreed dates. Genuine later renewal/session replacements may be labelled `replacement`.
+- **Academy closures are calendar exclusions.** A blank closure end date means a single-day closure; invalid ranges must produce a handled admin error, never a page-level crash.
+
+### Parent email template rule
+
+`academy_email_templates` is the source of truth for editable parent-facing wording for planned-place and renewal emails.
+
+- Do not hard-code new parent-facing sentences into a renderer when they should be editable in Academy Setup → Parent communication.
+- Renderers may calculate structured values only: names, child-specific period heading, grouped service dates/times, session count, amount, bank details and payment reference.
+- The template contract, template editor placeholder help, preview renderer and send renderer must be changed together.
+- `{{service_dates}}` contains the session heading plus each date and start time.
+- `{{payment_details}}` contains business/account/IBAN details only.
+- `{{payment_reference}}` is separate and currently resolves to child/learner name plus the covered month/year.
+- Preview and send must use the same renderer so the reviewed content is the content sent.
+- Existing legacy initial-template placeholders (`{{recurring_place}}`, `{{price_plan_name}}`, `{{session_price}}`) remain supported for backwards compatibility, but new default wording should use the compact period contract.

@@ -116,3 +116,12 @@ For a material future slice:
 The operational foundation is intentionally ahead of the parent-facing product surface. Future work should prioritize the existing Phase 1 roadmap: richer learner profiles, group matching, consent/safeguarding workflow and reliable learning evidence before expanding the parent portal.
 
 Database-security hardening items identified by the 5 October Supabase advisor review are documented in the security model and should be handled as deliberate infrastructure slices rather than incidental feature edits.
+
+
+## Planned lead capacity and one-off communication edits
+
+- A saved lead plan reserves its exact planned Operations seat before payment. Operations must show that seat on the exact planned service date as **Planned · awaiting payment** and count it against visible capacity.
+- Planned lead occupancy comes from `accepted_bookings.planned_sessions`, not from inventing recurring dates. This preserves pre-agreed first-period exceptions.
+- Planned lead seats do not permit attendance until payment/activation has created the real learner/delivery seat.
+- In Family Pipeline, generated planned-place email subject/body may be edited for one family. The submitted edited values are the values sent and logged; they do not update the reusable parent-communication template.
+- Bank detail semantics are: `TAA_BANK_ACCOUNT_NAME` is currently used as the displayed bank name, `TAA_BUSINESS_NAME` as the account name, and `TAA_BANK_IBAN` as the IBAN.

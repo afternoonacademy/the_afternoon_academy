@@ -227,3 +227,17 @@ The large launch-operations rebuild is now treated as a completed product slice.
 - Build reliable utilisation/attendance/conversion reporting only after enough live data exists.
 - Keep the parent portal deferred until the underlying learning-evidence workflow is consistently used.
 - Keep AI family-update delivery deferred until provider approval, data-protection/safeguarding controls and the required AI infrastructure are explicitly approved.
+
+
+## October 2026 consolidated operations baseline
+
+The current Phase 1 operations baseline now includes the following additional controls:
+
+- **Flexible prepaid session changes:** staff may deliberately alter future paid sessions without rewriting historical attendance. One-off changes do not alter the recurring place; from-date changes create an effective-dated recurring placement.
+- **Family-level balance handling:** price differences from future-session changes create an auditable family credit or balance due. Staff decide explicitly whether to apply a credit/debt to a prepared child renewal, collect/refund it separately, or waive an outstanding balance. No automatic sibling transfer is permitted.
+- **Parent/family account:** the parent record is the central surface for family balance and child future-session administration; learner records remain learning/operational records and link back to the family account.
+- **Pre-agreed first-period exceptions:** a new family still signs up to a recurring place, but the first paid period may include agreed one-off dates. Those dates do not propagate into later renewals and are not described to parents as replacements.
+- **Parent communication review:** planned-place and renewal messages are reviewed before explicit send. Reusable wording lives in Academy Setup → Parent communication, while the renderer supplies structured names, grouped service dates/times, totals, bank details and period-specific payment references.
+- **Academy closure safety:** one-day closures may omit the end date; invalid ranges are handled as normal admin validation rather than page crashes.
+
+This baseline should be treated as the starting point for future Phase 1 feature work. New features should extend these systems rather than create parallel family, learner, billing, timetable, renewal or communication models.

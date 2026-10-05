@@ -184,3 +184,35 @@ Renewal workflow eligibility is based on the learner's actual latest paid-throug
 - Operations continues to show paid dated seats as paid for dates covered by an entitlement.
 - Future recurring capacity without paid coverage is shown separately as **Renewal due · place held**.
 - There is no automatic 21-day early renewal status. Staff may still deliberately start a renewal from the Renewals workflow once the learner is due.
+
+
+## First-period exceptions and post-payment changes — October 2026
+
+The exact-date model now distinguishes three operational concepts:
+
+1. **Recurring session** — follows the standing placement and is eligible to recur in future billing periods.
+2. **Pre-agreed first-period exception** — agreed before the first payment/activation, belongs only to the initial exact-date paid period, and does not alter the recurring standing place.
+3. **Replacement / future-session change** — a deliberate post-agreement change to a paid future date; genuine replacements may be labelled as such in renewal/customer communication.
+
+Renewal generation must use the effective standing placement, not copy first-period exception dates into the next period.
+
+## Family balance and effective-dated changes — October 2026
+
+When future paid sessions change after payment:
+
+- old historical/attended dates remain immutable;
+- one-off changes alter only the dated paid-session set;
+- from-date changes end-date the old recurring placement and create the new effective placement;
+- the financial difference is recorded at family level;
+- negative difference = family credit; positive difference = family amount due;
+- application/refund/collection/waiver is explicit and admin-controlled;
+- a family adjustment must never be automatically transferred across unrelated families;
+- operational paid/renewal state remains based on the exact paid-period/paid-through model, not merely on whether the family has a small credit/debt balance.
+
+## Parent email contract — October 2026
+
+The reusable initial and renewal email bodies are stored in `academy_email_templates`. The renderer supplies structured placeholder values; it must not silently replace editable parent-facing wording with hard-coded prose.
+
+`{{service_dates}}` is a compact grouped summary containing session/price-plan heading plus each date and start time. Initial pre-agreed exceptions are shown normally; genuine renewal replacements may include `· replacement`.
+
+`{{payment_details}}` contains only configured business/account/IBAN details. `{{payment_reference}}` is a separate value derived from learner/child name plus the covered month/year so admins may position or remove it in the stored template.

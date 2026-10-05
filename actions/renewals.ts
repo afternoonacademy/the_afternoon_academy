@@ -12,11 +12,15 @@ import {
   formatAcademyServiceGroups,
   formatPaymentReference,
 } from "@/lib/email/academy-period-email.mjs"
+import {
+  buildPaymentDetails,
+  renewalTemplateContract,
+} from "@/lib/email/parent-template-contract.mjs"
 
 const caseSchema = z.object({ caseId: z.string().uuid(), parentLeadId: z.string().uuid() })
 const dateRangeSchema = caseSchema.extend({ periodStart: z.string().date(), periodEnd: z.string().date(), pricePlanId: z.string().uuid() }).refine((value) => value.periodEnd >= value.periodStart, { message: "End date must follow start date" })
-const defaultSubject = "Renewal for {{learner_names}} at The Afternoon Academy"
-const defaultBody = "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
+const defaultSubject = renewalTemplateContract.defaultSubject
+const defaultBody = renewalTemplateContract.defaultBody
 const iso = (value: Date) => value.toISOString().slice(0, 10)
 const addDays = (value: string, days: number) => { const date = new Date(`${value}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return iso(date) }
 const escapeHtml = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;")
@@ -43,21 +47,12 @@ const applyTemplate = (template: string, values: Record<string, string>) => Obje
 const formatRenewalServiceDates = (sessions: any[]) =>
   formatAcademyServiceGroups(sessions, { initialPeriod: false })
 
-const renewalPaymentDetails = (learnerLabel: string, sessions: any[]) =>
-  [
-    process.env.TAA_BUSINESS_NAME
-      ? `Business name: ${process.env.TAA_BUSINESS_NAME}`
-      : null,
-    process.env.TAA_BANK_ACCOUNT_NAME
-      ? `Account name: ${process.env.TAA_BANK_ACCOUNT_NAME}`
-      : null,
-    process.env.TAA_BANK_IBAN
-      ? `IBAN: ${process.env.TAA_BANK_IBAN}`
-      : null,
-    `Payment reference: ${formatPaymentReference(learnerLabel, sessions)}`,
-  ]
-    .filter(Boolean)
-    .join("\n")
+const renewalPaymentDetails = () =>
+  buildPaymentDetails({
+    businessName: process.env.TAA_BUSINESS_NAME || "",
+    accountName: process.env.TAA_BANK_ACCOUNT_NAME || "",
+    iban: process.env.TAA_BANK_IBAN || "",
+  }) || "Please use the usual Academy bank-transfer details."
 
 
 export async function startChildRenewalCase(formData: FormData) {
@@ -307,7 +302,7 @@ export async function prepareRenewalDraft(formData: FormData) {
   const value = parsed.data; const supabase = supabaseService()
   const [{ data: parent }, { data: template }, service] = await Promise.all([supabase.from("parent_leads").select("parent_name").eq("id", value.parentLeadId).single(), supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "renewal_reminder").maybeSingle(), buildRenewalDates(value.parentLeadId, value.periodStart, value.periodEnd, value.pricePlanId)])
   if (!parent) throw new Error("Could not load this family"); if (!service.sessions.length) throw new Error("There are no open Academy session dates in this period"); if (service.sessions.some((session) => session.priceCents === null)) throw new Error("Set the missing session price in Academy Setup before preparing this renewal")
-  const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const learnerLabel = [...new Set(service.sessions.map((session) => session.learnerName).filter(Boolean))].join(", ") || service.learnerNames; const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(service.sessions), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(learnerLabel, service.sessions) }
+  const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const learnerLabel = [...new Set(service.sessions.map((session) => session.learnerName).filter(Boolean))].join(", ") || service.learnerNames; const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(service.sessions), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(), payment_reference: formatPaymentReference(learnerLabel, service.sessions) }
   const { error } = await supabase.from("renewal_cases").update({ proposed_period_start: value.periodStart, proposed_period_end: value.periodEnd, proposed_session_price_plan_id: value.pricePlanId, proposed_amount_cents: amountCents, proposed_service_dates: service.dates, selected_sessions: service.sessions, selected_session_count: service.sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId)
   if (error) throw new Error("Could not prepare the renewal email"); revalidatePath("/admin/renewals")
   revalidatePath("/admin/leads")
@@ -330,7 +325,7 @@ export async function updateRenewalSelection(formData: FormData) {
   const amountCents = sessions.reduce((total, session) => total + session.priceCents, 0)
   const service = await buildRenewalDates(parsed.data.parentLeadId, renewal.proposed_period_start, renewal.proposed_period_end)
   const learnerLabel = [...new Set(sessions.map((session: any) => session.learnerName).filter(Boolean))].join(", ") || service.learnerNames
-  const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(sessions), session_count: String(sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(learnerLabel, sessions) }
+  const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(sessions), session_count: String(sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(), payment_reference: formatPaymentReference(learnerLabel, sessions) }
   const { error } = await supabase.from("renewal_cases").update({ proposed_amount_cents: amountCents, proposed_service_dates: [...new Set(sessions.map((session) => session.date))].sort(), selected_sessions: sessions, selected_session_count: sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId)
   if (error) throw new Error("Could not update the selected sessions")
   revalidatePath("/admin/renewals")

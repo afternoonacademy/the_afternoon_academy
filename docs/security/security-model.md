@@ -104,3 +104,34 @@ Revisit this model whenever TAA adds a parent portal, new staff roles, specialis
 ## Parent email delivery telemetry
 
 TAA may retain operational delivery outcomes for parent communications (sent, delivered, delayed, bounced and failed) so staff can identify messages that did not reach the recipient. TAA does not use email open or click tracking for this workflow. Delivery webhooks must be cryptographically verified and stored through trusted server/service-role paths; webhook signing secrets remain server-only. Retain only the minimum delivery metadata needed for operational support and audit rather than full provider webhook payloads.
+
+
+## October 2026 operational billing and parent-communication boundary
+
+The current family billing/session-change and parent-email workflows remain admin-only trusted-server operations.
+
+- Family account and future-session mutations require `requireAdmin()`; client controls are not treated as authorization.
+- Editable email templates are stored in `academy_email_templates`, which has RLS enabled and no browser policies. Template reads/writes for admin workflows occur through trusted server/service-role paths.
+- Parent, booking, renewal, entitlement and communication tables used by these workflows also remain RLS-enabled with no direct browser policies in the current architecture.
+- Bank account details are supplied from server-side environment variables. They are never read from browser-controlled fields and must not be placed in public environment variables.
+- Planned-place email preview performs no send, pipeline mutation or delivery-log creation. The actual send remains explicit and is retained in the family communication audit trail.
+- The shared template renderer performs string substitution only; it does not execute template content.
+- Family account adjustments are retained as append-only JSON audit entries on the parent record. Future work must not allow a browser to submit authoritative balances/prices; server actions must reload authoritative family, learner, paid-session and price-plan data before mutation.
+- Cross-family balance use is prohibited. A target learner must be revalidated against the same `parent_lead_id` at submit time.
+- Historical paid/attended sessions must not be modified by a future-session change.
+
+### Security review snapshot — 5 October 2026
+
+A fresh Supabase advisor review found no advisor classified as an error/critical issue. Current known advisories are:
+
+- RLS enabled with no policies on a number of operational tables. In the current architecture this is intentionally deny-by-default for browser clients; trusted server/service-role code is the access path. Future parent/staff browser access must add narrowly scoped policies rather than disabling RLS.
+- Two database functions have mutable `search_path` warnings: `enforce_delivery_seat_capacity` and `prevent_operational_config_archive`. These are baseline hardening items to resolve in a dedicated migration after verifying function signatures/behavior.
+- `btree_gist` is installed in the public schema. Moving an extension is a database-maintenance task and should not be bundled into unrelated feature work.
+- Supabase leaked-password protection is disabled. Enable it as an authentication-hardening task when account/password configuration is reviewed.
+- Performance advisor findings include unindexed foreign keys and unused indexes. These are not release blockers for this email-template slice and should be handled from measured query/load evidence rather than bulk index churn.
+
+Reference remediation guidance:
+- RLS enabled/no policy: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
+- Mutable function search path: https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
+- Extension in public: https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public
+- Leaked password protection: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection

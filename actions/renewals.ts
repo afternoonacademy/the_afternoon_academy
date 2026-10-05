@@ -7,16 +7,20 @@ import { requireAdmin } from "@/lib/auth/require-admin"
 import { allocateDatedOperationsSeat, assertPaidPeriodCapacity, type DatedCapacityRequest } from "@/lib/delivery-capacity"
 import { getResend, emailFrom } from "@/lib/resend"
 import { supabaseService } from "@/lib/supabase/service"
+import {
+  childPeriodHeading,
+  formatAcademyServiceGroups,
+  formatPaymentReference,
+} from "@/lib/email/academy-period-email.mjs"
 
 const caseSchema = z.object({ caseId: z.string().uuid(), parentLeadId: z.string().uuid() })
 const dateRangeSchema = caseSchema.extend({ periodStart: z.string().date(), periodEnd: z.string().date(), pricePlanId: z.string().uuid() }).refine((value) => value.periodEnd >= value.periodStart, { message: "End date must follow start date" })
 const defaultSubject = "Renewal for {{learner_names}} at The Afternoon Academy"
-const defaultBody = "Hello {{parent_name}},\n\nWe hope you are well.\n\nYour next Academy period includes:\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\nWarmly,\nThe Afternoon Academy"
+const defaultBody = "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to continue, please make your usual bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 const iso = (value: Date) => value.toISOString().slice(0, 10)
 const addDays = (value: string, days: number) => { const date = new Date(`${value}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return iso(date) }
 const escapeHtml = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;")
 const emailHtml = (body: string) => `<main style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:32px;color:#20304a;line-height:1.55">${escapeHtml(body).replaceAll("\n", "<br />")}</main>`
-const formatDate = (value: string) => new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${value}T12:00:00Z`))
 
 async function buildRenewalDates(parentLeadId: string, periodStart: string, periodEnd: string, pricePlanId?: string) {
   const supabase = supabaseService()
@@ -36,21 +40,24 @@ async function buildRenewalDates(parentLeadId: string, periodStart: string, peri
   return { dates: [...new Set(sessions.map((session) => session.date))].sort(), sessions, learnerNames: (learners || []).map((learner) => learner.first_name).filter(Boolean).join(", ") || "your child" }
 }
 const applyTemplate = (template: string, values: Record<string, string>) => Object.entries(values).reduce((result, [key, value]) => result.replaceAll(`{{${key}}}`, value), template)
-const formatRenewalServiceDates = (sessions: any[]) => {
-  const groups = new Map<string, any[]>()
-  for (const session of sessions) {
-    const serviceName = session.pricePlanName || session.focus || "Academy sessions"
-    groups.set(serviceName, [...(groups.get(serviceName) || []), session])
-  }
-  return [...groups.entries()].map(([serviceName, serviceSessions]) => {
-    const dates = serviceSessions
-      .slice()
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((session) => `${formatDate(session.date)}${session.replacement ? " · replacement" : ""}`)
-      .join("\n")
-    return `${serviceName}\n${dates}`
-  }).join("\n\n")
-}
+const formatRenewalServiceDates = (sessions: any[]) =>
+  formatAcademyServiceGroups(sessions, { initialPeriod: false })
+
+const renewalPaymentDetails = (learnerLabel: string, sessions: any[]) =>
+  [
+    process.env.TAA_BUSINESS_NAME
+      ? `Business name: ${process.env.TAA_BUSINESS_NAME}`
+      : null,
+    process.env.TAA_BANK_ACCOUNT_NAME
+      ? `Account name: ${process.env.TAA_BANK_ACCOUNT_NAME}`
+      : null,
+    process.env.TAA_BANK_IBAN
+      ? `IBAN: ${process.env.TAA_BANK_IBAN}`
+      : null,
+    `Payment reference: ${formatPaymentReference(learnerLabel, sessions)}`,
+  ]
+    .filter(Boolean)
+    .join("\n")
 
 
 export async function startChildRenewalCase(formData: FormData) {
@@ -300,7 +307,7 @@ export async function prepareRenewalDraft(formData: FormData) {
   const value = parsed.data; const supabase = supabaseService()
   const [{ data: parent }, { data: template }, service] = await Promise.all([supabase.from("parent_leads").select("parent_name").eq("id", value.parentLeadId).single(), supabase.from("academy_email_templates").select("subject_template,body_template").eq("template_key", "renewal_reminder").maybeSingle(), buildRenewalDates(value.parentLeadId, value.periodStart, value.periodEnd, value.pricePlanId)])
   if (!parent) throw new Error("Could not load this family"); if (!service.sessions.length) throw new Error("There are no open Academy session dates in this period"); if (service.sessions.some((session) => session.priceCents === null)) throw new Error("Set the missing session price in Academy Setup before preparing this renewal")
-  const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const values = { parent_name: parent.parent_name, learner_names: service.learnerNames, service_dates: formatRenewalServiceDates(service.sessions), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100) }
+  const amountCents = service.sessions.reduce((total, session) => total + (session.priceCents || 0), 0); const learnerLabel = [...new Set(service.sessions.map((session) => session.learnerName).filter(Boolean))].join(", ") || service.learnerNames; const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(service.sessions), session_count: String(service.sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(learnerLabel, service.sessions) }
   const { error } = await supabase.from("renewal_cases").update({ proposed_period_start: value.periodStart, proposed_period_end: value.periodEnd, proposed_session_price_plan_id: value.pricePlanId, proposed_amount_cents: amountCents, proposed_service_dates: service.dates, selected_sessions: service.sessions, selected_session_count: service.sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId)
   if (error) throw new Error("Could not prepare the renewal email"); revalidatePath("/admin/renewals")
   revalidatePath("/admin/leads")
@@ -322,7 +329,8 @@ export async function updateRenewalSelection(formData: FormData) {
   if (!sessions.length) throw new Error("Choose at least one session")
   const amountCents = sessions.reduce((total, session) => total + session.priceCents, 0)
   const service = await buildRenewalDates(parsed.data.parentLeadId, renewal.proposed_period_start, renewal.proposed_period_end)
-  const values = { parent_name: parent.parent_name, learner_names: service.learnerNames, service_dates: formatRenewalServiceDates(sessions), session_count: String(sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100) }
+  const learnerLabel = [...new Set(sessions.map((session: any) => session.learnerName).filter(Boolean))].join(", ") || service.learnerNames
+  const values = { parent_name: parent.parent_name, learner_names: learnerLabel, period_heading: childPeriodHeading(learnerLabel, "renewal"), service_dates: formatRenewalServiceDates(sessions), session_count: String(sessions.length), amount_due: new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amountCents / 100), payment_details: renewalPaymentDetails(learnerLabel, sessions) }
   const { error } = await supabase.from("renewal_cases").update({ proposed_amount_cents: amountCents, proposed_service_dates: [...new Set(sessions.map((session) => session.date))].sort(), selected_sessions: sessions, selected_session_count: sessions.length, draft_subject: applyTemplate(template?.subject_template || defaultSubject, values), draft_body: applyTemplate(template?.body_template || defaultBody, values), updated_by: user.id }).eq("id", parsed.data.caseId).eq("parent_lead_id", parsed.data.parentLeadId)
   if (error) throw new Error("Could not update the selected sessions")
   revalidatePath("/admin/renewals")

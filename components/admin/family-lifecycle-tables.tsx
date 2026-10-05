@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table"
 
 export type FamilyCustomerRow = {
+  parentLeadId: string
   learnerId: string
   learnerName: string
   parentName: string
@@ -61,7 +62,12 @@ export function FamilyCustomersTable({
             {rows.map((row) => (
               <TableRow key={row.learnerId}>
                 <TableCell>
-                  <p className="font-semibold">{row.parentName}</p>
+                  <Link
+                    className="font-semibold text-primary hover:underline"
+                    href={"/admin/families/" + row.parentLeadId}
+                  >
+                    {row.parentName}
+                  </Link>
                   <p className="text-xs text-muted-foreground">{row.email}</p>
                 </TableCell>
                 <TableCell>
@@ -77,9 +83,9 @@ export function FamilyCustomersTable({
                 <TableCell className="text-right">
                   <Link
                     className="text-sm font-semibold text-primary hover:underline"
-                    href={"/admin/learners/" + row.learnerId}
+                    href={"/admin/families/" + row.parentLeadId}
                   >
-                    Open record
+                    Family account
                   </Link>
                 </TableCell>
               </TableRow>
@@ -92,7 +98,7 @@ export function FamilyCustomersTable({
         {rows.map((row) => (
           <Link
             className="flex items-start justify-between gap-4 py-4"
-            href={"/admin/learners/" + row.learnerId}
+            href={"/admin/families/" + row.parentLeadId}
             key={row.learnerId}
           >
             <span className="min-w-0">

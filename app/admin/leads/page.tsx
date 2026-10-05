@@ -279,6 +279,7 @@ export default async function AdminLeadsPage() {
     .map((learner) => {
       const parent = relation(learner.parent_leads)
       return {
+        parentLeadId: learner.parent_lead_id,
         learnerId: learner.id,
         learnerName: learner.first_name,
         parentName: parent?.parent_name || "Family",

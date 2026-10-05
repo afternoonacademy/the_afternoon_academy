@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { createLearnerGoal, recordAttendance, updateLearnerDetails, updateLearnerGoalStatus, updateLearnerPersonalProfile } from "@/actions/learners"
@@ -11,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
 import { FamilyCommunications } from "@/components/admin/family-communications"
 import { SaveActionForm } from "@/components/admin/save-action-form"
-import { SessionChangeForm } from "@/components/admin/session-change-form"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -66,31 +66,6 @@ export default async function LearnerPage({ params }: PageProps) {
   const profile = profileResult.data
   const today = new Date().toISOString().slice(0, 10)
 
-  const [
-    { data: changeTemplates },
-    { data: changePricePlans },
-    { data: parentAccount },
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("weekly_table_templates")
-      .select("id,weekday,starts_at,table_number,focus")
-      .eq("status", "active")
-      .order("weekday")
-      .order("starts_at")
-      .order("table_number"),
-    supabaseAdmin
-      .from("session_price_plans")
-      .select("id,name,price_cents")
-      .eq("status", "active")
-      .order("price_cents")
-      .order("name"),
-    supabaseAdmin
-      .from("parent_leads")
-      .select("account_adjustments")
-      .eq("id", learner.parent_lead_id)
-      .maybeSingle(),
-  ])
-
   const { data: communications } = await supabaseAdmin
     .from("email_delivery_log")
     .select(
@@ -110,51 +85,17 @@ export default async function LearnerPage({ params }: PageProps) {
   const latestEntitlement = entitlementResult.data
   const renewal = renewalResult.data
 
-  const paidSessionDetails = Array.isArray(latestEntitlement?.selected_sessions)
-    ? latestEntitlement.selected_sessions
-        .map((session) => {
-          if (!session || typeof session !== "object" || Array.isArray(session)) {
-            return null
-          }
-          const value = session as Record<string, unknown>
-          if (
-            typeof value.date !== "string" ||
-            typeof value.startsAt !== "string" ||
-            typeof value.priceCents !== "number" ||
-            typeof value.pricePlanName !== "string"
-          ) {
-            return null
-          }
-          return {
-            date: value.date,
-            startsAt: value.startsAt,
-            priceCents: value.priceCents,
-            pricePlanName: value.pricePlanName,
-          }
-        })
-        .filter(
-          (
-            session,
-          ): session is {
-            date: string
-            startsAt: string
-            priceCents: number
-            pricePlanName: string
-          } => Boolean(session),
-        )
-        .sort((a, b) => a.date.localeCompare(b.date) || a.startsAt.localeCompare(b.startsAt))
+  const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
+    ? [...new Set(
+        latestEntitlement.selected_sessions
+          .map((session) => {
+            if (!session || typeof session !== "object" || Array.isArray(session)) return null
+            const date = (session as Record<string, unknown>).date
+            return typeof date === "string" ? date : null
+          })
+          .filter((date): date is string => Boolean(date)),
+      )].sort()
     : []
-
-  const paidDates = [...new Set(paidSessionDetails.map((session) => session.date))]
-
-  const accountAdjustments = Array.isArray(parentAccount?.account_adjustments)
-    ? (parentAccount.account_adjustments as Array<Record<string, unknown>>)
-    : []
-  const familyBalanceCents = accountAdjustments.reduce(
-    (total, entry) =>
-      total + (typeof entry.amountCents === "number" ? entry.amountCents : 0),
-    0,
-  )
 
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat("en-GB", {
@@ -272,85 +213,18 @@ export default async function LearnerPage({ params }: PageProps) {
         </div>
       </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Family account & future sessions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="rounded-xl border bg-muted/20 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Family balance
-            </p>
-            <p className="mt-1 text-2xl font-bold">
-              {familyBalanceCents < 0
-                ? `€${(Math.abs(familyBalanceCents) / 100).toFixed(2)} credit`
-                : familyBalanceCents > 0
-                  ? `€${(familyBalanceCents / 100).toFixed(2)} due`
-                  : "Settled"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Credits and outstanding adjustments belong to the family. Admins
-              decide when they are applied to this learner or a sibling.
-            </p>
-            {accountAdjustments.length ? (
-              <div className="mt-3 space-y-2 text-sm">
-                {accountAdjustments.slice(-5).reverse().map((entry, index) => (
-                  <div className="rounded-md border bg-background px-3 py-2" key={String(entry.id || index)}>
-                    <p className="font-medium">
-                      {String(entry.originatingLearnerName || "Learner")} ·{" "}
-                      {typeof entry.amountCents === "number" && entry.amountCents < 0
-                        ? `€${(Math.abs(entry.amountCents) / 100).toFixed(2)} credit`
-                        : typeof entry.amountCents === "number" && entry.amountCents > 0
-                          ? `€${(entry.amountCents / 100).toFixed(2)} due`
-                          : "No balance change"}
-                    </p>
-                    {entry.reason ? (
-                      <p className="text-muted-foreground">{String(entry.reason)}</p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          {futurePlaces.length ? (
-            <div className="rounded-md border bg-blue-50 px-3 py-2 text-sm text-blue-950">
-              <p className="font-semibold">Future recurring place already scheduled</p>
-              {futurePlaces.map((place) => (
-                <p key={place.id}>
-                  From {formatDate(place.effective_from)} · {weekdayNames[place.weekday]} ·{" "}
-                  {place.starts_at.slice(0, 5)} · Table {place.table_number}
-                </p>
-              ))}
-            </div>
-          ) : null}
-
-          {latestEntitlement?.period_end && paidSessionDetails.length ? (
-            <SessionChangeForm
-              learnerId={learner.id}
-              paidThrough={latestEntitlement.period_end}
-              sessions={paidSessionDetails}
-              templates={(changeTemplates || []).map((item) => ({
-                id: item.id,
-                weekday: item.weekday,
-                startsAt: item.starts_at,
-                tableNumber: item.table_number,
-                focus: item.focus,
-              }))}
-              plans={(changePricePlans || []).map((item) => ({
-                id: item.id,
-                name: item.name,
-                priceCents: item.price_cents,
-              }))}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              A current exact-date paid period is required before future paid
-              sessions can be changed.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border bg-muted/20 p-4 text-sm">
+        <p className="font-semibold">Family billing and timetable changes</p>
+        <p className="mt-1 text-muted-foreground">
+          Payments, family credit/debt and future paid-session changes are managed on the parent account.
+        </p>
+        <Link
+          className="mt-3 inline-block font-semibold text-primary hover:underline"
+          href={"/admin/families/" + learner.parent_lead_id}
+        >
+          Open family account
+        </Link>
+      </div>
 
       <Card>
         <CardContent className="pt-6">

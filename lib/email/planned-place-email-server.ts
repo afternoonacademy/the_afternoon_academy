@@ -188,8 +188,8 @@ export async function loadPlannedPlaceEmailDraft({
   const paymentReference = formatPaymentReference(childName, sessions)
   const paymentDetails =
     buildPaymentDetails({
-      businessName: process.env.TAA_BUSINESS_NAME || "",
-      accountName: bankName,
+      bankName,
+      accountName: process.env.TAA_BUSINESS_NAME || "",
       iban,
     }) || "Please use the usual Academy bank-transfer details."
 

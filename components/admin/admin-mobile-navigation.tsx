@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Menu } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import { logout } from "@/actions/auth"
@@ -15,7 +15,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { adminNavItems } from "@/lib/admin/admin-navigation.mjs"
+import {
+  adminNavItems,
+  mobileAdminNavigationConfig,
+} from "@/lib/admin/admin-navigation.mjs"
 import { cn } from "@/lib/utils"
 
 export function AdminMobileNavigation({ email }: { email: string }) {
@@ -48,9 +51,19 @@ export function AdminMobileNavigation({ email }: { email: string }) {
 
           <SheetContent
             className="mobile-scroll-surface w-[86vw] max-w-[22rem] overflow-y-auto bg-[#fffdf5] p-0"
-            side="left"
+            side={mobileAdminNavigationConfig.side}
+            showCloseButton={false}
           >
-            <SheetHeader className="border-b border-indigo-100 bg-[#26345f] px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] text-left">
+            <SheetHeader className="relative border-b border-indigo-100 bg-[#26345f] px-5 pb-5 pr-16 pt-[max(1.25rem,env(safe-area-inset-top))] text-left">
+              <SheetClose asChild>
+                <button
+                  aria-label="Close admin menu"
+                  className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition active:scale-95"
+                  type="button"
+                >
+                  <X className="size-5" />
+                </button>
+              </SheetClose>
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-yellow-200">
                 The Afternoon Academy
               </p>

@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-import { customerFacingSessionSuffix } from "@/lib/initial-plan-exceptions.mjs"
 import {
   paidPeriodSummary,
   sortPaidPeriodSessions,
@@ -52,7 +51,7 @@ const defaultPlannedPlaceSubject =
   "Planned Academy place for {{child_name}}"
 
 const defaultPlannedPlaceBody =
-  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to take the place, please make your bank transfer.\n\n{{payment_details}}\n\nPayment reference: {{payment_reference}}\n\nWarmly,\nThe Afternoon Academy"
+  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to take the place, please make your bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 
 function parseSessions(raw: unknown): PaidPeriodSession[] {
   const parsed = z.array(plannedSessionSchema).min(1).safeParse(raw)
@@ -191,8 +190,14 @@ export async function loadPlannedPlaceEmailDraft({
   const paymentReference = formatPaymentReference(childName, sessions)
   const paymentDetails =
     bankName && iban
-      ? "Payment details:\nAccount name: " + bankName + "\nIBAN: " + iban
-      : "Please use the usual Academy bank-transfer details."
+      ? "Payment details:\nAccount name: " +
+        bankName +
+        "\nIBAN: " +
+        iban +
+        "\nPayment reference: " +
+        paymentReference
+      : "Please use the usual Academy bank-transfer details.\nPayment reference: " +
+        paymentReference
 
   const values: Record<string, string> = {
     parent_name: parent.parent_name,

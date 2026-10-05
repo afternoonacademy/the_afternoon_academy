@@ -467,3 +467,12 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Fully paid learners now remain in **Customers** until their current paid period reaches its final date.
 - On the final paid date they enter **Renewals → Needs renewal**; after the paid period ends, Operations can continue to show the recurring capacity as **Renewal due · place held** until payment is recorded or the place is released.
 - Added an automated regression test for before / on / after the final paid date, and made the test suite run before production builds.
+
+
+## 5 October 2026 — Price plan names can repeat
+
+- Removed the database uniqueness rule on `session_price_plans.name`.
+- Price plan identity is now the plan ID; the display name is a reusable label.
+- This allows plans such as **Private tuition · €30/session** and **Private tuition · €40/session** to coexist as separate commercial rates.
+- Existing plan selectors already show the plan name together with the per-session price, so same-name plans remain distinguishable to admins.
+- Updated Academy Setup guidance to explain that each rate should be created as its own plan.

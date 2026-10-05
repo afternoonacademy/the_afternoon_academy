@@ -161,3 +161,11 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Planned Operations occupancy must use the exact saved `planned_sessions` dates so pre-agreed first-period exceptions appear correctly and are not converted into recurring dates.
 - Editing a generated initial parent email in Family Pipeline is a one-off communication override. Send and delivery-log content must use the submitted edited subject/body, while the Academy Setup template remains unchanged.
 - Parent email bank labels must distinguish bank name from account name. Current mapping: bank name from `TAA_BANK_ACCOUNT_NAME`, account name from `TAA_BUSINESS_NAME`, IBAN from `TAA_BANK_IBAN`.
+
+
+### Persistent planned-place draft invariant
+
+- One-off planned-place email edits belong to the child lead and persist across navigation; they are not reusable template edits.
+- Persist the draft with the booking version it was generated/saved against.
+- If a booking change affects the planned email, regenerate the persisted draft from current authoritative booking data and surface an explicit admin notice rather than silently retaining stale wording.
+- The exact subject/body submitted from Family Pipeline remains the content sent and logged.

@@ -45,12 +45,12 @@ test("renewal template contract exposes period heading payment details and payme
 test("default parent templates keep payment reference editable and separate from bank details", () => {
   assert.match(
     plannedPlaceTemplateContract.defaultBody,
-    /Payment details:\\n{{payment_details}}/,
+    /Payment details:\n{{payment_details}}/,
   )
   assert.match(plannedPlaceTemplateContract.defaultBody, /Payment reference: {{payment_reference}}/)
   assert.match(
     renewalTemplateContract.defaultBody,
-    /Payment details:\\n{{payment_details}}/,
+    /Payment details:\n{{payment_details}}/,
   )
   assert.match(renewalTemplateContract.defaultBody, /Payment reference: {{payment_reference}}/)
 })

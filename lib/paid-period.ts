@@ -39,6 +39,7 @@ export type PaidPeriodSession = {
   pricePlanName: string
   priceCents: number
   replacement: boolean
+  sessionOrigin?: "recurring" | "pre_agreed_exception" | "replacement"
 }
 
 const iso = (value: Date) => value.toISOString().slice(0, 10)
@@ -79,6 +80,7 @@ export function sessionFromPlacement(
   placement: PaidPeriodPlacement,
   date: string,
   replacement = false,
+  sessionOrigin?: "recurring" | "pre_agreed_exception" | "replacement",
 ): PaidPeriodSession {
   return {
     learnerId: placement.learnerId,
@@ -97,6 +99,9 @@ export function sessionFromPlacement(
     pricePlanName: placement.pricePlanName,
     priceCents: placement.priceCents,
     replacement,
+    sessionOrigin:
+      sessionOrigin ||
+      (replacement ? "replacement" : "recurring"),
   }
 }
 

@@ -536,6 +536,8 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 
 ## 5 October 2026 — Planned Operations seats and one-off email editing
 
+_Release note: PR #20 merged to the production branch._
+
 - Planned lead places now appear in the Operations Hub on their exact planned service dates before payment, using the saved table, time and seat from the planned-period session list.
 - Planned lead seats count against visible room capacity and are labelled **Planned · awaiting payment**. They are not treated as paid learners and do not expose attendance controls until activation creates the learner/delivery seat.
 - Actual dated delivery seats remain authoritative; renewal-held and planned lead expectations are supporting occupancy states rather than duplicate paid seats.

@@ -1,10 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { supabaseService } from "@/lib/supabase/service"
+import { childLeadFormSchema } from "@/lib/validations/lead"
 
 const leadStatusSchema = z.object({
   leadId: z.string().uuid(),
@@ -30,9 +32,14 @@ const paidFamilyEnrolmentSchema = z.object({
 })
 
 const manualLeadSchema = z.object({
-  parentName: z.string().trim().min(2).max(160), email: z.string().trim().email().max(254), phone: z.string().trim().max(50).optional(),
-  childFirstName: z.string().trim().min(1).max(80), childAge: z.coerce.number().int().min(4).max(18), schoolYear: z.string().trim().max(80).optional(),
+  parentName: z.string().trim().min(2).max(160),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().max(50).optional(),
   source: z.string().trim().min(2).max(80),
+  children: z
+    .array(childLeadFormSchema)
+    .min(1, "Add at least one child")
+    .max(6, "Please create a second family record for more than six children"),
 })
 
 const manualEnrolmentSchema = z.object({
@@ -100,20 +107,105 @@ export async function deleteLead(formData: FormData) {
   revalidatePath("/admin/trends")
 }
 
-export async function createManualLead(formData: FormData) {
-  await requireAdmin()
-  const parsed = manualLeadSchema.safeParse({ parentName: formData.get("parentName"), email: formData.get("email"), phone: formData.get("phone") || undefined, childFirstName: formData.get("childFirstName"), childAge: formData.get("childAge"), schoolYear: formData.get("schoolYear") || undefined, source: formData.get("source") })
-  if (!parsed.success) throw new Error("Please check the lead details")
-  const data = parsed.data; const supabase = supabaseService()
-  const { data: lead, error: leadError } = await supabase.from("parent_leads").insert({ parent_name: data.parentName, email: data.email, phone: data.phone || null, interest_level: "interested_timetable", consent_contact: true, source: data.source, status: "new" }).select("id").single()
-  if (leadError || !lead) throw new Error("Could not create parent lead")
-  const { data: child, error: childError } = await supabase.from("child_leads").insert({ parent_lead_id: lead.id, first_name: data.childFirstName, child_age: data.childAge, school_year: data.schoolYear || null, curriculum: "other_not_sure", support_needs: [] }).select("id").single()
-  if (childError || !child) throw new Error("Could not create child lead")
-  const { error: timetableError } = await supabase.from("timetable_preferences").insert({ child_lead_id: child.id, preferred_days: [], preferred_times: [] })
-  if (timetableError) throw new Error("Could not create timetable preference")
-  revalidatePath("/admin/leads"); revalidatePath("/admin"); revalidatePath("/admin/sessions")
+export type ManualLeadActionState = {
+  error?: string
 }
 
+export async function createManualLead(
+  _previousState: ManualLeadActionState,
+  formData: FormData,
+): Promise<ManualLeadActionState> {
+  await requireAdmin()
+
+  let children: unknown
+  try {
+    children = JSON.parse(String(formData.get("children") || "[]"))
+  } catch {
+    return { error: "Please check the child details" }
+  }
+
+  const parsed = manualLeadSchema.safeParse({
+    parentName: formData.get("parentName"),
+    email: formData.get("email"),
+    phone: formData.get("phone") || undefined,
+    source: formData.get("source"),
+    children,
+  })
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message || "Please check the lead details",
+    }
+  }
+
+  const data = parsed.data
+  const supabase = supabaseService()
+
+  const { data: lead, error: leadError } = await supabase
+    .from("parent_leads")
+    .insert({
+      parent_name: data.parentName,
+      email: data.email,
+      phone: data.phone || null,
+      school_name: data.children[0]?.schoolName || null,
+      interest_level: "interested_timetable",
+      consent_contact: true,
+      source: data.source,
+      status: "new",
+    })
+    .select("id")
+    .single()
+
+  if (leadError || !lead) {
+    return { error: "Could not create parent lead" }
+  }
+
+  const { data: childLeads, error: childError } = await supabase
+    .from("child_leads")
+    .insert(
+      data.children.map((child) => ({
+        parent_lead_id: lead.id,
+        first_name: child.firstName,
+        child_age: child.age,
+        school_name: child.schoolName || null,
+        school_year: child.schoolYear || null,
+        curriculum: child.curriculum,
+        support_needs: child.supportNeeds,
+        course_or_exam_board: child.supportNeeds.includes("igcse_chemistry")
+          ? child.courseOrExamBoard || null
+          : null,
+        notes: child.notes || null,
+      })),
+    )
+    .select("id")
+
+  if (childError || !childLeads || childLeads.length !== data.children.length) {
+    await supabase.from("parent_leads").delete().eq("id", lead.id)
+    return { error: "Could not create the child lead records" }
+  }
+
+  const { error: timetableError } = await supabase
+    .from("timetable_preferences")
+    .insert(
+      childLeads.map((childLead, index) => ({
+        child_lead_id: childLead.id,
+        preferred_days: data.children[index].preferredDays,
+        preferred_times: data.children[index].preferredTimes,
+        preferred_frequency: data.children[index].preferredFrequency,
+      })),
+    )
+
+  if (timetableError) {
+    await supabase.from("parent_leads").delete().eq("id", lead.id)
+    return { error: "Could not create the timetable preferences" }
+  }
+
+  revalidatePath("/admin/leads")
+  revalidatePath("/admin")
+  revalidatePath("/admin/sessions")
+
+  redirect("/admin/leads")
+}
 
 export async function enrolPaidChildren(formData: FormData) {
   const { user } = await requireAdmin()

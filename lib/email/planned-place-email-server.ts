@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-import { customerFacingSessionSuffix } from "@/lib/initial-plan-exceptions.mjs"
 import {
   paidPeriodSummary,
   sortPaidPeriodSessions,
@@ -11,6 +10,10 @@ import {
   renderPlannedPlaceEmailDraft,
 } from "@/lib/email/planned-place-email.mjs"
 import { supabaseService } from "@/lib/supabase/service"
+import {
+  childPeriodHeading,
+  formatPaymentReference,
+} from "@/lib/email/academy-period-email.mjs"
 
 const plannedSessionSchema = z.object({
   learnerId: z.string().uuid().nullable(),
@@ -48,7 +51,7 @@ const defaultPlannedPlaceSubject =
   "Planned Academy place for {{child_name}}"
 
 const defaultPlannedPlaceBody =
-  "Dear {{parent_name}},\n\nWe can offer {{child_name}} the following recurring Academy place(s):\n{{recurring_place}}\n\nPrice plan(s): {{price_plan_name}} · {{session_price}} per session\n\nPlanned service dates:\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\n{{payment_details}}\n\nPayment reference: {{payment_reference}}\n\nOnce the transfer has cleared, we will confirm the exact paid dates and activate the dated Operations places.\n\nWarmly,\nThe Afternoon Academy"
+  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to take the place, please make your bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 
 function parseSessions(raw: unknown): PaidPeriodSession[] {
   const parsed = z.array(plannedSessionSchema).min(1).safeParse(raw)
@@ -184,15 +187,22 @@ export async function loadPlannedPlaceEmailDraft({
   const bankName = process.env.TAA_BANK_ACCOUNT_NAME || ""
   const iban = process.env.TAA_BANK_IBAN || ""
   const childName = child.first_name || "your child"
-  const paymentReference = child.first_name || parent.parent_name
+  const paymentReference = formatPaymentReference(childName, sessions)
   const paymentDetails =
     bankName && iban
-      ? "Payment details:\nAccount name: " + bankName + "\nIBAN: " + iban
-      : "Please use the usual Academy bank-transfer details."
+      ? "Payment details:\nAccount name: " +
+        bankName +
+        "\nIBAN: " +
+        iban +
+        "\nPayment reference: " +
+        paymentReference
+      : "Please use the usual Academy bank-transfer details.\nPayment reference: " +
+        paymentReference
 
   const values: Record<string, string> = {
     parent_name: parent.parent_name,
     child_name: childName,
+    period_heading: childPeriodHeading(childName, "initial"),
     recurring_place: recurringPlaces,
     price_plan_name: planNames.join(" / "),
     session_price:

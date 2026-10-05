@@ -6,7 +6,7 @@ import {
   sortPaidPeriodSessions,
   type PaidPeriodSession,
 } from "@/lib/paid-period"
-import { renderPlannedPlaceEmailDraft } from "@/lib/email/planned-place-email.mjs"
+import {\n  formatPlannedSessionGroups,\n  renderPlannedPlaceEmailDraft,\n} from "@/lib/email/planned-place-email.mjs"
 import { supabaseService } from "@/lib/supabase/service"
 
 const plannedSessionSchema = z.object({
@@ -176,21 +176,7 @@ export async function loadPlannedPlaceEmailDraft({
     ...new Set(sessions.map((session) => money(session.priceCents))),
   ]
 
-  const datesText = sessions
-    .map(
-      (session) =>
-        formatDate(session.date) +
-        " · " +
-        session.startsAt +
-        " · Table " +
-        session.tableNumber +
-        " · " +
-        session.pricePlanName +
-        " · " +
-        money(session.priceCents) +
-        customerFacingSessionSuffix(session),
-    )
-    .join("\n")
+  const datesText = formatPlannedSessionGroups(sessions)
 
   const bankName = process.env.TAA_BANK_ACCOUNT_NAME || ""
   const iban = process.env.TAA_BANK_IBAN || ""

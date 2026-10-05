@@ -495,3 +495,12 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Preview and send now use the same shared email builder to prevent content drift.
 - Planned service dates are grouped under the session/price-plan name and no longer repeat table number, session type or per-session price on every line.
 - Pre-agreed first-period exceptions continue to display as normal dates; genuine later replacements can still show `· replacement`.
+
+
+## 5 October 2026 — Initial and renewal email attendance alignment
+
+- Added the session start time to every service-date line in both initial planned-place and renewal emails.
+- Added the child/learner name to the period heading so parents can see exactly whose schedule is being confirmed.
+- Standardised bank-transfer references as child name plus the month/year covered by the period, for example `Mya October 2026`; multi-month periods use an explicit month range.
+- Kept the terminology distinction: pre-agreed first-period exceptions are shown as normal dates, while genuine renewal replacements continue to show `· replacement`.
+- Initial and renewal emails now share the same compact attendance-information conventions while retaining their different first-period/next-period wording.

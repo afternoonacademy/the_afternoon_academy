@@ -125,3 +125,12 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Planned lead seats do not permit attendance until payment/activation has created the real learner/delivery seat.
 - In Family Pipeline, generated planned-place email subject/body may be edited for one family. The submitted edited values are the values sent and logged; they do not update the reusable parent-communication template.
 - Bank detail semantics are: `TAA_BANK_ACCOUNT_NAME` is currently used as the displayed bank name, `TAA_BUSINESS_NAME` as the account name, and `TAA_BANK_IBAN` as the IBAN.
+
+
+## Persistent planned-place email drafts
+
+- Initial planned-place email drafts are persisted at child-lead level; they are one-off operational communication state, not template state.
+- A persisted draft is valid only for the booking version it was saved against.
+- If the underlying planned booking changes, any existing draft is automatically replaced with newly generated content from the current booking and an admin-visible regeneration notice is set.
+- Editing the regenerated draft clears the notice because the admin has reviewed/changed the current version.
+- Reusable wording remains owned by `academy_email_templates`; persisted child-level drafts must never mutate those templates.

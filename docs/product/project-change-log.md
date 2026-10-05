@@ -544,3 +544,12 @@ _Release note: PR #20 merged to the production branch._
 - The initial planned-place email review is now editable. The subject/body submitted from Family Pipeline are the exact values sent through Resend and written to the delivery log for that one communication.
 - One-off edits do not modify the reusable Academy Setup → Parent communication template.
 - Parent payment details now render with explicit semantics: **Bank name: Santander**, **Account name: JADIS SL**, then **IBAN**. The payment reference remains a separate template placeholder.
+
+
+## 5 October 2026 — Persistent planned-place email drafts
+
+- One-off planned-place email edits in Family Pipeline are now persisted against the child lead and restored when an admin leaves and returns to the page.
+- Editing the subject or body auto-saves the draft without changing the reusable Parent Communication template.
+- If a saved planned booking is changed after a draft exists, the draft is regenerated from the latest booking information and marked with an admin-visible **Email updated** notice.
+- The notice explains that the booking changed and requires the admin to review the regenerated email before sending.
+- Sending still uses the exact subject/body shown in Family Pipeline and logs that sent copy in the communication history.

@@ -9,6 +9,7 @@ import {
   formatPlannedSessionGroups,
   renderPlannedPlaceEmailDraft,
 } from "@/lib/email/planned-place-email.mjs"
+import { choosePlannedEmailDraft } from "@/lib/email/planned-place-draft-state.mjs"
 import { supabaseService } from "@/lib/supabase/service"
 import {
   childPeriodHeading,
@@ -80,14 +81,36 @@ export type PlannedPlaceEmailDraft = {
   subject: string
   body: string
   bookingIds: string[]
+  bookingVersion: string
+  regenerationNotice: boolean
+  persisted: boolean
+}
+
+function bookingVersion(bookings: any[]) {
+  return JSON.stringify(
+    [...bookings]
+      .map((booking) => ({
+        id: booking.id,
+        status: booking.status,
+        weekday: booking.weekday,
+        tableNumber: booking.table_number,
+        seatNumber: booking.seat_number,
+        startsAt: String(booking.starts_at).slice(0, 5),
+        plannedSessions: booking.planned_sessions || [],
+        sessionPricePlanId: booking.session_price_plan_id,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  )
 }
 
 export async function loadPlannedPlaceEmailDraft({
   parentLeadId,
   childLeadId,
+  useSavedDraft = true,
 }: {
   parentLeadId: string
   childLeadId: string
+  useSavedDraft?: boolean
 }): Promise<PlannedPlaceEmailDraft> {
   const supabase = supabaseService()
 
@@ -104,7 +127,7 @@ export async function loadPlannedPlaceEmailDraft({
       .single(),
     supabase
       .from("child_leads")
-      .select("parent_lead_id,first_name")
+      .select("parent_lead_id,first_name,planned_email_draft_subject,planned_email_draft_body,planned_email_draft_booking_version,planned_email_draft_regeneration_notice")
       .eq("id", childLeadId)
       .single(),
     supabase
@@ -219,10 +242,32 @@ export async function loadPlannedPlaceEmailDraft({
     values,
   })
 
+  const currentBookingVersion = bookingVersion(bookings || [])
+  const saved =
+    useSavedDraft &&
+    child.planned_email_draft_subject &&
+    child.planned_email_draft_body
+      ? {
+          subject: child.planned_email_draft_subject,
+          body: child.planned_email_draft_body,
+          bookingVersion: child.planned_email_draft_booking_version || "",
+        }
+      : null
+  const selected = choosePlannedEmailDraft({
+    generated: rendered,
+    saved,
+    bookingVersion: currentBookingVersion,
+  })
+
   return {
     to: parent.email,
-    subject: rendered.subject,
-    body: rendered.body,
+    subject: selected.subject,
+    body: selected.body,
     bookingIds: (bookings || []).map((booking) => booking.id),
+    bookingVersion: currentBookingVersion,
+    regenerationNotice: Boolean(
+      child.planned_email_draft_regeneration_notice || selected.regenerated,
+    ),
+    persisted: Boolean(saved && !selected.regenerated),
   }
 }

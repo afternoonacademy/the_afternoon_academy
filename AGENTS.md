@@ -9,6 +9,7 @@ Before material product or engineering work, read the relevant project documents
 - `docs/product/product-roadmap.md`
 - `docs/product/project-change-log.md`
 - `docs/engineering/agentic-development.md`
+- `docs/engineering/current-baseline.md`
 - `docs/security/security-model.md`
 - the relevant feature specification under `specs/`
 

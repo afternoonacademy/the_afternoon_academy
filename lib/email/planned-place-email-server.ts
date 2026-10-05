@@ -14,6 +14,10 @@ import {
   childPeriodHeading,
   formatPaymentReference,
 } from "@/lib/email/academy-period-email.mjs"
+import {
+  buildPaymentDetails,
+  plannedPlaceTemplateContract,
+} from "@/lib/email/parent-template-contract.mjs"
 
 const plannedSessionSchema = z.object({
   learnerId: z.string().uuid().nullable(),
@@ -46,12 +50,6 @@ const weekdayNames = [
   "Friday",
   "Saturday",
 ]
-
-const defaultPlannedPlaceSubject =
-  "Planned Academy place for {{child_name}}"
-
-const defaultPlannedPlaceBody =
-  "Hello {{parent_name}},\n\nWe hope you are well.\n\n{{period_heading}}\n\n{{service_dates}}\n\nThat is {{session_count}} session(s), totalling {{amount_due}}.\n\nIf you would like to take the place, please make your bank transfer.\n\n{{payment_details}}\n\nWarmly,\nThe Afternoon Academy"
 
 function parseSessions(raw: unknown): PaidPeriodSession[] {
   const parsed = z.array(plannedSessionSchema).min(1).safeParse(raw)
@@ -189,15 +187,11 @@ export async function loadPlannedPlaceEmailDraft({
   const childName = child.first_name || "your child"
   const paymentReference = formatPaymentReference(childName, sessions)
   const paymentDetails =
-    bankName && iban
-      ? "Payment details:\nAccount name: " +
-        bankName +
-        "\nIBAN: " +
-        iban +
-        "\nPayment reference: " +
-        paymentReference
-      : "Please use the usual Academy bank-transfer details.\nPayment reference: " +
-        paymentReference
+    buildPaymentDetails({
+      businessName: process.env.TAA_BUSINESS_NAME || "",
+      accountName: bankName,
+      iban,
+    }) || "Please use the usual Academy bank-transfer details."
 
   const values: Record<string, string> = {
     parent_name: parent.parent_name,
@@ -218,8 +212,10 @@ export async function loadPlannedPlaceEmailDraft({
 
   const rendered = renderPlannedPlaceEmailDraft({
     subjectTemplate:
-      emailTemplate?.subject_template || defaultPlannedPlaceSubject,
-    bodyTemplate: emailTemplate?.body_template || defaultPlannedPlaceBody,
+      emailTemplate?.subject_template ||
+      plannedPlaceTemplateContract.defaultSubject,
+    bodyTemplate:
+      emailTemplate?.body_template || plannedPlaceTemplateContract.defaultBody,
     values,
   })
 

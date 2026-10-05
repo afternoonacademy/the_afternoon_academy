@@ -449,3 +449,13 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Localized the Focus Group interest form, validation feedback, parent acknowledgement email and Spanish thank-you routing while retaining the same existing lead/family data model.
 - Clarified on both homepages that the Homework Club serves ages 4–12 while the IGCSE Chemistry Focus Group serves Years 10–11.
 - Confirmed both main homepages continue to use the same multi-child family enquiry form, so siblings can be included in one submission with independent requirements.
+
+
+## 5 October 2026 — Admin family lead entry matches public multi-child model
+
+- Upgraded **Add family lead** so staff can record multiple children under one parent/family enquiry.
+- Each child is written as an independent `child_leads` record with its own support needs, curriculum, school context and timetable preferences, matching the public family-enquiry data model.
+- Added the same support-type choices used on the public enquiry form, including General Homework Support, IGCSE Chemistry and 1-to-1 support.
+- Added **Add another child** / remove-child controls for admin entry.
+- Added a visible pending state with spinner and disabled controls while the family lead is being saved, then returns the admin to Family Pipeline on success.
+- Confirmed the public English and Spanish landing-page forms already create one parent lead plus a separate child lead and timetable-preference record for each child submitted in the same family form.

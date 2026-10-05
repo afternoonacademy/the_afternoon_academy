@@ -459,3 +459,11 @@ Founder acceptance has been given for the unified Family Pipeline / renewal / co
 - Added **Add another child** / remove-child controls for admin entry.
 - Added a visible pending state with spinner and disabled controls while the family lead is being saved, then returns the admin to Family Pipeline on success.
 - Confirmed the public English and Spanish landing-page forms already create one parent lead plus a separate child lead and timetable-preference record for each child submitted in the same family form.
+
+
+## 5 October 2026 — Remove 21-day early renewal window
+
+- Changed Family Pipeline renewal eligibility from 21 days before paid-through to the learner's final paid date.
+- Fully paid learners now remain in **Customers** until their current paid period reaches its final date.
+- On the final paid date they enter **Renewals → Needs renewal**; after the paid period ends, Operations can continue to show the recurring capacity as **Renewal due · place held** until payment is recorded or the place is released.
+- Added an automated regression test for before / on / after the final paid date, and made the test suite run before production builds.

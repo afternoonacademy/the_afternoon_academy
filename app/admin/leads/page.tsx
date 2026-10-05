@@ -122,7 +122,7 @@ export default async function AdminLeadsPage() {
       .order("first_name"),
     supabaseAdmin
       .from("standing_placements")
-      .select("learner_id,weekday,table_number,starts_at,status")
+      .select("learner_id,weekday,table_number,starts_at,status,effective_from,effective_to")
       .eq("status", "active"),
     supabaseAdmin
       .from("child_payment_entitlements")
@@ -239,8 +239,15 @@ export default async function AdminLeadsPage() {
     }
   }
 
+  const lifecycleToday = new Date().toISOString().slice(0, 10)
   const placesByLearner = new Map<string, string[]>()
   for (const placement of lifecyclePlacements || []) {
+    if (
+      placement.effective_from > lifecycleToday ||
+      (placement.effective_to && placement.effective_to < lifecycleToday)
+    ) {
+      continue
+    }
     const current = placesByLearner.get(placement.learner_id) || []
     const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
       placement.weekday

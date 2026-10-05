@@ -146,7 +146,7 @@ export async function recordPlannedChildPlace(formData: FormData) {
     { data: closures, error: closureError },
     { data: currentBookings, error: currentBookingError },
   ] = await Promise.all([
-    supabase.from("child_leads").select("parent_lead_id,first_name,pipeline_status").eq("id", parsed.data.childLeadId).single(),
+    supabase.from("child_leads").select("parent_lead_id,first_name,pipeline_status,planned_email_draft_subject,planned_email_draft_body").eq("id", parsed.data.childLeadId).single(),
     supabase.from("weekly_table_templates").select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,status").in("id", templateIds).eq("status", "active"),
     supabase.from("session_price_plans").select("id,name,price_cents,status").in("id", [...new Set(places.map((place) => place.pricePlanId))]).eq("status", "active"),
     supabase.from("academy_tables").select("id,seat_capacity,status").eq("status", "active"),
@@ -300,6 +300,30 @@ export async function recordPlannedChildPlace(formData: FormData) {
   const { error: statusError } = await supabase.from("child_leads").update({ pipeline_status: "session_planned" }).eq("id", parsed.data.childLeadId)
   if (statusError) throw new Error("The places were planned, but the child status could not be updated")
 
+  if (child.planned_email_draft_subject && child.planned_email_draft_body) {
+    const regenerated = await loadPlannedPlaceEmailDraft({
+      parentLeadId: parsed.data.parentLeadId,
+      childLeadId: parsed.data.childLeadId,
+      useSavedDraft: false,
+    })
+    const regeneratedAt = new Date().toISOString()
+    const { error: draftError } = await supabase
+      .from("child_leads")
+      .update({
+        planned_email_draft_subject: regenerated.subject,
+        planned_email_draft_body: regenerated.body,
+        planned_email_draft_booking_version: regenerated.bookingVersion,
+        planned_email_draft_saved_at: regeneratedAt,
+        planned_email_draft_regeneration_notice: true,
+        planned_email_draft_regenerated_at: regeneratedAt,
+      })
+      .eq("id", parsed.data.childLeadId)
+      .eq("parent_lead_id", parsed.data.parentLeadId)
+    if (draftError) {
+      throw new Error("The booking was updated, but the parent email draft could not be regenerated")
+    }
+  }
+
   revalidatePath("/admin")
   revalidatePath("/admin/leads")
 }
@@ -346,11 +370,77 @@ export async function previewPlannedPlaceEmail(
 
   const draft = await loadPlannedPlaceEmailDraft(parsed.data)
 
+  if (draft.regenerationNotice && !draft.persisted) {
+    const supabase = supabaseService()
+    const regeneratedAt = new Date().toISOString()
+    const { error } = await supabase
+      .from("child_leads")
+      .update({
+        planned_email_draft_subject: draft.subject,
+        planned_email_draft_body: draft.body,
+        planned_email_draft_booking_version: draft.bookingVersion,
+        planned_email_draft_saved_at: regeneratedAt,
+        planned_email_draft_regeneration_notice: true,
+        planned_email_draft_regenerated_at: regeneratedAt,
+      })
+      .eq("id", parsed.data.childLeadId)
+      .eq("parent_lead_id", parsed.data.parentLeadId)
+    if (error) throw new Error("The updated parent email could not be saved")
+  }
+
   return {
     to: draft.to,
     subject: draft.subject,
     body: draft.body,
+    regenerationNotice: draft.regenerationNotice,
+    persisted: draft.persisted,
   }
+}
+
+export async function savePlannedPlaceEmailDraft({
+  parentLeadId,
+  childLeadId,
+  subject,
+  body,
+}: {
+  parentLeadId: string
+  childLeadId: string
+  subject: string
+  body: string
+}) {
+  await requireAdmin()
+  const parsed = childActionSchema
+    .extend({
+      subject: z.string().trim().min(2).max(200),
+      body: z.string().trim().min(2).max(12000),
+    })
+    .safeParse({ parentLeadId, childLeadId, subject, body })
+  if (!parsed.success) throw new Error("Check the email draft before saving")
+
+  const current = await loadPlannedPlaceEmailDraft({
+    parentLeadId: parsed.data.parentLeadId,
+    childLeadId: parsed.data.childLeadId,
+    useSavedDraft: false,
+  })
+  const content = normalizePlannedPlaceSendContent({
+    subject: parsed.data.subject,
+    body: parsed.data.body,
+  })
+  const savedAt = new Date().toISOString()
+  const { error } = await supabaseService()
+    .from("child_leads")
+    .update({
+      planned_email_draft_subject: content.subject,
+      planned_email_draft_body: content.body,
+      planned_email_draft_booking_version: current.bookingVersion,
+      planned_email_draft_saved_at: savedAt,
+      planned_email_draft_regeneration_notice: false,
+    })
+    .eq("id", parsed.data.childLeadId)
+    .eq("parent_lead_id", parsed.data.parentLeadId)
+  if (error) throw new Error("Could not save the parent email draft")
+
+  return { savedAt }
 }
 
 export async function sendPlannedPlaceEmail(formData: FormData) {
@@ -453,6 +543,10 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
       .from("parent_leads")
       .update({ status: "contacted" })
       .eq("id", parsed.data.parentLeadId),
+    supabase
+      .from("child_leads")
+      .update({ planned_email_draft_regeneration_notice: false })
+      .eq("id", parsed.data.childLeadId),
     deliveryLog
       ? supabase
           .from("email_delivery_log")

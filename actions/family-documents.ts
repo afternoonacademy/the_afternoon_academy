@@ -35,7 +35,7 @@ function emailHtml(body: string) {
 }
 
 export async function sendRegistrationAuthorisationForm(formData: FormData) {
-  const { user } = await requireAdmin()
+  const { internalUser } = await requireAdmin()
   const parsed = familySchema.safeParse({
     parentLeadId: formData.get("parentLeadId"),
   })
@@ -88,7 +88,7 @@ export async function sendRegistrationAuthorisationForm(formData: FormData) {
       idempotency_key: idempotencyKey,
       subject: rendered.subject,
       body_text: rendered.body,
-      created_by: user.id,
+      created_by: internalUser.id,
     })
     .select("id")
     .single()
@@ -118,7 +118,7 @@ export async function sendRegistrationAuthorisationForm(formData: FormData) {
             sent_at: sentAt,
             send_count: (existingDocument.send_count || 0) + 1,
             last_email_delivery_log_id: log.id,
-            updated_by: user.id,
+            updated_by: internalUser.id,
             updated_at: sentAt,
           })
           .eq("id", existingDocument.id)
@@ -131,8 +131,8 @@ export async function sendRegistrationAuthorisationForm(formData: FormData) {
           sent_at: sentAt,
           send_count: 1,
           last_email_delivery_log_id: log.id,
-          created_by: user.id,
-          updated_by: user.id,
+          created_by: internalUser.id,
+          updated_by: internalUser.id,
         })
 
     const [logUpdate, documentUpdate] = await Promise.all([
@@ -173,7 +173,7 @@ export async function sendRegistrationAuthorisationForm(formData: FormData) {
 }
 
 export async function markRegistrationAuthorisationSigned(formData: FormData) {
-  const { user } = await requireAdmin()
+  const { internalUser } = await requireAdmin()
   const parsed = signedSchema.safeParse({
     parentLeadId: formData.get("parentLeadId"),
     signedOn: formData.get("signedOn"),
@@ -211,8 +211,8 @@ export async function markRegistrationAuthorisationSigned(formData: FormData) {
         .update({
           status: "signed",
           signed_at: signedAt,
-          signed_recorded_by: user.id,
-          updated_by: user.id,
+          signed_recorded_by: internalUser.id,
+          updated_by: internalUser.id,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id)
@@ -224,9 +224,9 @@ export async function markRegistrationAuthorisationSigned(formData: FormData) {
         form_url: REGISTRATION_AUTHORISATION_FORM_URL,
         signed_at: signedAt,
         send_count: 0,
-        signed_recorded_by: user.id,
-        created_by: user.id,
-        updated_by: user.id,
+        signed_recorded_by: internalUser.id,
+        created_by: internalUser.id,
+        updated_by: internalUser.id,
       })
 
   if (result.error) throw new Error("Could not record the signed registration form")

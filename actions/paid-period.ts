@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
+import { paymentEligibleBookingStatuses } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
 import { allocateDatedOperationsSeat, assertPaidPeriodCapacity } from "@/lib/delivery-capacity"
 import {
@@ -178,7 +179,7 @@ export async function recordExactManualEnrolment(
           .select("id,status,weekly_table_template_id,session_price_plan_id,seat_number")
           .eq("parent_lead_id", value.parentLeadId)
           .eq("child_lead_id", value.childLeadId)
-          .in("status", ["contacted", "accepted_awaiting_payment"])
+          .in("status", paymentEligibleBookingStatuses)
           .order("weekday"),
       ])
 
@@ -190,7 +191,7 @@ export async function recordExactManualEnrolment(
     }
     if (bookingError || !(plannedBookings || []).length) {
       return {
-        error: "Plan the child’s recurring places and contact the parent before confirming payment.",
+        error: "Plan the child’s recurring places before confirming payment.",
       }
     }
 

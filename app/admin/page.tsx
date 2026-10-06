@@ -1,14 +1,17 @@
 import Link from "next/link";
 
 import { TodayDeliveryBoard } from "@/components/admin/today-delivery-board";
+import { PerformanceSummary } from "@/components/admin/performance-summary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
 import { loadPlannedExpectedSeatsForDate } from "@/lib/admin/operations-planned-expectations";
+import { loadPerformanceMetrics } from "@/lib/admin/load-performance-metrics";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Operations view includes renewal-due recurring capacity.
 import { requireCapability } from "@/lib/auth/require-capability"
+import { roleHasCapability } from "@/lib/auth/capabilities.mjs"
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 const move = (date: string, days: number) => {
@@ -20,13 +23,19 @@ const move = (date: string, days: number) => {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; period?: string }>;
 }) {
-  await requireCapability("view_operations")
+  const { internalUser } = await requireCapability("view_operations")
   const query = await searchParams;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(query.date || "")
     ? query.date!
     : iso(new Date());
+  const period = ["this_month", "last_month", "this_year"].includes(query.period || "")
+    ? query.period!
+    : "this_month";
+  const performance = roleHasCapability(internalUser.role, "view_commercial_kpis")
+    ? await loadPerformanceMetrics({ periodKey: period, today: date })
+    : null;
   const [
     { data: sessions },
     { data: seats },
@@ -97,6 +106,13 @@ export default async function AdminPage({
 
   return (
     <div className="space-y-6 pb-10">
+      {performance ? (
+        <PerformanceSummary
+          metrics={performance.metrics}
+          operationalDate={date}
+          period={performance.period.key}
+        />
+      ) : null}
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-3xl bg-[#26345f] p-6 text-white shadow-lg shadow-indigo-950/10">
         <div>
           <p className="text-sm font-semibold text-yellow-200">The daily operating picture</p>

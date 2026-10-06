@@ -47,3 +47,19 @@ test("registration email includes parent name and exact web form link", () => {
     /https:\/\/eu2\.documents\.adobe\.com\/public\/esignWidget\?wid=example\*/,
   )
 })
+
+
+test("registration template placeholders use the setup editor contract shape", async () => {
+  const { registrationAuthorisationTemplateContract } = await import(
+    "../lib/admin/family-documents.mjs"
+  )
+
+  assert.deepEqual(registrationAuthorisationTemplateContract.placeholders, [
+    { key: "parent_name", description: "Parent or guardian name" },
+    {
+      key: "document_name",
+      description: "Parent Registration & Authorisation Form",
+    },
+    { key: "form_link", description: "Secure Adobe web-form link" },
+  ])
+})

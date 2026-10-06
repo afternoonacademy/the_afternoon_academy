@@ -241,3 +241,18 @@ The current Phase 1 operations baseline now includes the following additional co
 - **Academy closure safety:** one-day closures may omit the end date; invalid ranges are handled as normal admin validation rather than page crashes.
 
 This baseline should be treated as the starting point for future Phase 1 feature work. New features should extend these systems rather than create parallel family, learner, billing, timetable, renewal or communication models.
+
+
+### Parent documents & authorisations
+
+**Current lightweight phase**
+- Use the existing external Parent Registration & Authorisation web form rather than building an in-house signature system.
+- Send the form link from the family account through Resend.
+- Track Not sent / Awaiting signature / Signed at family level, together with send time, email-delivery state and manually verified signed date.
+- Keep the external provider responsible for the signature ceremony and evidence.
+
+**Deferred automation**
+- Do not add a paid e-sign API while Academy volume is small.
+- Revisit provider API integration when manual signature checking becomes materially time-consuming or document volume justifies the recurring cost.
+- Future integration should automate signature-state updates, signed-PDF retrieval, audit evidence and document versioning without replacing the TAA family-document model.
+- Provider choice should remain replaceable; PandaDoc is a current candidate but is not a locked architectural dependency.

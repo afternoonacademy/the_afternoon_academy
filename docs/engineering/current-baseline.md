@@ -183,3 +183,15 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Teacher: `view_operations`, `operate_sessions`, `view_learners`, `edit_learning_record`.
 - Parent: supported role with no internal `/admin` capabilities in this baseline.
 - Child: no role/login.
+
+
+## Parent registration document tracking — 6 October 2026 release candidate
+
+- `family_documents` is the family-level operational record for the Parent Registration & Authorisation Form.
+- The initial document type is `parent_registration_authorisation` and the initial provider is the existing Adobe Web Form.
+- State is deliberately minimal: no row means Not sent; `sent` means TAA has sent/requested the form; `signed` means an Admin has verified the external signature and recorded the signed date.
+- Email requests reuse `email_delivery_log` and Resend delivery tracking with the email kind `registration_authorisation`.
+- The family account is the control surface. It shows send/signature state and links to the external form.
+- Admin-only server actions send/resend and record signed status. Teacher permissions are unchanged.
+- The new table has RLS enabled and is accessed server-side with service-role infrastructure; anon/authenticated table privileges are revoked.
+- No signing-provider API, webhook, PDF ingestion or automated signature inference is included in this phase.

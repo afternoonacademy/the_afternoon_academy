@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { FamilyBalanceManager } from "@/components/admin/family-balance-manager"
+import { FamilyDocumentAuthorisation } from "@/components/admin/family-document-authorisation"
 import { SessionChangeLauncher } from "@/components/admin/session-change-launcher"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +45,7 @@ export default async function FamilyAccountPage({ params }: PageProps) {
     templatesResult,
     plansResult,
     renewalsResult,
+    documentsResult,
   ] = await Promise.all([
     supabaseAdmin
       .from("parent_leads")
@@ -84,6 +86,12 @@ export default async function FamilyAccountPage({ params }: PageProps) {
       .eq("parent_lead_id", id)
       .in("status", ["ready_to_send", "awaiting_payment", "overdue"])
       .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("family_documents")
+      .select("id,status,sent_at,signed_at,send_count,last_email_delivery_log_id")
+      .eq("parent_lead_id", id)
+      .eq("document_key", "parent_registration_authorisation")
+      .maybeSingle(),
   ])
 
   const parent = parentResult.data
@@ -93,6 +101,15 @@ export default async function FamilyAccountPage({ params }: PageProps) {
   const placements = placementsResult.data || []
   const entitlements = entitlementsResult.data || []
   const renewals = renewalsResult.data || []
+  const registrationDocument = documentsResult.data
+  const { data: registrationDelivery } =
+    registrationDocument?.last_email_delivery_log_id
+      ? await supabaseAdmin
+          .from("email_delivery_log")
+          .select("status,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,error_message")
+          .eq("id", registrationDocument.last_email_delivery_log_id)
+          .maybeSingle()
+      : { data: null }
 
   const latestEntitlementByLearner = new Map<string, (typeof entitlements)[number]>()
   for (const entitlement of entitlements) {
@@ -124,6 +141,12 @@ export default async function FamilyAccountPage({ params }: PageProps) {
           Back to Family Pipeline
         </Link>
       </div>
+
+      <FamilyDocumentAuthorisation
+        delivery={registrationDelivery}
+        parentLeadId={parent.id}
+        record={registrationDocument}
+      />
 
       <Card>
         <CardHeader>

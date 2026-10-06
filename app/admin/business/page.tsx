@@ -1,3 +1,4 @@
+import { requireCapability } from "@/lib/auth/require-capability"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -11,6 +12,7 @@ function formatMoney(amountCents: number) {
 }
 
 export default async function BusinessPage() {
+  await requireCapability("view_commercial_kpis")
   const today = new Date();
   const todayDate = isoDate(today);
   const inFourteenDays = new Date(today);

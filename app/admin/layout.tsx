@@ -2,19 +2,20 @@ import Link from "next/link";
 
 import { logout } from "@/actions/auth";
 import { AdminMobileNavigation } from "@/components/admin/admin-mobile-navigation";
-import { adminNavItems } from "@/lib/admin/admin-navigation.mjs";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { navigationForRole } from "@/lib/admin/admin-navigation.mjs";
+import { requireCapability } from "@/lib/auth/require-capability";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { internalUser } = await requireAdmin();
+  const { internalUser } = await requireCapability("view_operations");
+  const navItems = navigationForRole(internalUser.role);
 
   return (
     <main className="min-h-screen bg-muted/30 md:flex">
-      <AdminMobileNavigation email={internalUser.email} />
+      <AdminMobileNavigation email={internalUser.email} items={navItems} />
 
       <aside className="hidden border-r border-indigo-100 bg-[#fffdf5]/90 p-4 backdrop-blur md:flex md:min-h-screen md:w-72 md:flex-col">
         <div className="mb-6 rounded-2xl bg-[#26345f] p-4 text-white shadow-lg shadow-indigo-950/10">
@@ -27,7 +28,7 @@ export default async function AdminLayout({
           </p>
         </div>
         <nav className="flex flex-1 flex-col gap-2">
-          {adminNavItems.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -1,3 +1,4 @@
+import { requireCapability } from "@/lib/auth/require-capability"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import {
   Card,
@@ -46,6 +47,7 @@ function formatLabel(value: string) {
 }
 
 export default async function AdminTrendsPage() {
+  await requireCapability("view_commercial_kpis")
   const { data: demandData, error: demandError } = await supabaseAdmin
     .from("timetable_demand_view")
     .select("*")

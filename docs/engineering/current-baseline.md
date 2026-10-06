@@ -141,3 +141,12 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Once a learner is active, has paid entitlement and has a current or upcoming active standing placement, the learner belongs in Family Pipeline → Customers unless a renewal or closed-renewal state takes precedence.
 - Customer lifecycle visibility must not depend on the standing placement having reached its `effective_from` date. This avoids a gap between payment/activation and the first operational session.
 - Operations and attendance continue to respect the actual placement `effective_from` date; lifecycle visibility does not make a future placement operational early.
+
+
+## Planning corrections and lifecycle
+
+- Booking edits are operational corrections, not lifecycle transitions.
+- Saving or correcting planned dates/places preserves Contacted — awaiting payment when that is the child's current lifecycle stage; unsent plans remain Session planned.
+- A valid planned booking is sufficient to expose manual payment confirmation. Sending an email is optional and must not be a prerequisite for payment.
+- Parent communication history records what was actually sent and is immutable; regenerated drafts represent current proposed wording only.
+- Explicit lifecycle actions such as release/cancel may move a child backwards or close the journey; ordinary booking edits must not.

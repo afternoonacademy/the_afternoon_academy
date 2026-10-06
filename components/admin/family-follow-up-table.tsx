@@ -33,6 +33,7 @@ import type { AcademyClosure } from "@/lib/paid-period"
 export type FollowUpLead = {
   parent_lead_id: string
   child_lead_id: string
+  timetable_preference_id: string
   child_first_name: string | null
   parent_name: string
   email: string

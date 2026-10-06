@@ -4,7 +4,10 @@ import { LearnerRecordsTable } from "@/components/admin/learner-records-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 export default async function LearnersPage() {
+  await requireCapability("view_learners")
   const { data: learners, error } = await supabaseAdmin
     .from("learners")
     .select(

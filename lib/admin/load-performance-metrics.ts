@@ -54,7 +54,7 @@ export async function loadPerformanceMetrics({
       .in("status", ["session_planned", "contacted", "accepted_awaiting_payment"]),
     supabaseAdmin
       .from("renewal_cases")
-      .select("learner_id,status"),
+      .select("learner_id,status,due_on"),
     supabaseAdmin
       .from("learners")
       .select("id,first_name,year_group,status,parent_lead_id,parent_leads(parent_name,email)")

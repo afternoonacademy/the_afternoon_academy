@@ -51,7 +51,7 @@ export function AdminMobileNavigation({ email }: { email: string }) {
 
           <SheetContent
             className="mobile-scroll-surface w-[86vw] max-w-[22rem] overflow-y-auto bg-[#fffdf5] p-0"
-            side={mobileAdminNavigationConfig.side}
+            side={mobileAdminNavigationConfig.side as "left" | "top" | "right" | "bottom"}
             showCloseButton={false}
           >
             <SheetHeader className="relative border-b border-indigo-100 bg-[#26345f] px-5 pb-5 pr-16 pt-[max(1.25rem,env(safe-area-inset-top))] text-left">

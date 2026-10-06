@@ -10,7 +10,7 @@ import {
 } from "@/components/admin/family-lifecycle-tables"
 import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
-import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
+import { shouldCountActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
 import { groupCustomerFamilies } from "@/lib/admin/family-customers.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
@@ -189,6 +189,12 @@ export default async function AdminLeadsPage() {
       !renewalChildLeadIds.has(lead.child_lead_id) &&
       !activeLearnerChildLeadIds.has(lead.child_lead_id),
   )
+  const leadFamilyCount = new Set(
+    followUpLeads.map((lead) => lead.parent_lead_id),
+  ).size
+  const renewalFamilyCount = new Set(
+    renewalRows.map((row) => row.parentLeadId),
+  ).size
 
   const communicationParentIds = [
     ...new Set(followUpLeads.map((lead) => lead.parent_lead_id)),
@@ -272,12 +278,10 @@ export default async function AdminLeadsPage() {
 
   const customerRows: FamilyCustomerRow[] = (lifecycleLearners || [])
     .filter((learner) =>
-      shouldShowActiveCustomer({
+      shouldCountActiveCustomer({
         learnerStatus: learner.status,
-        hasPaidEntitlement: paidThroughByLearner.has(learner.id),
         hasCurrentOrUpcomingPlacement:
           (placesByLearner.get(learner.id)?.length || 0) > 0,
-        isInRenewal: renewalLearnerIds.has(learner.id),
         hasClosedRenewal: closedRenewalByLearner.has(learner.id),
       }),
     )
@@ -339,17 +343,17 @@ export default async function AdminLeadsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">
-            One lifecycle view for every family
+            Family view: customers remain customers while in renewal
           </p>
           <div className="mt-1 flex items-center gap-1.5">
             <h2 className="text-3xl font-bold tracking-tight">
               Family pipeline
             </h2>
             <InfoTip label="About the Family pipeline">
-              A child appears in one operational queue at a time: Lead,
-              Customer, Renewal or Closed / Archived. Renewals reuse the same
-              staged booking process while preserving the learner’s recurring
-              capacity.
+              Leads count unique parent families. Customers count every active
+              family with a current recurring place, including families that are
+              also in Renewal. Renewal is a payment-status subset of Customers,
+              not a replacement for Customer status.
             </InfoTip>
           </div>
         </div>
@@ -363,9 +367,9 @@ export default async function AdminLeadsPage() {
 
       <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
         {[
-          ["Leads", followUpLeads.length],
+          ["Leads", leadFamilyCount],
           ["Customers", customerFamilies.familyCount],
-          ["Renewals", renewalRows.length],
+          ["Renewals", renewalFamilyCount],
           ["Closed / archived", archiveRows.length],
         ].map(([label, count]) => (
           <div className="px-4 py-3" key={String(label)}>
@@ -380,8 +384,9 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="leads">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            1 · Leads · {followUpLeads.length} child response
-            {followUpLeads.length === 1 ? "" : "s"}
+            1 · Leads · {leadFamilyCount} famil
+            {leadFamilyCount === 1 ? "y" : "ies"} · {followUpLeads.length} child
+            {followUpLeads.length === 1 ? "" : "ren"}
           </h3>
           <InfoTip label="About Leads">
             New enquiries only. Open Details, plan the child’s recurring place,
@@ -418,8 +423,9 @@ export default async function AdminLeadsPage() {
             {customerFamilies.learnerCount === 1 ? "" : "s"}
           </h3>
           <InfoTip label="About Customers">
-            Customers are unique paying families. Active learners are nested
-            beneath each family and move out of this table while renewal is due.
+            Customers are unique active families with at least one current
+            recurring place. Families remain Customers while a renewal is due;
+            Renewal is shown separately as an additional payment-status view.
           </InfoTip>
         </div>
         <div className="mt-5">
@@ -427,7 +433,7 @@ export default async function AdminLeadsPage() {
             <FamilyCustomersTable rows={customerFamilies.families} />
           ) : (
             <p className="border-y py-5 text-sm text-muted-foreground">
-              No active customers are outside the renewal window.
+              No active customer families.
             </p>
           )}
         </div>
@@ -436,13 +442,14 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="renewals">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            3 · Renewals · {renewalRows.length} learner
+            3 · Renewals · {renewalFamilyCount} famil
+            {renewalFamilyCount === 1 ? "y" : "ies"} · {renewalRows.length} learner
             {renewalRows.length === 1 ? "" : "s"}
           </h3>
           <InfoTip label="About Renewals">
-            These learners are removed from Leads and Customers while renewal
-            is due. Their existing recurring capacity stays reserved until
-            renewal is paid or an admin explicitly releases the place.
+            These are existing Customer families with one or more learners in
+            a renewal cycle. They remain Customers throughout renewal while their
+            recurring places are still active.
           </InfoTip>
         </div>
         <div className="mt-5">

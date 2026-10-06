@@ -15,13 +15,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import {
-  adminNavItems,
-  mobileAdminNavigationConfig,
-} from "@/lib/admin/admin-navigation.mjs"
+import { mobileAdminNavigationConfig } from "@/lib/admin/admin-navigation.mjs"
 import { cn } from "@/lib/utils"
 
-export function AdminMobileNavigation({ email }: { email: string }) {
+type AdminNavItem = { href: string; label: string; capability?: string }
+
+export function AdminMobileNavigation({
+  email,
+  items,
+}: {
+  email: string
+  items: AdminNavItem[]
+}) {
   const pathname = usePathname()
 
   return (
@@ -76,7 +81,7 @@ export function AdminMobileNavigation({ email }: { email: string }) {
             </SheetHeader>
 
             <nav className="flex flex-col gap-1 px-3 py-4" aria-label="Admin navigation">
-              {adminNavItems.map((item) => {
+              {items.map((item) => {
                 const active =
                   item.href === "/admin"
                     ? pathname === "/admin"

@@ -27,11 +27,9 @@ const money = (cents: number | null) =>
 export function PerformanceSummary({
   metrics,
   period,
-  operationalDate,
 }: {
   metrics: Metrics
   period: string
-  operationalDate: string
 }) {
   const cards = [
     ["Revenue received", money(metrics.revenueCents), "Paid cash received in the selected period."],
@@ -64,7 +62,6 @@ export function PerformanceSummary({
           </p>
         </div>
         <form className="flex items-end gap-2" method="get">
-          <input name="date" type="hidden" value={operationalDate} />
           <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
             Financial period
             <select

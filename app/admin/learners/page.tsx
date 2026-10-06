@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { requireCapability } from "@/lib/auth/require-capability"
+import { roleHasCapability } from "@/lib/auth/capabilities.mjs"
 
 export default async function LearnersPage() {
-  await requireCapability("view_learners")
+  const { internalUser } = await requireCapability("view_learners")
+  const canCreateLearner = roleHasCapability(internalUser.role, "destructive_admin_actions")
   const { data: learners, error } = await supabaseAdmin
     .from("learners")
     .select(
@@ -24,12 +26,14 @@ export default async function LearnersPage() {
             The operational record for every child you support.
           </p>
         </div>
-        <Link
-          href="/admin/learners/new"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Add learner
-        </Link>
+        {canCreateLearner ? (
+                  <Link
+                    href="/admin/learners/new"
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                  >
+                    Add learner
+                  </Link>
+        ) : null}
       </div>
       {error ? (
         <p className="rounded-lg border p-6">

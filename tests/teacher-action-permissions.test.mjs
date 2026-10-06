@@ -14,6 +14,7 @@ test("teacher-safe action policy is explicit", () => {
     "updateLearnerPersonalProfile",
     "addDeliverySeat",
     "addAdhocDeliverySeat",
+    "saveAdhocDeliverySession",
     "updateDailyDeliverySession",
   ]) {
     assert.equal(roleHasCapability("teacher", capabilityForTeachingAction(action)), true)

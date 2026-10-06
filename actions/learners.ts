@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { assertCapability } from "@/lib/auth/require-capability";
 import { allocateDatedOperationsSeat } from "@/lib/delivery-capacity";
 import { supabaseService } from "@/lib/supabase/service";
 

@@ -563,3 +563,12 @@ _Release note: PR #20 merged to the production branch._
 - The desktop left sidebar remains unchanged.
 - Reduced the mobile content-shell padding so Operations content starts closer to the header.
 - Fixed a Family Pipeline lifecycle gap: paid active learners with an upcoming standing placement now appear in Customers immediately, even before the placement effective date. Operations/attendance still respects the actual placement start date.
+
+
+## 6 October 2026 — Planning corrections preserve lifecycle
+
+- Editing planned dates or recurring places no longer moves a contacted family backwards to Session planned.
+- A contacted child remains Contacted — awaiting payment after booking corrections.
+- Parent email is optional before payment: admins may agree dates by phone, WhatsApp, in person or email and then record cleared payment from a valid planned booking.
+- Correcting booking information still regenerates the one-off email draft for optional review/resend, without rewriting historical sent-email records.
+- Sending a corrected email while already Contacted leaves the lifecycle at Contacted.

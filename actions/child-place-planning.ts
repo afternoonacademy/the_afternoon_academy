@@ -5,6 +5,7 @@ import { randomBytes } from "crypto"
 import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
+import { lifecycleAfterPlanEdit } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import { resend, resendFromEmail } from "@/lib/email/resend"
 import { loadPlannedPlaceEmailDraft } from "@/lib/email/planned-place-email-server"
 import { normalizePlannedPlaceSendContent } from "@/lib/email/planned-place-email.mjs"
@@ -151,7 +152,7 @@ export async function recordPlannedChildPlace(formData: FormData) {
     supabase.from("session_price_plans").select("id,name,price_cents,status").in("id", [...new Set(places.map((place) => place.pricePlanId))]).eq("status", "active"),
     supabase.from("academy_tables").select("id,seat_capacity,status").eq("status", "active"),
     supabase.from("academy_closures").select("starts_on,ends_on,reason"),
-    supabase.from("accepted_bookings").select("id,weekly_table_template_id,status").eq("parent_lead_id", parsed.data.parentLeadId).eq("child_lead_id", parsed.data.childLeadId).in("status", ["session_planned", "contacted", "accepted_awaiting_payment"]),
+    supabase.from("accepted_bookings").select("id,weekly_table_template_id,status,contacted_at,contacted_by").eq("parent_lead_id", parsed.data.parentLeadId).eq("child_lead_id", parsed.data.childLeadId).in("status", ["session_planned", "contacted", "accepted_awaiting_payment"]),
   ])
 
   if (childError || !child || child.parent_lead_id !== parsed.data.parentLeadId) {
@@ -257,6 +258,11 @@ export async function recordPlannedChildPlace(formData: FormData) {
     const pricePlan = planById.get(place.pricePlanId)!
     const placeSessions = serverSessions.filter((session) => session.placementId === place.templateId)
     const summary = paidPeriodSummary(placeSessions)
+    const existing = currentByTemplate.get(place.templateId)
+    const lifecycle = lifecycleAfterPlanEdit({
+      childPipelineStatus: child.pipeline_status,
+      existingBookingStatus: existing?.status || null,
+    })
     const payload = {
       parent_lead_id: parsed.data.parentLeadId,
       child_lead_id: parsed.data.childLeadId,
@@ -268,16 +274,19 @@ export async function recordPlannedChildPlace(formData: FormData) {
       seat_number: place.seatNumber,
       starts_at: template.starts_at,
       duration_minutes: template.duration_minutes,
-      status: "session_planned",
+      status: lifecycle.bookingStatus,
       accepted_by: user.id,
       planned_sessions: placeSessions,
       planned_amount_cents: summary.amountCents,
       planned_period_start: summary.periodStart,
       planned_period_end: summary.periodEnd,
-      contacted_at: null,
-      contacted_by: null,
+      contacted_at: lifecycle.clearContactMetadata
+        ? null
+        : existing?.contacted_at || null,
+      contacted_by: lifecycle.clearContactMetadata
+        ? null
+        : existing?.contacted_by || null,
     }
-    const existing = currentByTemplate.get(place.templateId)
     const result = existing
       ? await supabase.from("accepted_bookings").update(payload).eq("id", existing.id)
       : await supabase.from("accepted_bookings").insert(payload)
@@ -297,7 +306,14 @@ export async function recordPlannedChildPlace(formData: FormData) {
     if (error) throw new Error("Could not release a removed recurring place")
   }
 
-  const { error: statusError } = await supabase.from("child_leads").update({ pipeline_status: "session_planned" }).eq("id", parsed.data.childLeadId)
+  const childLifecycle = lifecycleAfterPlanEdit({
+    childPipelineStatus: child.pipeline_status,
+    existingBookingStatus: null,
+  })
+  const { error: statusError } = await supabase
+    .from("child_leads")
+    .update({ pipeline_status: childLifecycle.childPipelineStatus })
+    .eq("id", parsed.data.childLeadId)
   if (statusError) throw new Error("The places were planned, but the child status could not be updated")
 
   if (child.planned_email_draft_subject && child.planned_email_draft_body) {

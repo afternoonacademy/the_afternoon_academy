@@ -169,3 +169,11 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Persist the draft with the booking version it was generated/saved against.
 - If a booking change affects the planned email, regenerate the persisted draft from current authoritative booking data and surface an explicit admin notice rather than silently retaining stale wording.
 - The exact subject/body submitted from Family Pipeline remains the content sent and logged.
+
+
+### Booking corrections must not rewind lifecycle
+
+- Editing planned dates, recurring places, seats or pricing is an operational correction and must not automatically move a child backwards through the lead lifecycle.
+- If the child is already Contacted — awaiting payment, preserve that stage after plan edits.
+- Parent email is optional before recording payment; valid planned booking data is the payment prerequisite.
+- Historical sent communications must remain unchanged even when current booking data is corrected.

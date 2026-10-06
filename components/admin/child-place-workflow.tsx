@@ -14,6 +14,7 @@ import { PlannedPlaceEmailReview } from "@/components/admin/planned-place-email-
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { canRecordPlannedPayment } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import type {
   AcademyClosure,
   PaidPeriodPlacement,
@@ -177,8 +178,12 @@ export function ChildPlaceWorkflow({
     })
   }, [child.first_name, child.id, placeSelections, pricePlans, slots])
 
-  const canEmail = pipelineStatus === "session_planned"
-  const canConfirmPayment = pipelineStatus === "contacted"
+  const canEmail =
+    pipelineStatus === "session_planned" || pipelineStatus === "contacted"
+  const canConfirmPayment = canRecordPlannedPayment({
+    pipelineStatus,
+    plannedBookingCount: plannedBookings.length,
+  })
   const isPaid = pipelineStatus === "paid"
 
   function updateSelection(index: number, patch: Partial<PlaceSelection>) {
@@ -540,11 +545,15 @@ export function ChildPlaceWorkflow({
             <Mail className="mt-0.5 size-5 text-primary" />
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="font-semibold">Next step · contact parent</p>
+                <p className="font-semibold">
+                  {pipelineStatus === "contacted"
+                    ? "Optional · update parent by email"
+                    : "Optional · contact parent by email"}
+                </p>
                 <InfoTip label="About contacting the parent">
-                  All recurring days and the combined date list will be included
-                  in one planned-place email. No payment or dated Operations
-                  attendance exists yet.
+                  Email is optional. You can agree dates by phone, WhatsApp or
+                  in person and move straight to recording cleared payment.
+                  Sending an email does not control the lifecycle stage.
                 </InfoTip>
               </div>
             </div>
@@ -561,10 +570,12 @@ export function ChildPlaceWorkflow({
       {plannedBookings.length && canConfirmPayment && !editing ? (
         <div className="rounded-xl border p-4">
           <div className="flex items-center gap-1.5">
-            <p className="font-semibold">Next step · confirm cleared payment</p>
+            <p className="font-semibold">Confirm cleared payment</p>
             <InfoTip label="About confirming cleared payment">
-              Confirm the combined planned amount and dates. Only this step
-              creates the paid entitlement and dated Operations places.
+              You can record payment as soon as the planned booking is valid,
+              whether the parent was contacted by email, phone, WhatsApp or in
+              person. This step creates the paid entitlement and dated
+              Operations places.
             </InfoTip>
           </div>
           <div className="mt-4">

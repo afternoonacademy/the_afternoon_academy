@@ -249,15 +249,9 @@ export function FamilyFollowUpTable({
                       </div>
                     </TableCell>
                     <TableCell className="align-top">
-                      <div className="space-y-2">
-                        {family.children.map((child) => (
-                          <div key={child.child_lead_id}>
-                            <Badge variant="secondary">
-                              {statusLabel(child.status)}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
+                      <Badge variant="secondary">
+                        {statusLabel(family.children[0]?.status || "new")}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right align-top">
                       <Button

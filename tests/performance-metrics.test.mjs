@@ -51,7 +51,12 @@ test("cash, paid sessions, capacity and pending value stay distinct", () => {
       { child_lead_id: "c1", status: "contacted", planned_period_start: "2026-10-01", planned_period_end: "2026-10-31", planned_amount_cents: 10000 },
       { child_lead_id: "c2", status: "paid_active", planned_amount_cents: 5000 },
     ],
-    renewalCases: [{ status: "ready_to_send" }, { status: "renewed" }],
+    renewalCases: [
+      { learner_id: "l1", status: "ready_to_send", due_on: "2026-10-06" },
+      { learner_id: "l2", status: "ready_to_send", due_on: "2026-10-26" },
+      { learner_id: null, status: "overdue", due_on: "2026-09-30" },
+      { learner_id: "l3", status: "renewed", due_on: "2026-09-30" },
+    ],
     activeFamilyCount: 3,
     activeLearnerCount: 5,
   })

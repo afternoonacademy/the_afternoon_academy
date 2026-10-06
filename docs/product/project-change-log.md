@@ -1,5 +1,22 @@
 # The Afternoon Academy — Project Change Log
 
+## 6 October 2026 — Role-aware operations, family pipeline and finance dashboard
+
+### Production release
+
+- Capability-based authorization now supports Admin, Teacher and Parent roles. There is no Child role.
+- Admin retains the full internal capability set. Teacher is restricted to Operations and Learner Records teaching workflows; Parent has no internal `/admin` access.
+- `/admin` is now role-aware: Admin lands on **Finance & metrics** and Teacher lands on **Operations Hub**.
+- Commercial KPI data moved out of Operations Hub into the Admin-only **Finance & metrics** page.
+- Finance & metrics includes paid cash revenue, active family/learner counts, paid-session and recurring-capacity measures, renewal/pending-value signals, monthly revenue, lifetime revenue, average customer lifetime value and revenue-by-family lifetime history.
+- Family Pipeline now groups lead children under one parent/family row. Lead counts therefore represent unique parent/family records rather than child records.
+- Customers are unique active families with current or upcoming recurring places. Families remain Customers while in renewal; Renewals is an overlapping action subset, not a mutually exclusive customer state.
+- Customer rows visibly flag learners in renewal using the paid-through status badge.
+- Pre-conversion lead details can be corrected from Family Pipeline. Shared parent/contact details and eligible child/timetable details may change, but lifecycle, payment, booking and sent-communication history are preserved.
+- A family/lead record is not the same thing as an authenticated parent portal account. Parent portal access remains a separate concern.
+- Production data cleanup consolidated duplicate family lead records for multi-child families and removed orphan renewal artifacts without changing legitimate paid history.
+- Release verification: final preview passed 69/69 automated tests, Next.js production compilation and TypeScript, then production deployed successfully from `main`.
+
 This repository copy records material product/engineering decisions that need to travel with the application. The fuller working project source remains the canonical business/product change log until intentionally consolidated.
 
 ## 30 September 2026 — Focus Groups first build

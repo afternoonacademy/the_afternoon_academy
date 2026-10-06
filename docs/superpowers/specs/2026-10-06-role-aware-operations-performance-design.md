@@ -323,3 +323,15 @@ The release is accepted when:
 - a pre-conversion lead can be corrected without changing lifecycle, booking or communication history;
 - converted learner identity is edited through Learner Records rather than stale lead data;
 - tests pass, final preview is READY, production deploy is READY and post-release error/fatal logs are clean.
+
+
+## Post-implementation clarification — production 6 October 2026
+
+The production implementation refined several UI semantics without changing the approved security model:
+
+- Customers and Renewals are **not mutually exclusive**. A renewing family remains a Customer and is also present in Renewals until the renewal action is resolved.
+- Lead counts and rows are family-based; multiple children under one parent are nested in one lead family row.
+- Commercial KPIs were moved from Operations Hub to a dedicated Admin-only **Finance & metrics** page.
+- Admin lands on Finance & metrics; Teacher lands on Operations Hub.
+- Customer rows retain renewing families and visibly flag renewal status in the paid-through badge.
+- Pre-conversion lead editing is surfaced from the grouped family row/child details while preserving lifecycle and history.

@@ -177,3 +177,17 @@ Treat the following as current production architecture unless a later roadmap/ch
 - If the child is already Contacted — awaiting payment, preserve that stage after plan edits.
 - Parent email is optional before recording payment; valid planned booking data is the payment prerequisite.
 - Historical sent communications must remain unchanged even when current booking data is corrected.
+
+
+## Production role, pipeline and finance invariants — 6 October 2026
+
+- **Admin landing:** `/admin` redirects Admin users to `/admin/finance`.
+- **Teacher landing:** `/admin` redirects Teacher users to `/admin/operations`.
+- **Finance & metrics is Admin-only.** Teachers do not receive the navigation item and the route requires `view_commercial_kpis` server-side.
+- **Operations Hub is the daily teaching surface.** Commercial KPI cards are not loaded or rendered there.
+- **Leads are counted and displayed at family level.** One parent with multiple children is one Lead family row, with children nested beneath it.
+- **Customers are counted at family level and include families in renewal.** Renewal is a subset/status of Customers, not a mutually exclusive replacement category.
+- **Renewal state is visible from Customers.** A learner currently requiring renewal action is flagged in the paid-through badge while remaining in the Customer family row.
+- **Pre-conversion lead details are editable without changing lifecycle.** Parent contact fields and eligible child/timetable details may be corrected before conversion; payments, bookings, sent communications and lifecycle state remain untouched.
+- **Authenticated parent portal access remains separate from the lead/family record.** A `parent_leads` record may exist without a parent login.
+- **No Child login/role exists.**

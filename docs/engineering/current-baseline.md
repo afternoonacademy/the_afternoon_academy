@@ -150,3 +150,36 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - A valid planned booking is sufficient to expose manual payment confirmation. Sending an email is optional and must not be a prerequisite for payment.
 - Parent communication history records what was actually sent and is immutable; regenerated drafts represent current proposed wording only.
 - Explicit lifecycle actions such as release/cancel may move a child backwards or close the journey; ordinary booking edits must not.
+
+
+## 6 October 2026 production baseline — role-aware admin, grouped families and finance
+
+### Role-aware application entry
+
+- `/admin` is a role router rather than the Operations page.
+- Admin users are redirected to `/admin/finance`.
+- Teacher users are redirected to `/admin/operations`.
+- Navigation is generated from the central capability map and page routes independently enforce the required capability server-side.
+
+### Admin-only finance surface
+
+- Commercial reporting lives at `/admin/finance`, protected by `view_commercial_kpis`.
+- The daily Operations page does not query or render commercial KPI data.
+- Current finance reporting combines period KPIs with calendar-year monthly paid revenue and family lifetime revenue.
+- Revenue is based on payment records whose status is `paid`; pending planned value remains separate from received revenue.
+
+### Family Pipeline semantics
+
+- Leads are unique parent/family records. Siblings are nested beneath one family row.
+- Customers are unique active parent/family records with at least one active learner and a current/upcoming recurring place.
+- A family in renewal remains a Customer. Renewals is an overlapping action subset.
+- Customer learner rows expose renewal state through the paid-through badge rather than removing the family from Customers.
+- Pre-conversion edits update approved parent/child/timetable source fields only and preserve lifecycle, payments, bookings and communication history.
+- Once a learner exists, identity/lifecycle edits belong in Learner Records rather than stale lead identity fields.
+
+### Current access model
+
+- Admin: all internal capabilities.
+- Teacher: `view_operations`, `operate_sessions`, `view_learners`, `edit_learning_record`.
+- Parent: supported role with no internal `/admin` capabilities in this baseline.
+- Child: no role/login.

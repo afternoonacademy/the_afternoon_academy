@@ -135,3 +135,30 @@ Reference remediation guidance:
 - Mutable function search path: https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
 - Extension in public: https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public
 - Leaked password protection: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+
+## Capability-based authorization baseline — 6 October 2026
+
+Authorization is capability-based and enforced server-side. Hidden navigation or omitted controls are not treated as a security boundary.
+
+### Roles
+
+- **Admin:** receives the complete internal capability set.
+- **Teacher:** receives only `view_operations`, `operate_sessions`, `view_learners`, and `edit_learning_record`.
+- **Parent:** receives no internal admin capabilities in this release.
+- **Child:** no role or login exists.
+
+### Commercial-data boundary
+
+- `/admin/finance` requires `view_commercial_kpis`.
+- Teacher navigation excludes Finance & metrics.
+- Teacher pages should not fetch commercial KPI/payment lifecycle data merely to hide it later in the client.
+- Operations Hub is intentionally non-commercial for Teacher access.
+
+### Mutation boundary
+
+Teacher-safe mutations are limited to approved teaching/learner-record actions. Payment, renewal lifecycle, setup, destructive learner lifecycle and other commercial/destructive actions remain Admin-only.
+
+### Lead-edit boundary
+
+Pre-conversion lead correction requires the dedicated lead-edit capability and may update only approved source fields. It must not mutate lifecycle status, payments, planned booking history, or historical sent communications. Converted learner identity is maintained through Learner Records.

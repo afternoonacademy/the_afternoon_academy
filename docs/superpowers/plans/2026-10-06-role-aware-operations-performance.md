@@ -473,3 +473,22 @@ Scan production runtime logs for error/fatal events after release. If new errors
 - [ ] **Step 7: Final release report**
 
 Report commit SHA, production deployment ID, READY status, tests, runtime error scan and any remaining known limitations.
+
+
+## Release completion note — 6 October 2026
+
+This plan is implemented and released to production.
+
+Production refinements made during acceptance:
+- Admin KPIs moved from Operations Hub to `/admin/finance`.
+- Admin lands on Finance & metrics; Teacher lands on `/admin/operations`.
+- Leads are grouped by parent/family with children nested beneath one row.
+- Customers remain Customers during renewal; Renewals is an overlapping action subset.
+- Renewal state is highlighted in the Customer paid-through badge.
+- Pre-conversion lead edit remains lifecycle-safe and family-aware.
+
+Verification:
+- 69/69 automated tests passed on the final preview.
+- Next.js production compilation and TypeScript passed.
+- Final feature preview reached READY.
+- Production deployment from `main` reached READY on 6 October 2026.

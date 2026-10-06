@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 export default async function TutorRoomPage() {
+  await requireCapability("manage_tutor_room")
   const [{ data: learners }, { data: leads }, { data: bookings }] =
     await Promise.all([
       supabaseAdmin

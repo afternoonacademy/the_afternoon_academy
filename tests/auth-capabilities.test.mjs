@@ -24,12 +24,13 @@ test("capability map keeps admin complete and teacher deliberately narrow", () =
 test("teacher navigation contains only operations and learner records", () => {
   assert.deepEqual(
     navigationForRole("teacher").map((item) => item.href),
-    ["/admin", "/admin/learners"],
+    ["/admin/operations", "/admin/learners"],
   )
   assert.deepEqual(
     navigationForRole("admin").map((item) => item.href),
     [
-      "/admin",
+      "/admin/finance",
+      "/admin/operations",
       "/admin/leads",
       "/admin/learners",
       "/admin/family-updates",

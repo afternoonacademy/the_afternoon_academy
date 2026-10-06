@@ -3,7 +3,6 @@ import {
   calculatePerformanceMetrics,
   performancePeriod,
 } from "@/lib/admin/performance-metrics.mjs"
-import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 function relation<T>(value: T | T[] | null | undefined): T | null {
@@ -106,15 +105,11 @@ export async function loadPerformanceMetrics({
   )
 
   const eligibleCustomerRows = (learners || [])
-    .filter((learner) =>
-      shouldShowActiveCustomer({
-        learnerStatus: learner.status,
-        hasPaidEntitlement: paidThroughByLearner.has(learner.id),
-        hasCurrentOrUpcomingPlacement:
-          (placesByLearner.get(learner.id)?.length || 0) > 0,
-        isInRenewal: openRenewalLearnerIds.has(learner.id),
-        hasClosedRenewal: closedRenewalLearnerIds.has(learner.id),
-      }),
+    .filter(
+      (learner) =>
+        learner.status === "active" &&
+        (placesByLearner.get(learner.id)?.length || 0) > 0 &&
+        !closedRenewalLearnerIds.has(learner.id),
     )
     .map((learner) => {
       const parent = relation(learner.parent_leads)

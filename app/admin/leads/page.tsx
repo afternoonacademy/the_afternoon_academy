@@ -290,6 +290,7 @@ export default async function AdminLeadsPage() {
       return {
         parentLeadId: learner.parent_lead_id,
         learnerId: learner.id,
+        inRenewal: renewalLearnerIds.has(learner.id),
         learnerName: learner.first_name,
         parentName: parent?.parent_name || "Family",
         email: parent?.email || "—",
@@ -384,9 +385,7 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="leads">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            1 · Leads · {leadFamilyCount} famil
-            {leadFamilyCount === 1 ? "y" : "ies"} · {followUpLeads.length} child
-            {followUpLeads.length === 1 ? "" : "ren"}
+            Leads
           </h3>
           <InfoTip label="About Leads">
             New enquiries only. Open Details, plan the child’s recurring place,
@@ -417,10 +416,7 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="customers">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            2 · Customers · {customerFamilies.familyCount} famil
-            {customerFamilies.familyCount === 1 ? "y" : "ies"} ·{" "}
-            {customerFamilies.learnerCount} active learner
-            {customerFamilies.learnerCount === 1 ? "" : "s"}
+            Customers
           </h3>
           <InfoTip label="About Customers">
             Customers are unique active families with at least one current
@@ -442,9 +438,7 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="renewals">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            3 · Renewals · {renewalFamilyCount} famil
-            {renewalFamilyCount === 1 ? "y" : "ies"} · {renewalRows.length} learner
-            {renewalRows.length === 1 ? "" : "s"}
+            Renewals
           </h3>
           <InfoTip label="About Renewals">
             These are existing Customer families with one or more learners in

@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   lifecycleAfterPlanEdit,
   canRecordPlannedPayment,
+  paymentEligibleBookingStatuses,
 } from "../lib/admin/lead-planning-lifecycle.mjs"
 
 test("editing planned dates after parent contact preserves contacted lifecycle", () => {
@@ -83,4 +84,13 @@ test("payment is not offered without a planned booking or once paid", () => {
     }),
     false,
   )
+})
+
+
+test("server payment lookup accepts session-planned bookings without prior email", () => {
+  assert.deepEqual(paymentEligibleBookingStatuses, [
+    "session_planned",
+    "contacted",
+    "accepted_awaiting_payment",
+  ])
 })

@@ -8,6 +8,8 @@ import { loadPlannedExpectedSeatsForDate } from "@/lib/admin/operations-planned-
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Operations view includes renewal-due recurring capacity.
+import { requireCapability } from "@/lib/auth/require-capability"
+
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 const move = (date: string, days: number) => {
   const value = new Date(`${date}T12:00:00`);
@@ -20,6 +22,7 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
+  await requireCapability("view_operations")
   const query = await searchParams;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(query.date || "")
     ? query.date!

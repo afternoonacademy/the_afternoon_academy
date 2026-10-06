@@ -34,7 +34,7 @@ export default async function AdminPage({
     ? query.period!
     : "this_month";
   const performance = roleHasCapability(internalUser.role, "view_commercial_kpis")
-    ? await loadPerformanceMetrics({ periodKey: period, today: date })
+    ? await loadPerformanceMetrics({ periodKey: period, today: iso(new Date()) })
     : null;
   const [
     { data: sessions },

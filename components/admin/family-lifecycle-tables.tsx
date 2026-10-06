@@ -76,16 +76,7 @@ export function FamilyCustomersTable({
             {rows.map((row) => (
               <TableRow key={row.parentLeadId || row.children[0]?.learnerId}>
                 <TableCell className="align-top">
-                  {row.parentLeadId ? (
-                    <Link
-                      className="font-semibold text-primary hover:underline"
-                      href={"/admin/families/" + row.parentLeadId}
-                    >
-                      {row.parentName}
-                    </Link>
-                  ) : (
-                    <p className="font-semibold">{row.parentName}</p>
-                  )}
+                  <p className="font-semibold">{row.parentName}</p>
                   <p className="text-xs text-muted-foreground">{row.email}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {row.activeLearnerCount} active learner
@@ -125,10 +116,10 @@ export function FamilyCustomersTable({
                 <TableCell className="text-right align-top">
                   {row.parentLeadId ? (
                     <Link
-                      className="text-sm font-semibold text-primary hover:underline"
+                      className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-semibold hover:bg-muted"
                       href={"/admin/families/" + row.parentLeadId}
                     >
-                      Family account
+                      Manage
                     </Link>
                   ) : null}
                 </TableCell>
@@ -161,12 +152,20 @@ export function FamilyCustomersTable({
               </Badge>
             </span>
           )
-          return row.parentLeadId ? (
-            <Link href={"/admin/families/" + row.parentLeadId} key={row.parentLeadId}>
+          return (
+            <div key={row.parentLeadId || row.children[0]?.learnerId}>
               {content}
-            </Link>
-          ) : (
-            <div key={row.children[0]?.learnerId}>{content}</div>
+              {row.parentLeadId ? (
+                <div className="pb-4">
+                  <Link
+                    className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-semibold hover:bg-muted"
+                    href={"/admin/families/" + row.parentLeadId}
+                  >
+                    Manage
+                  </Link>
+                </div>
+              ) : null}
+            </div>
           )
         })}
       </div>

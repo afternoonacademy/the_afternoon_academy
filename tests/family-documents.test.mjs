@@ -6,6 +6,7 @@ import {
   canSendFamilyDocument,
   familyDocumentStatus,
   renderRegistrationAuthorisationEmail,
+  shouldShowRegistrationFormLink,
 } from "../lib/admin/family-documents.mjs"
 
 test("missing family document record is not sent", () => {
@@ -62,4 +63,20 @@ test("registration template placeholders use the setup editor contract shape", a
     },
     { key: "form_link", description: "Secure Adobe web-form link" },
   ])
+})
+
+
+test("signed family document hides the public Adobe form link", () => {
+  assert.equal(
+    shouldShowRegistrationFormLink({ status: "signed" }),
+    false,
+  )
+})
+
+test("unsigned family document still shows the public Adobe form link", () => {
+  assert.equal(shouldShowRegistrationFormLink(null), true)
+  assert.equal(
+    shouldShowRegistrationFormLink({ status: "sent" }),
+    true,
+  )
 })

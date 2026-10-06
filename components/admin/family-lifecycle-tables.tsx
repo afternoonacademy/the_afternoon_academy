@@ -19,6 +19,7 @@ export type FamilyCustomerRow = {
   yearGroup: string | null
   paidThrough: string | null
   placeSummary: string
+  inRenewal?: boolean
 }
 
 export type FamilyCustomerFamilyRow = {
@@ -32,6 +33,7 @@ export type FamilyCustomerFamilyRow = {
     yearGroup: string | null
     paidThrough: string | null
     placeSummary: string
+    inRenewal?: boolean
   }>
 }
 
@@ -106,7 +108,15 @@ export function FamilyCustomersTable({
                   <div className="space-y-3">
                     {row.children.map((child) => (
                       <div key={child.learnerId}>
-                        <Badge variant="secondary">
+                        <Badge
+                          className={
+                            child.inRenewal
+                              ? "border-amber-300 bg-amber-100 text-amber-950"
+                              : ""
+                          }
+                          variant="secondary"
+                        >
+                          {child.inRenewal ? "Renewal due · " : ""}
                           {formatDate(child.paidThrough)}
                         </Badge>
                       </div>

@@ -11,6 +11,7 @@ import {
 import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
 import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
+import { groupCustomerFamilies } from "@/lib/admin/family-customers.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 import { requireCapability } from "@/lib/auth/require-capability"
@@ -295,6 +296,8 @@ export default async function AdminLeadsPage() {
       }
     })
 
+  const customerFamilies = groupCustomerFamilies(customerRows)
+
   const archiveRowsByKey = new Map<string, FamilyArchiveRow>()
 
   for (const learner of lifecycleLearners || []) {
@@ -361,7 +364,7 @@ export default async function AdminLeadsPage() {
       <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
         {[
           ["Leads", followUpLeads.length],
-          ["Customers", customerRows.length],
+          ["Customers", customerFamilies.familyCount],
           ["Renewals", renewalRows.length],
           ["Closed / archived", archiveRows.length],
         ].map(([label, count]) => (
@@ -409,18 +412,19 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="customers">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            2 · Customers · {customerRows.length} active learner
-            {customerRows.length === 1 ? "" : "s"}
+            2 · Customers · {customerFamilies.familyCount} famil
+            {customerFamilies.familyCount === 1 ? "y" : "ies"} ·{" "}
+            {customerFamilies.learnerCount} active learner
+            {customerFamilies.learnerCount === 1 ? "" : "s"}
           </h3>
           <InfoTip label="About Customers">
-            Active paid learners who do not currently need renewal. Learners
-            move out of this table automatically when their paid period reaches
-            the renewal window.
+            Customers are unique paying families. Active learners are nested
+            beneath each family and move out of this table while renewal is due.
           </InfoTip>
         </div>
         <div className="mt-5">
-          {customerRows.length ? (
-            <FamilyCustomersTable rows={customerRows} />
+          {customerFamilies.familyCount ? (
+            <FamilyCustomersTable rows={customerFamilies.families} />
           ) : (
             <p className="border-y py-5 text-sm text-muted-foreground">
               No active customers are outside the renewal window.

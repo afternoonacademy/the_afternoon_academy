@@ -5,6 +5,7 @@ import {
 import {
   REGISTRATION_AUTHORISATION_FORM_URL,
   familyDocumentStatus,
+  shouldShowRegistrationFormLink,
 } from "@/lib/admin/family-documents.mjs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -129,14 +130,16 @@ export function FamilyDocumentAuthorisation({
           </form>
         ) : null}
 
-        <a
-          className="inline-flex h-10 items-center rounded-md border bg-background px-4 text-sm font-semibold hover:bg-muted"
-          href={REGISTRATION_AUTHORISATION_FORM_URL}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Open Adobe form
-        </a>
+        {shouldShowRegistrationFormLink(record) ? (
+          <a
+            className="inline-flex h-10 items-center rounded-md border bg-background px-4 text-sm font-semibold hover:bg-muted"
+            href={REGISTRATION_AUTHORISATION_FORM_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Open Adobe form
+          </a>
+        ) : null}
 
         {status !== "signed" ? (
           <form action={markRegistrationAuthorisationSigned} className="flex flex-wrap items-end gap-2">

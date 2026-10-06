@@ -13,6 +13,8 @@ import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
 import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 type LeadOverviewRow = {
   parent_lead_id: string
   child_lead_id: string
@@ -47,6 +49,7 @@ function relation<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export default async function AdminLeadsPage() {
+  await requireCapability("view_family_pipeline")
   const { data, error } = await supabaseAdmin
     .from("lead_overview_view")
     .select("*")

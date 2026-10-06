@@ -2,7 +2,10 @@ import { PlaceOfferForm } from "@/components/admin/place-offer-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 export default async function PlaceOffersPage() {
+  await requireCapability("manage_payments")
   const [{ data: families }, { data: children }, { data: slots }, { data: offers }] = await Promise.all([
     supabaseAdmin.from("parent_leads").select("id,parent_name,email").neq("status", "closed").order("created_at", { ascending: false }),
     supabaseAdmin.from("child_leads").select("id,parent_lead_id,first_name,school_year").order("created_at"),

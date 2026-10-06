@@ -191,3 +191,13 @@ Treat the following as current production architecture unless a later roadmap/ch
 - **Pre-conversion lead details are editable without changing lifecycle.** Parent contact fields and eligible child/timetable details may be corrected before conversion; payments, bookings, sent communications and lifecycle state remain untouched.
 - **Authenticated parent portal access remains separate from the lead/family record.** A `parent_leads` record may exist without a parent login.
 - **No Child login/role exists.**
+
+
+### Family document tracking invariant
+
+- Parent registration/authorisation signatures remain legally executed by the external signing provider; TAA does not recreate the signature ceremony.
+- TAA may send the current external web-form link through the existing Resend transactional-email flow and record delivery status.
+- Until a signing-provider API is justified, signed status is an explicit Admin verification recorded in TAA; do not infer a signature from email delivery or link access.
+- Existing externally signed forms may be recorded without requiring a new TAA send.
+- Reusable parent-facing registration email wording belongs in Academy Setup email templates.
+- A future Adobe/PandaDoc/other signing API must update the same family-document state rather than create a parallel document system.

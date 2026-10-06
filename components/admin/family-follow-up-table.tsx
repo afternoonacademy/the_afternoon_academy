@@ -125,6 +125,7 @@ export function FamilyFollowUpTable({
   communications: FamilyCommunication[]
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [editTarget, setEditTarget] = useState<string | null>(null)
 
   const plannedByChild = new Map<string, PlannedBooking[]>()
   for (const booking of plannedBookings) {
@@ -180,15 +181,24 @@ export function FamilyFollowUpTable({
       id: "details",
       header: () => <span className="sr-only">Details</span>,
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="flex justify-end gap-1">
           <Button
-            onClick={() =>
-              setExpanded((current) =>
-                current === row.original.child_lead_id
-                  ? null
-                  : row.original.child_lead_id,
-              )
-            }
+            onClick={() => {
+              setExpanded(row.original.child_lead_id)
+              setEditTarget(row.original.child_lead_id)
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Edit
+          </Button>
+          <Button
+            onClick={() => {
+              const isOpen = expanded === row.original.child_lead_id
+              setExpanded(isOpen ? null : row.original.child_lead_id)
+              setEditTarget(null)
+            }}
             size="sm"
             type="button"
             variant={
@@ -268,7 +278,11 @@ export function FamilyFollowUpTable({
       </div>
 
       <div className="border-t pt-5">
-        <EditLeadDetails lead={lead} />
+        <EditLeadDetails
+          defaultOpen={editTarget === lead.child_lead_id}
+          key={lead.child_lead_id + ":" + (editTarget === lead.child_lead_id ? "edit" : "view")}
+          lead={lead}
+        />
       </div>
 
       <div className="border-t pt-5">
@@ -312,7 +326,7 @@ export function FamilyFollowUpTable({
                     key={header.id}
                     className={
                       header.id === "details"
-                        ? "w-[100px]"
+                        ? "w-[170px]"
                         : header.id === "child"
                           ? "w-[150px]"
                           : header.id === "status"

@@ -30,6 +30,7 @@ const kindLabel: Record<string, string> = {
   portal_access: "Portal access",
   learning_update: "Learning update",
   renewal_reminder: "Renewal email",
+  registration_authorisation: "Registration & authorisation form",
 }
 
 function statusLabel(status: string) {

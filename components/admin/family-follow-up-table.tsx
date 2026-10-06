@@ -13,6 +13,7 @@ import {
   type PlannedBooking,
   type RecurringSeatHold,
 } from "@/components/admin/child-place-workflow"
+import { EditLeadDetails } from "@/components/admin/edit-lead-details"
 import {
   FamilyCommunications,
   type FamilyCommunication,
@@ -263,6 +264,10 @@ export function FamilyFollowUpTable({
             {lead.notes || "No notes"}
           </p>
         </div>
+      </div>
+
+      <div className="border-t pt-5">
+        <EditLeadDetails lead={lead} />
       </div>
 
       <div className="border-t pt-5">

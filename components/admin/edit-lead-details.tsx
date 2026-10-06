@@ -31,8 +31,14 @@ type EditableLead = {
   preferred_frequency: string | null
 }
 
-export function EditLeadDetails({ lead }: { lead: EditableLead }) {
-  const [open, setOpen] = useState(false)
+export function EditLeadDetails({
+  lead,
+  defaultOpen = false,
+}: {
+  lead: EditableLead
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
 
   if (!open) {
     return (

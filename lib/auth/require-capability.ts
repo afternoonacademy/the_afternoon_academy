@@ -27,7 +27,7 @@ export async function requireCapability(capability: string) {
   if (!roleHasCapability(context.internalUser.role, capability)) {
     redirect("/unauthorised")
   }
-  return context
+  return { user: context.user, internalUser: context.internalUser }
 }
 
 export async function assertCapability(capability: string) {
@@ -35,5 +35,5 @@ export async function assertCapability(capability: string) {
   if (!context.internalUser || !roleHasCapability(context.internalUser.role, capability)) {
     throw new Error("You do not have permission to perform this action")
   }
-  return context
+  return { user: context.user, internalUser: context.internalUser }
 }

@@ -19,6 +19,22 @@ export type FamilyCustomerRow = {
   yearGroup: string | null
   paidThrough: string | null
   placeSummary: string
+  inRenewal?: boolean
+}
+
+export type FamilyCustomerFamilyRow = {
+  parentLeadId: string | null
+  parentName: string
+  email: string
+  activeLearnerCount: number
+  children: Array<{
+    learnerId: string
+    learnerName: string
+    yearGroup: string | null
+    paidThrough: string | null
+    placeSummary: string
+    inRenewal?: boolean
+  }>
 }
 
 export type FamilyArchiveRow = {
@@ -43,7 +59,7 @@ const formatDate = (value: string | null) =>
 export function FamilyCustomersTable({
   rows,
 }: {
-  rows: FamilyCustomerRow[]
+  rows: FamilyCustomerFamilyRow[]
 }) {
   return (
     <>
@@ -52,41 +68,70 @@ export function FamilyCustomersTable({
           <TableHeader>
             <TableRow>
               <TableHead>Family</TableHead>
-              <TableHead>Learner</TableHead>
-              <TableHead>Recurring place</TableHead>
+              <TableHead>Learners</TableHead>
+              <TableHead>Recurring places</TableHead>
               <TableHead>Paid through</TableHead>
               <TableHead className="w-[120px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((row) => (
-              <TableRow key={row.learnerId}>
-                <TableCell>
-                  <Link
-                    className="font-semibold text-primary hover:underline"
-                    href={"/admin/families/" + row.parentLeadId}
-                  >
-                    {row.parentName}
-                  </Link>
+              <TableRow key={row.parentLeadId || row.children[0]?.learnerId}>
+                <TableCell className="align-top">
+                  <p className="font-semibold">{row.parentName}</p>
                   <p className="text-xs text-muted-foreground">{row.email}</p>
-                </TableCell>
-                <TableCell>
-                  <p className="font-semibold">{row.learnerName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.yearGroup || "Year group to confirm"}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {row.activeLearnerCount} active learner
+                    {row.activeLearnerCount === 1 ? "" : "s"}
                   </p>
                 </TableCell>
-                <TableCell>{row.placeSummary}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{formatDate(row.paidThrough)}</Badge>
+                <TableCell className="align-top">
+                  <div className="space-y-3">
+                    {row.children.map((child) => (
+                      <div key={child.learnerId}>
+                        <p className="font-semibold">{child.learnerName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {child.yearGroup || "Year group to confirm"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    className="text-sm font-semibold text-primary hover:underline"
-                    href={"/admin/families/" + row.parentLeadId}
-                  >
-                    Family account
-                  </Link>
+                <TableCell className="align-top">
+                  <div className="space-y-3">
+                    {row.children.map((child) => (
+                      <p key={child.learnerId}>{child.placeSummary}</p>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="align-top">
+                  <div className="space-y-3">
+                    {row.children.map((child) => (
+                      <div key={child.learnerId}>
+                        <Badge
+                          className={
+                            child.inRenewal
+                              ? "border-amber-300 bg-amber-100 text-amber-950"
+                              : ""
+                          }
+                          variant="secondary"
+                        >
+                          {child.inRenewal ? "Renewal due · " : ""}
+                          {formatDate(child.paidThrough)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right align-top">
+                  {row.parentLeadId ? (
+                    <Link
+                      className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-semibold hover:bg-muted"
+                      href={"/admin/families/" + row.parentLeadId}
+                    >
+                      Manage
+                    </Link>
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}
@@ -95,24 +140,44 @@ export function FamilyCustomersTable({
       </div>
 
       <div className="divide-y border-y md:hidden">
-        {rows.map((row) => (
-          <Link
-            className="flex items-start justify-between gap-4 py-4"
-            href={"/admin/families/" + row.parentLeadId}
-            key={row.learnerId}
-          >
-            <span className="min-w-0">
-              <span className="block font-semibold">{row.learnerName}</span>
-              <span className="block truncate text-sm text-muted-foreground">
-                {row.email}
+        {rows.map((row) => {
+          const content = (
+            <span className="flex w-full items-start justify-between gap-4 py-4">
+              <span className="min-w-0">
+                <span className="block font-semibold">{row.parentName}</span>
+                <span className="block truncate text-sm text-muted-foreground">
+                  {row.email}
+                </span>
+                <span className="mt-2 block space-y-2">
+                  {row.children.map((child) => (
+                    <span className="block" key={child.learnerId}>
+                      <span className="block font-semibold">{child.learnerName}</span>
+                      <span className="block text-sm">{child.placeSummary}</span>
+                    </span>
+                  ))}
+                </span>
               </span>
-              <span className="mt-1 block text-sm">{row.placeSummary}</span>
+              <Badge className="shrink-0" variant="secondary">
+                {row.activeLearnerCount} learner{row.activeLearnerCount === 1 ? "" : "s"}
+              </Badge>
             </span>
-            <Badge className="shrink-0" variant="secondary">
-              Paid to {formatDate(row.paidThrough)}
-            </Badge>
-          </Link>
-        ))}
+          )
+          return (
+            <div key={row.parentLeadId || row.children[0]?.learnerId}>
+              {content}
+              {row.parentLeadId ? (
+                <div className="pb-4">
+                  <Link
+                    className="inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm font-semibold hover:bg-muted"
+                    href={"/admin/families/" + row.parentLeadId}
+                  >
+                    Manage
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
       </div>
     </>
   )

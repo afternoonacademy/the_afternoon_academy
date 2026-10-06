@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { assertCapability } from "@/lib/auth/require-capability";
 import { allocateDatedOperationsSeat } from "@/lib/delivery-capacity";
 import { supabaseService } from "@/lib/supabase/service";
 
@@ -1074,7 +1075,7 @@ export async function addAdhocDeliverySeat(formData: FormData) {
 }
 
 export async function saveAdhocDeliverySession(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { user } = await assertCapability("operate_sessions");
   const parsed = z.object({
     serviceDate: z.string().date(), academyTableId: z.string().uuid(),
     tableNumber: z.coerce.number().int().min(1).max(40),

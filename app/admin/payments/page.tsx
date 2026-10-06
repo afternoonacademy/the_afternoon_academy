@@ -10,6 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 function formatMoney(amountCents: number | null, currency: string | null) {
@@ -21,6 +23,7 @@ function formatMoney(amountCents: number | null, currency: string | null) {
 }
 
 export default async function PaymentsPage() {
+  await requireCapability("manage_payments")
   const today = new Date();
   const inFourteenDays = new Date(today);
   inFourteenDays.setDate(today.getDate() + 14);

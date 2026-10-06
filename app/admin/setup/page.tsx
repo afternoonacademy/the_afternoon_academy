@@ -10,7 +10,10 @@ import {
   renewalTemplateContract,
 } from "@/lib/email/parent-template-contract.mjs"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 export default async function AcademySetupPage() {
+  await requireCapability("manage_setup")
   const [{ data: buildings }, { data: rooms }, { data: tables }, { data: closures }, { data: pricePlans }, { data: renewalTemplate }, { data: plannedPlaceTemplate }] = await Promise.all([
     supabaseAdmin.from("academy_buildings").select("id,name,address").eq("status", "active").order("name"),
     supabaseAdmin.from("academy_rooms").select("id,building_id,name,room_type,capacity").eq("status", "active").order("name"),

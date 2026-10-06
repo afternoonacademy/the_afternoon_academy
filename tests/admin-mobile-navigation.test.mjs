@@ -10,7 +10,8 @@ test("mobile admin navigation exposes every primary admin destination", () => {
   assert.deepEqual(
     adminNavItems.map((item) => item.href),
     [
-      "/admin",
+      "/admin/finance",
+      "/admin/operations",
       "/admin/leads",
       "/admin/learners",
       "/admin/family-updates",

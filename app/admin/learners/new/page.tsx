@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { requireCapability } from "@/lib/auth/require-capability"
 import { createLearner } from "@/actions/learners"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 export default async function NewLearnerPage() {
+  await requireCapability("destructive_admin_actions")
   const { data: leads } = await supabaseAdmin.from("parent_leads").select("id, parent_name, email").order("created_at", { ascending: false })
   return <div className="mx-auto max-w-3xl space-y-6">
     <div><Link href="/admin/learners" className="text-sm underline">Back to learners</Link><h2 className="mt-3 text-3xl font-bold tracking-tight">Create learner record</h2><p className="mt-2 text-muted-foreground">Record only what helps the team support this child. Do not use this space for diagnoses or unnecessary sensitive detail.</p></div>

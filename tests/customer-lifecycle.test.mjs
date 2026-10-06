@@ -1,35 +1,12 @@
-import test from "node:test"
 import assert from "node:assert/strict"
+import test from "node:test"
 
-import { shouldShowActiveCustomer } from "../lib/admin/customer-lifecycle.mjs"
+import {
+  shouldCountActiveCustomer,
+  shouldShowActiveCustomer,
+} from "../lib/admin/customer-lifecycle.mjs"
 
-test("active paid learner with upcoming standing placement appears in Customers", () => {
-  assert.equal(
-    shouldShowActiveCustomer({
-      learnerStatus: "active",
-      hasPaidEntitlement: true,
-      hasCurrentOrUpcomingPlacement: true,
-      isInRenewal: false,
-      hasClosedRenewal: false,
-    }),
-    true,
-  )
-})
-
-test("active learner without a current or upcoming placement stays out of Customers", () => {
-  assert.equal(
-    shouldShowActiveCustomer({
-      learnerStatus: "active",
-      hasPaidEntitlement: true,
-      hasCurrentOrUpcomingPlacement: false,
-      isInRenewal: false,
-      hasClosedRenewal: false,
-    }),
-    false,
-  )
-})
-
-test("renewal learner remains out of Customers", () => {
+test("renewal learners leave the paid-customer queue but remain active customers", () => {
   assert.equal(
     shouldShowActiveCustomer({
       learnerStatus: "active",
@@ -37,6 +14,35 @@ test("renewal learner remains out of Customers", () => {
       hasCurrentOrUpcomingPlacement: true,
       isInRenewal: true,
       hasClosedRenewal: false,
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldCountActiveCustomer({
+      learnerStatus: "active",
+      hasCurrentOrUpcomingPlacement: true,
+      hasClosedRenewal: false,
+    }),
+    true,
+  )
+})
+
+test("released or closed learners are not active customers", () => {
+  assert.equal(
+    shouldCountActiveCustomer({
+      learnerStatus: "active",
+      hasCurrentOrUpcomingPlacement: false,
+      hasClosedRenewal: false,
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldCountActiveCustomer({
+      learnerStatus: "active",
+      hasCurrentOrUpcomingPlacement: true,
+      hasClosedRenewal: true,
     }),
     false,
   )

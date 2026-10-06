@@ -1,9 +1,12 @@
 import Link from "next/link"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 import { ManualFamilyLeadForm } from "@/components/admin/manual-family-lead-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function NewFamilyLeadPage() {
+export default async function NewFamilyLeadPage() {
+  await requireCapability("edit_preconversion_leads")
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-10">
       <div className="flex items-center justify-between gap-3">

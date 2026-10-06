@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 type PageProps = { params: Promise<{ id: string }> }
 
 type Adjustment = Record<string, unknown>
@@ -30,6 +32,7 @@ function relation<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export default async function FamilyAccountPage({ params }: PageProps) {
+  await requireCapability("view_family_pipeline")
   const { id } = await params
   const today = new Date().toISOString().slice(0, 10)
 

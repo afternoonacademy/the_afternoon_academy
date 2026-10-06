@@ -10,8 +10,11 @@ import {
 } from "@/components/admin/family-lifecycle-tables"
 import { RenewalWorkflowTable } from "@/components/admin/renewal-workflow-table"
 import { loadFamilyRenewals } from "@/lib/admin/family-renewals"
-import { shouldShowActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
+import { shouldCountActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
+import { groupCustomerFamilies } from "@/lib/admin/family-customers.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+
+import { requireCapability } from "@/lib/auth/require-capability"
 
 type LeadOverviewRow = {
   parent_lead_id: string
@@ -47,6 +50,7 @@ function relation<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export default async function AdminLeadsPage() {
+  await requireCapability("view_family_pipeline")
   const { data, error } = await supabaseAdmin
     .from("lead_overview_view")
     .select("*")
@@ -185,6 +189,12 @@ export default async function AdminLeadsPage() {
       !renewalChildLeadIds.has(lead.child_lead_id) &&
       !activeLearnerChildLeadIds.has(lead.child_lead_id),
   )
+  const leadFamilyCount = new Set(
+    followUpLeads.map((lead) => lead.parent_lead_id),
+  ).size
+  const renewalFamilyCount = new Set(
+    renewalRows.map((row) => row.parentLeadId),
+  ).size
 
   const communicationParentIds = [
     ...new Set(followUpLeads.map((lead) => lead.parent_lead_id)),
@@ -268,12 +278,10 @@ export default async function AdminLeadsPage() {
 
   const customerRows: FamilyCustomerRow[] = (lifecycleLearners || [])
     .filter((learner) =>
-      shouldShowActiveCustomer({
+      shouldCountActiveCustomer({
         learnerStatus: learner.status,
-        hasPaidEntitlement: paidThroughByLearner.has(learner.id),
         hasCurrentOrUpcomingPlacement:
           (placesByLearner.get(learner.id)?.length || 0) > 0,
-        isInRenewal: renewalLearnerIds.has(learner.id),
         hasClosedRenewal: closedRenewalByLearner.has(learner.id),
       }),
     )
@@ -282,6 +290,7 @@ export default async function AdminLeadsPage() {
       return {
         parentLeadId: learner.parent_lead_id,
         learnerId: learner.id,
+        inRenewal: renewalLearnerIds.has(learner.id),
         learnerName: learner.first_name,
         parentName: parent?.parent_name || "Family",
         email: parent?.email || "—",
@@ -291,6 +300,8 @@ export default async function AdminLeadsPage() {
           placesByLearner.get(learner.id)?.join(" · ") || "Recurring place",
       }
     })
+
+  const customerFamilies = groupCustomerFamilies(customerRows)
 
   const archiveRowsByKey = new Map<string, FamilyArchiveRow>()
 
@@ -333,17 +344,17 @@ export default async function AdminLeadsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">
-            One lifecycle view for every family
+            Family view: customers remain customers while in renewal
           </p>
           <div className="mt-1 flex items-center gap-1.5">
             <h2 className="text-3xl font-bold tracking-tight">
               Family pipeline
             </h2>
             <InfoTip label="About the Family pipeline">
-              A child appears in one operational queue at a time: Lead,
-              Customer, Renewal or Closed / Archived. Renewals reuse the same
-              staged booking process while preserving the learner’s recurring
-              capacity.
+              Leads count unique parent families. Customers count every active
+              family with a current recurring place, including families that are
+              also in Renewal. Renewal is a payment-status subset of Customers,
+              not a replacement for Customer status.
             </InfoTip>
           </div>
         </div>
@@ -357,9 +368,9 @@ export default async function AdminLeadsPage() {
 
       <div className="grid divide-y border-y sm:grid-cols-4 sm:divide-x sm:divide-y-0">
         {[
-          ["Leads", followUpLeads.length],
-          ["Customers", customerRows.length],
-          ["Renewals", renewalRows.length],
+          ["Leads", leadFamilyCount],
+          ["Customers", customerFamilies.familyCount],
+          ["Renewals", renewalFamilyCount],
           ["Closed / archived", archiveRows.length],
         ].map(([label, count]) => (
           <div className="px-4 py-3" key={String(label)}>
@@ -374,8 +385,7 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="leads">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            1 · Leads · {followUpLeads.length} child response
-            {followUpLeads.length === 1 ? "" : "s"}
+            Leads
           </h3>
           <InfoTip label="About Leads">
             New enquiries only. Open Details, plan the child’s recurring place,
@@ -406,21 +416,20 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="customers">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            2 · Customers · {customerRows.length} active learner
-            {customerRows.length === 1 ? "" : "s"}
+            Customers
           </h3>
           <InfoTip label="About Customers">
-            Active paid learners who do not currently need renewal. Learners
-            move out of this table automatically when their paid period reaches
-            the renewal window.
+            Customers are unique active families with at least one current
+            recurring place. Families remain Customers while a renewal is due;
+            Renewal is shown separately as an additional payment-status view.
           </InfoTip>
         </div>
         <div className="mt-5">
-          {customerRows.length ? (
-            <FamilyCustomersTable rows={customerRows} />
+          {customerFamilies.familyCount ? (
+            <FamilyCustomersTable rows={customerFamilies.families} />
           ) : (
             <p className="border-y py-5 text-sm text-muted-foreground">
-              No active customers are outside the renewal window.
+              No active customer families.
             </p>
           )}
         </div>
@@ -429,13 +438,12 @@ export default async function AdminLeadsPage() {
       <section className="border-t pt-6" id="renewals">
         <div className="flex items-center gap-1.5">
           <h3 className="text-xl font-bold tracking-tight">
-            3 · Renewals · {renewalRows.length} learner
-            {renewalRows.length === 1 ? "" : "s"}
+            Renewals
           </h3>
           <InfoTip label="About Renewals">
-            These learners are removed from Leads and Customers while renewal
-            is due. Their existing recurring capacity stays reserved until
-            renewal is paid or an admin explicitly releases the place.
+            These are existing Customer families with one or more learners in
+            a renewal cycle. They remain Customers throughout renewal while their
+            recurring places are still active.
           </InfoTip>
         </div>
         <div className="mt-5">

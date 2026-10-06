@@ -1,4 +1,5 @@
 import { groupCustomerFamilies } from "@/lib/admin/family-customers.mjs"
+import { shouldCountActiveCustomer } from "@/lib/admin/customer-lifecycle.mjs"
 import {
   calculatePerformanceMetrics,
   performancePeriod,
@@ -105,11 +106,13 @@ export async function loadPerformanceMetrics({
   )
 
   const eligibleCustomerRows = (learners || [])
-    .filter(
-      (learner) =>
-        learner.status === "active" &&
-        (placesByLearner.get(learner.id)?.length || 0) > 0 &&
-        !closedRenewalLearnerIds.has(learner.id),
+    .filter((learner) =>
+      shouldCountActiveCustomer({
+        learnerStatus: learner.status,
+        hasCurrentOrUpcomingPlacement:
+          (placesByLearner.get(learner.id)?.length || 0) > 0,
+        hasClosedRenewal: closedRenewalLearnerIds.has(learner.id),
+      }),
     )
     .map((learner) => {
       const parent = relation(learner.parent_leads)

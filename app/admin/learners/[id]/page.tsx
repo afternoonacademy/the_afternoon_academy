@@ -13,6 +13,8 @@ import { AiTeacherUpdate } from "@/components/admin/ai-teacher-update"
 import { FamilyCommunications } from "@/components/admin/family-communications"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 
+import { requireCapability } from "@/lib/auth/require-capability"
+
 type PageProps = { params: Promise<{ id: string }> }
 
 function formatList(items: string[] | null | undefined) {
@@ -20,6 +22,7 @@ function formatList(items: string[] | null | undefined) {
 }
 
 export default async function LearnerPage({ params }: PageProps) {
+  await requireCapability("view_learners")
   const { id } = await params
   const [
     learnerResult,

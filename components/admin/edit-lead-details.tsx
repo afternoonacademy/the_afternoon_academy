@@ -77,7 +77,7 @@ export function EditLeadDetails({ lead }: { lead: EditableLead }) {
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Email</Label>
-            <Input defaultValue={lead.email} name="email" type="email" />
+            <Input defaultValue={lead.email} name="email" required type="email" />
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Phone</Label>
@@ -89,7 +89,7 @@ export function EditLeadDetails({ lead }: { lead: EditableLead }) {
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Source</Label>
-            <Input defaultValue={lead.source || ""} name="source" />
+            <Input defaultValue={lead.source || ""} name="source" required />
           </label>
         </div>
 

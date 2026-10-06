@@ -1,5 +1,17 @@
 # The Afternoon Academy — Project Change Log
 
+## 6 October 2026 — Lightweight parent registration & authorisation tracking
+
+### Release candidate
+
+- Added a family-level **Documents & authorisations** panel for the existing Parent Registration & Authorisation Form.
+- Admin can send the existing Adobe Web Form link through TAA's Resend transactional-email path, see the latest delivery state, resend while outstanding, open the Adobe form, and manually record a verified signed date.
+- Existing externally completed forms can be marked signed without sending a new request, preserving the current Anastasia-style historical workflow.
+- Reusable registration-email subject/body is editable in Academy Setup alongside the existing planned-place and renewal templates.
+- TAA records only the operational request/signature status; Adobe remains responsible for the actual electronic-signature ceremony.
+- Added a dedicated family-document record so a future signing-provider API can automate the same state instead of introducing a second document workflow.
+- Paid Adobe/PandaDoc API integration remains deferred until Academy volume justifies it.
+
 ## 6 October 2026 — Role-aware operations, family pipeline and finance dashboard
 
 ### Production release

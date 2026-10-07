@@ -104,6 +104,23 @@ Because AI-generated code can look plausible while being wrong, encode important
 - Security review tools are an additional layer, not proof that the app is secure.
 - Preview deployments are for verification; production is not a test environment.
 
+### Deployment economy — Vercel previews are a limited resource
+
+Vercel preview/build capacity must be treated as a limited operational resource. TAA can hit Vercel deployment/rate limits if every small development commit triggers its own build.
+
+- **Do not use incremental Vercel deployments as the development loop.** A sequence of test-first edits, helper commits, UI commits, refactors or intermediate broken states must not each trigger a preview build merely because they are separate implementation steps.
+- **Batch implementation work into sensible development chunks before pushing to a branch that auto-deploys.** The agent is responsible for deciding the appropriate chunk size based on risk, feature boundaries and what actually needs browser/runtime verification.
+- **Prefer local/repository-level verification first:** automated tests, lint, typecheck, build and code review should catch ordinary implementation errors before a Vercel preview is requested.
+- **Create a preview deployment only when it adds information that local/static verification cannot provide**, such as integrated browser behaviour, Vercel runtime/environment behaviour, authentication/deployment protection, or founder acceptance of a coherent feature slice.
+- **Do not deliberately push known-red or intentionally incomplete TDD states to an auto-deploying branch.** RED tests belong in the development workspace; Vercel should receive a coherent green chunk.
+- **For a normal feature, aim for the minimum useful number of previews rather than a preview per commit.** Often one coherent release-candidate preview is enough; use additional previews only when a meaningful integration finding requires another verification cycle.
+- **Documentation-only or bookkeeping changes should be batched with the next appropriate code push where practical** rather than consuming a deployment on their own.
+- Before starting implementation on an auto-deploying branch, explicitly consider the repo's deployment trigger behaviour and plan the commit/push strategy accordingly.
+- If a workflow/tooling choice would create many deployments, change the workflow rather than accepting the deployment volume.
+- When reporting implementation progress, distinguish **commits** from **deployments**. Frequent logical checkpoints are acceptable internally; frequent Vercel builds are not required.
+
+The goal is not an arbitrary fixed deployment count. The agent must use engineering judgement to choose the fewest deployments that still provide safe, meaningful verification and human acceptance.
+
 ## Role model for AI-assisted work
 
 The same model may perform different roles at different times, but keep the responsibilities distinct:

@@ -224,7 +224,7 @@ export default async function LearnerPage({ params }: PageProps) {
       </header>
 
       <Tabs defaultValue="workspace">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0" variant="line">
+        <TabsList className="h-auto w-full justify-start overflow-x-auto overflow-y-hidden rounded-none border-b bg-transparent p-0 lg:overflow-visible" variant="line">
           <TabsTrigger className="min-w-fit px-4 py-3" value="workspace">Workspace</TabsTrigger>
           <TabsTrigger className="min-w-fit px-4 py-3" value="attendance">Attendance</TabsTrigger>
           <TabsTrigger className="min-w-fit px-4 py-3" value="history">Teaching history</TabsTrigger>

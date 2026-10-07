@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import {
   createLearnerGoal,
   recordAttendance,
-  updateLearnerGoalStatus,
+  recordLearnerGoalProgress,
 } from "@/actions/learners"
 import { FamilyCommunications } from "@/components/admin/family-communications"
 import { TeacherSessionNote } from "@/components/admin/teacher-session-note"
@@ -43,6 +43,7 @@ export default async function LearnerPage({ params }: PageProps) {
     attendanceResult,
     updatesResult,
     goalsResult,
+    goalProgressResult,
     assignmentsResult,
   ] = await Promise.all([
     supabaseAdmin.from("learners").select("*").eq("id", id).maybeSingle(),
@@ -63,6 +64,11 @@ export default async function LearnerPage({ params }: PageProps) {
       .eq("learner_id", id)
       .order("created_at", { ascending: false }),
     supabaseAdmin
+      .from("learner_goal_progress")
+      .select("goal_id,progress_state,occurred_on,created_at")
+      .eq("learner_id", id)
+      .order("created_at", { ascending: false }),
+    supabaseAdmin
       .from("learner_teaching_frameworks")
       .select("*,teaching_frameworks(title),teaching_framework_versions(id,prompt_config)")
       .eq("learner_id", id)
@@ -74,6 +80,7 @@ export default async function LearnerPage({ params }: PageProps) {
   const profile = profileResult.data
   const updates = updatesResult.data || []
   const goals = goalsResult.data || []
+  const goalProgress = goalProgressResult.data || []
   const assignments = assignmentsResult.data || []
 
   const activeAssignments = assignments.filter(
@@ -312,12 +319,22 @@ export default async function LearnerPage({ params }: PageProps) {
                         </p>
                         {goal.evidence ? <p className="mt-2 text-muted-foreground">{goal.evidence}</p> : null}
                       </div>
-                      <form action={updateLearnerGoalStatus}>
-                        <input name="learnerId" type="hidden" value={id} />
-                        <input name="goalId" type="hidden" value={goal.id} />
-                        <input name="status" type="hidden" value="achieved" />
-                        <Button size="sm" variant="outline">Mark achieved</Button>
-                      </form>
+                      <div className="min-w-full sm:min-w-0">
+                        {goalProgress.find((item) => item.goal_id === goal.id) ? (
+                          <p className="mb-2 text-right text-xs text-muted-foreground">
+                            Latest: {goalProgress.find((item) => item.goal_id === goal.id)?.progress_state.replaceAll("_", " ")}
+                          </p>
+                        ) : null}
+                        <form action={recordLearnerGoalProgress} className="flex flex-wrap justify-end gap-2">
+                          <input name="learnerId" type="hidden" value={id} />
+                          <input name="goalId" type="hidden" value={goal.id} />
+                          <input name="occurredOn" type="hidden" value={today} />
+                          <Button name="progressState" size="sm" type="submit" value="no_change" variant="ghost">No change</Button>
+                          <Button name="progressState" size="sm" type="submit" value="progressing" variant="outline">Progressing</Button>
+                          <Button name="progressState" size="sm" type="submit" value="needs_review" variant="outline">Needs review</Button>
+                          <Button name="progressState" size="sm" type="submit" value="achieved">Achieved</Button>
+                        </form>
+                      </div>
                     </div>
                   </article>
                 )) : <p className="text-sm text-muted-foreground">No active goals yet.</p>}

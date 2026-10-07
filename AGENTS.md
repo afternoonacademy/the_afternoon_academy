@@ -218,3 +218,17 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Existing externally signed forms may be recorded without requiring a new TAA send.
 - Reusable parent-facing registration email wording belongs in Academy Setup email templates.
 - A future Adobe/PandaDoc/other signing API must update the same family-document state rather than create a parallel document system.
+
+
+### Learner teaching workspace invariant
+
+- The learner record is the long-term source of truth for teaching context. A learner may have several Teaching Framework assignments over time or concurrently; one active assignment may be the default.
+- A per-session framework selection or override changes that session only. It must never silently rewrite the learner's longer-term teaching context.
+- Teaching Frameworks are reusable Academy guidance for how TAA teaches and reviews a type of provision. Learner-specific course, exam board, topic and objectives belong on the learner assignment rather than duplicating the global framework.
+- Framework versions are historical evidence. Publishing new guidance must not rewrite the framework/version or prompt snapshot stored on an earlier teaching note.
+- The normal teaching-note workflow should remain proportionate and fast: target roughly 30–60 seconds for routine Homework Support. TAA complements school provision and does not require teachers to recreate school reports.
+- Routine teaching evidence should be concise and factual: what was worked on, where support was needed when useful, where the learner got to, and what should be picked up next.
+- Attendance and Teaching History are teaching surfaces. Family/place/commercial data and family communications remain separate Admin-only learner tabs.
+- Personal profile editing and learner lifecycle/status editing are configuration actions, not permanent cards on the day-to-day teaching workspace.
+- Teaching Hub is readable by Admin and Teacher; global framework creation/versioning/publishing/archiving is Admin-only.
+- No identifiable learner data may be sent to an AI provider through this workflow unless the existing TAA AI/privacy approval conditions are separately satisfied.

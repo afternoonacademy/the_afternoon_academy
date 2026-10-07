@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { assertCapability } from "@/lib/auth/require-capability";
 import { allocateDatedOperationsSeat } from "@/lib/delivery-capacity";
 import { buildPromptSnapshot, validateHomeworkSupportNote } from "@/lib/teaching/session-note.mjs";
+import { goalStatusAfterProgress, normaliseGoalProgressState } from "@/lib/teaching/goals.mjs";
 import { supabaseService } from "@/lib/supabase/service";
 
 const learnerSchema = z.object({
@@ -86,6 +87,14 @@ const learnerGoalStatusSchema = z.object({
   learnerId: z.string().uuid(),
   goalId: z.string().uuid(),
   status: z.enum(["active", "achieved", "paused"]),
+});
+
+const learnerGoalProgressSchema = z.object({
+  learnerId: z.string().uuid(),
+  goalId: z.string().uuid(),
+  occurredOn: z.string().date(),
+  progressState: z.enum(["no_change", "progressing", "achieved", "needs_review"]),
+  note: z.string().trim().max(1000).optional(),
 });
 
 const sessionSchema = z.object({
@@ -691,6 +700,60 @@ export async function updateLearnerGoalStatus(formData: FormData) {
   if (error) throw new Error("Could not update learner goal");
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`);
   revalidatePath("/admin/operations");
+}
+
+export async function recordLearnerGoalProgress(formData: FormData) {
+  const { user } = await assertCapability("edit_learning_record")
+  const parsed = learnerGoalProgressSchema.safeParse({
+    learnerId: formData.get("learnerId"),
+    goalId: formData.get("goalId"),
+    occurredOn: formData.get("occurredOn"),
+    progressState: formData.get("progressState"),
+    note: formData.get("note") || undefined,
+  })
+
+  if (!parsed.success) throw new Error("Please check the goal progress update")
+  const progressState = normaliseGoalProgressState(parsed.data.progressState)
+  const supabase = supabaseService()
+
+  const { data: goal, error: goalError } = await supabase
+    .from("learner_goals")
+    .select("id,status")
+    .eq("id", parsed.data.goalId)
+    .eq("learner_id", parsed.data.learnerId)
+    .maybeSingle()
+
+  if (goalError || !goal) throw new Error("Learner goal not found")
+  if (goal.status !== "active" && progressState !== "no_change") {
+    throw new Error("Only an active goal can receive a progress update")
+  }
+
+  if (progressState !== "no_change") {
+    const { error: progressError } = await supabase
+      .from("learner_goal_progress")
+      .insert({
+        learner_id: parsed.data.learnerId,
+        goal_id: parsed.data.goalId,
+        occurred_on: parsed.data.occurredOn,
+        progress_state: progressState,
+        note: parsed.data.note || null,
+        recorded_by: user.id,
+      })
+    if (progressError) throw new Error("Could not record learner goal progress")
+  }
+
+  const nextStatus = goalStatusAfterProgress(goal.status, progressState)
+  if (nextStatus !== goal.status) {
+    const { error: statusError } = await supabase
+      .from("learner_goals")
+      .update({ status: nextStatus })
+      .eq("id", parsed.data.goalId)
+      .eq("learner_id", parsed.data.learnerId)
+    if (statusError) throw new Error("Goal progress was recorded but goal status could not be updated")
+  }
+
+  revalidatePath(`/admin/learners/${parsed.data.learnerId}`)
+  revalidatePath("/admin/operations")
 }
 
 export async function createAcademySession(formData: FormData) {

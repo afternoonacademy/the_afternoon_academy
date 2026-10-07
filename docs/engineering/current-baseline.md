@@ -180,7 +180,7 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 ### Current access model
 
 - Admin: all internal capabilities.
-- Teacher: `view_operations`, `operate_sessions`, `view_learners`, `edit_learning_record`.
+- Teacher: `view_operations`, `operate_sessions`, `view_learners`, `edit_learning_record`, `view_teaching_hub`.
 - Parent: supported role with no internal `/admin` capabilities in this baseline.
 - Child: no role/login.
 
@@ -195,3 +195,17 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Admin-only server actions send/resend and record signed status. Teacher permissions are unchanged.
 - The new table has RLS enabled and is accessed server-side with service-role infrastructure; anon/authenticated table privileges are revoked.
 - No signing-provider API, webhook, PDF ingestion or automated signature inference is included in this phase.
+
+
+## Learner teaching architecture — 7 October 2026 release candidate
+
+- Learner Workspace is the default teaching surface. It prioritises active teaching context, active goals, the previous useful handover, helpful strategies and a short session note.
+- Learner page tabs separate Workspace, Attendance and Teaching History from Admin-only Family & Place and Communications.
+- Stable profile fields are edited at /admin/learners/[id]/edit; lifecycle status remains Admin-only at /admin/learners/[id]/status.
+- teaching_frameworks holds stable Academy framework identity; teaching_framework_versions holds versioned guidance and constrained four-field prompt configuration.
+- learner_teaching_frameworks links learners to one or more time-bounded support contexts and stores learner-specific course/exam board/topic/objectives. One active default is permitted.
+- New contextual teacher_updates retain framework, framework-version, learner-assignment and prompt-snapshot references. Legacy teacher updates remain valid and render without a framework.
+- The first contextual note format uses working_on, optional support_needed, reached and next_step; legacy non-null note columns remain populated for compatibility.
+- learner_goal_progress is append-only evidence for Progressing / Needs review / Achieved events; No change deliberately creates no unnecessary history row.
+- Published Teaching Frameworks are readable by Admin and Teacher. Framework management requires manage_teaching_frameworks and remains Admin-only.
+- The redesigned default note path does not call the AI drafting endpoint or send identifiable learner data to an AI provider.

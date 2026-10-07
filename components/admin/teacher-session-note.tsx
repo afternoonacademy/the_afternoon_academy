@@ -61,16 +61,21 @@ const fallbackPrompts: PromptField[] = [
 
 function PromptLabel({ field }: { field: PromptField }) {
   return (
-    <div className="flex items-center gap-2">
-      <Label htmlFor={field.key}>{field.label}</Label>
+    <div className="flex items-start gap-2">
+      <Label className="pt-1" htmlFor={field.key}>{field.label}</Label>
       {field.help ? (
-        <span
-          aria-label={field.help}
-          className="inline-flex cursor-help text-muted-foreground"
-          title={field.help}
-        >
-          <Info className="size-4" />
-        </span>
+        <details className="group relative">
+          <summary
+            aria-label={"Help: " + field.label}
+            className="flex size-7 cursor-pointer list-none items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"
+          >
+            <Info className="size-4" />
+          </summary>
+          <div className="absolute left-0 z-20 mt-1 w-72 max-w-[calc(100vw-3rem)] rounded-lg border bg-popover p-3 text-xs font-normal leading-relaxed text-popover-foreground shadow-md">
+            <p>{field.help}</p>
+            {field.example ? <p className="mt-2 text-muted-foreground">Example: {field.example}</p> : null}
+          </div>
+        </details>
       ) : null}
     </div>
   )

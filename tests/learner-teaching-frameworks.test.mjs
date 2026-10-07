@@ -5,6 +5,7 @@ import {
   activeLearnerFrameworks,
   defaultLearnerFramework,
   validateLearnerFrameworkAssignment,
+  endDateForAssignment,
 } from "../lib/teaching/learner-frameworks.mjs"
 
 const rows = [
@@ -78,4 +79,10 @@ test("invalid date range and inactive default are rejected", () => {
       }),
     /default/,
   )
+})
+
+
+test("ending a future teaching context keeps a valid date range", () => {
+  assert.equal(endDateForAssignment("2027-09-01", "2027-08-20"), "2027-09-01")
+  assert.equal(endDateForAssignment("2027-03-01", "2027-04-20"), "2027-04-20")
 })

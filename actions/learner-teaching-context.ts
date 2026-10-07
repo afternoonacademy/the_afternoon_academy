@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { assertCapability } from "@/lib/auth/require-capability"
-import { validateLearnerFrameworkAssignment } from "@/lib/teaching/learner-frameworks.mjs"
+import { endDateForAssignment, validateLearnerFrameworkAssignment } from "@/lib/teaching/learner-frameworks.mjs"
 import { supabaseService } from "@/lib/supabase/service"
 
 const assignmentSchema = z.object({
@@ -212,11 +212,22 @@ export async function endLearnerFrameworkAssignment(formData: FormData) {
   if (!parsed.success) throw new Error("Teaching context could not be identified")
 
   const today = new Date().toISOString().slice(0, 10)
-  const { error } = await supabaseService()
+  const supabase = supabaseService()
+  const { data: assignment, error: readError } = await supabase
+    .from("learner_teaching_frameworks")
+    .select("id,starts_on")
+    .eq("id", parsed.data.assignmentId)
+    .eq("learner_id", parsed.data.learnerId)
+    .maybeSingle()
+
+  if (readError || !assignment) throw new Error("Teaching context not found")
+  const endOn = endDateForAssignment(assignment.starts_on, today)
+
+  const { error } = await supabase
     .from("learner_teaching_frameworks")
     .update({
       status: "ended",
-      ends_on: today,
+      ends_on: endOn,
       is_default: false,
       updated_by: internalUser.id,
       updated_at: new Date().toISOString(),

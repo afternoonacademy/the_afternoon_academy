@@ -136,18 +136,6 @@ export default async function LearnerPage({ params }: PageProps) {
       year: "numeric",
     }).format(new Date(value + "T12:00:00Z"))
 
-  const paidDates = Array.isArray(latestEntitlement?.selected_sessions)
-    ? [...new Set(
-        latestEntitlement.selected_sessions
-          .map((session) => {
-            if (!session || typeof session !== "object" || Array.isArray(session)) return null
-            const date = (session as Record<string, unknown>).date
-            return typeof date === "string" ? date : null
-          })
-          .filter((date): date is string => Boolean(date)),
-      )].sort()
-    : []
-
   return (
     <div className="space-y-6 pb-10">
       <header className="brand-hero p-6">

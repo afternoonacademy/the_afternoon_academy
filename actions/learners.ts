@@ -7,6 +7,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { assertCapability } from "@/lib/auth/require-capability";
 import { allocateDatedOperationsSeat } from "@/lib/delivery-capacity";
+import { buildPromptSnapshot, validateHomeworkSupportNote } from "@/lib/teaching/session-note.mjs";
+import { goalStatusAfterProgress, normaliseGoalProgressState } from "@/lib/teaching/goals.mjs";
 import { supabaseService } from "@/lib/supabase/service";
 
 const learnerSchema = z.object({
@@ -63,8 +65,13 @@ const renewalExpectedAttendanceSchema = z.object({
 const teacherUpdateSchema = z.object({
   learnerId: z.string().uuid(),
   occurredOn: z.string().date(),
-  whatHappened: z.string().trim().min(2).max(2000),
-  whyItMattered: z.string().trim().min(2).max(2000),
+  noteFormat: z.enum(["legacy", "contextual"]).default("legacy"),
+  assignmentId: z.string().uuid().optional(),
+  workingOn: z.string().trim().max(2000).optional(),
+  supportNeeded: z.string().trim().max(2000).optional(),
+  reached: z.string().trim().max(2000).optional(),
+  whatHappened: z.string().trim().max(2000).optional(),
+  whyItMattered: z.string().trim().max(2000).optional(),
   nextStep: z.string().trim().min(2).max(2000),
 });
 
@@ -80,6 +87,14 @@ const learnerGoalStatusSchema = z.object({
   learnerId: z.string().uuid(),
   goalId: z.string().uuid(),
   status: z.enum(["active", "achieved", "paused"]),
+});
+
+const learnerGoalProgressSchema = z.object({
+  learnerId: z.string().uuid(),
+  goalId: z.string().uuid(),
+  occurredOn: z.string().date(),
+  progressState: z.enum(["no_change", "progressing", "achieved", "needs_review"]),
+  note: z.string().trim().max(1000).optional(),
 });
 
 const sessionSchema = z.object({
@@ -368,7 +383,7 @@ export async function updateLearnerDetails(formData: FormData) {
 }
 
 export async function updateLearnerPersonalProfile(formData: FormData) {
-  await requireAdmin();
+  await assertCapability("edit_learning_record");
   const parsed = learnerPersonalProfileSchema.safeParse({
     learnerId: formData.get("learnerId"),
     firstName: formData.get("firstName"),
@@ -409,7 +424,7 @@ export async function updateLearnerPersonalProfile(formData: FormData) {
 }
 
 export async function recordRenewalExpectedAttendance(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { user } = await assertCapability("operate_sessions");
   const parsed = renewalExpectedAttendanceSchema.safeParse({
     learnerId: formData.get("learnerId"),
     attendanceDate: formData.get("attendanceDate"),
@@ -525,7 +540,7 @@ export async function recordRenewalExpectedAttendance(formData: FormData) {
 }
 
 export async function recordAttendance(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { user } = await assertCapability("operate_sessions");
   const parsed = attendanceSchema.safeParse({
     learnerId: formData.get("learnerId"),
     attendanceDate: formData.get("attendanceDate"),
@@ -559,35 +574,87 @@ export async function recordAttendance(formData: FormData) {
 }
 
 export async function createTeacherUpdate(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { user } = await assertCapability("edit_learning_record");
   const parsed = teacherUpdateSchema.safeParse({
     learnerId: formData.get("learnerId"),
     occurredOn: formData.get("occurredOn"),
-    whatHappened: formData.get("whatHappened"),
-    whyItMattered: formData.get("whyItMattered"),
+    noteFormat: formData.get("noteFormat") || "legacy",
+    assignmentId: formData.get("assignmentId") || undefined,
+    workingOn: formData.get("workingOn") || undefined,
+    supportNeeded: formData.get("supportNeeded") || undefined,
+    reached: formData.get("reached") || undefined,
+    whatHappened: formData.get("whatHappened") || undefined,
+    whyItMattered: formData.get("whyItMattered") || undefined,
     nextStep: formData.get("nextStep"),
   });
 
-  if (!parsed.success) throw new Error("Please complete the teacher update");
+  if (!parsed.success) throw new Error("Please complete the session note");
 
   const supabase = supabaseService();
+  let assignment = null;
+  let version = null;
+
+  if (parsed.data.noteFormat === "contextual") {
+    validateHomeworkSupportNote({
+      workingOn: parsed.data.workingOn,
+      supportNeeded: parsed.data.supportNeeded,
+      reached: parsed.data.reached,
+      nextStep: parsed.data.nextStep,
+    });
+
+    if (parsed.data.assignmentId) {
+      const { data, error } = await supabase
+        .from("learner_teaching_frameworks")
+        .select("id,learner_id,framework_id,framework_version_id,status,starts_on,ends_on,teaching_frameworks(id,title),teaching_framework_versions(id,prompt_config)")
+        .eq("id", parsed.data.assignmentId)
+        .eq("learner_id", parsed.data.learnerId)
+        .maybeSingle();
+
+      if (error || !data) throw new Error("Teaching framework could not be loaded");
+      if (
+        data.status !== "active" ||
+        data.starts_on > parsed.data.occurredOn ||
+        (data.ends_on && data.ends_on < parsed.data.occurredOn)
+      ) {
+        throw new Error("Choose an active teaching framework for this session");
+      }
+
+      assignment = data;
+      version = Array.isArray(data.teaching_framework_versions)
+        ? data.teaching_framework_versions[0]
+        : data.teaching_framework_versions;
+    }
+  } else if (!parsed.data.whatHappened || !parsed.data.whyItMattered) {
+    throw new Error("Please complete the teacher update");
+  }
+
+  const contextual = parsed.data.noteFormat === "contextual";
   const { error } = await supabase.from("teacher_updates").insert({
     learner_id: parsed.data.learnerId,
     occurred_on: parsed.data.occurredOn,
-    what_happened: parsed.data.whatHappened,
-    why_it_mattered: parsed.data.whyItMattered,
+    what_happened: contextual ? parsed.data.workingOn : parsed.data.whatHappened,
+    why_it_mattered: contextual
+      ? parsed.data.supportNeeded || "No specific support issue recorded"
+      : parsed.data.whyItMattered,
     next_step: parsed.data.nextStep,
+    working_on: contextual ? parsed.data.workingOn : null,
+    support_needed: contextual ? parsed.data.supportNeeded || null : null,
+    reached: contextual ? parsed.data.reached : null,
+    note_format: parsed.data.noteFormat,
+    teaching_framework_id: assignment?.framework_id || null,
+    teaching_framework_version_id: assignment?.framework_version_id || null,
+    learner_teaching_framework_id: assignment?.id || null,
+    prompt_snapshot: version ? buildPromptSnapshot(version) : null,
     parent_visible: false,
     author_id: user.id,
   });
 
-  if (error) throw new Error("Could not save teacher update");
+  if (error) throw new Error("Could not save session note");
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`);
   revalidatePath("/admin/operations");
 }
-
 export async function createLearnerGoal(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { user } = await assertCapability("edit_learning_record");
   const parsed = learnerGoalSchema.safeParse({
     learnerId: formData.get("learnerId"),
     title: formData.get("title"),
@@ -615,7 +682,7 @@ export async function createLearnerGoal(formData: FormData) {
 }
 
 export async function updateLearnerGoalStatus(formData: FormData) {
-  await requireAdmin();
+  await assertCapability("edit_learning_record");
   const parsed = learnerGoalStatusSchema.safeParse({
     learnerId: formData.get("learnerId"),
     goalId: formData.get("goalId"),
@@ -633,6 +700,60 @@ export async function updateLearnerGoalStatus(formData: FormData) {
   if (error) throw new Error("Could not update learner goal");
   revalidatePath(`/admin/learners/${parsed.data.learnerId}`);
   revalidatePath("/admin/operations");
+}
+
+export async function recordLearnerGoalProgress(formData: FormData) {
+  const { user } = await assertCapability("edit_learning_record")
+  const parsed = learnerGoalProgressSchema.safeParse({
+    learnerId: formData.get("learnerId"),
+    goalId: formData.get("goalId"),
+    occurredOn: formData.get("occurredOn"),
+    progressState: formData.get("progressState"),
+    note: formData.get("note") || undefined,
+  })
+
+  if (!parsed.success) throw new Error("Please check the goal progress update")
+  const progressState = normaliseGoalProgressState(parsed.data.progressState)
+  const supabase = supabaseService()
+
+  const { data: goal, error: goalError } = await supabase
+    .from("learner_goals")
+    .select("id,status")
+    .eq("id", parsed.data.goalId)
+    .eq("learner_id", parsed.data.learnerId)
+    .maybeSingle()
+
+  if (goalError || !goal) throw new Error("Learner goal not found")
+  if (goal.status !== "active" && progressState !== "no_change") {
+    throw new Error("Only an active goal can receive a progress update")
+  }
+
+  if (progressState !== "no_change") {
+    const { error: progressError } = await supabase
+      .from("learner_goal_progress")
+      .insert({
+        learner_id: parsed.data.learnerId,
+        goal_id: parsed.data.goalId,
+        occurred_on: parsed.data.occurredOn,
+        progress_state: progressState,
+        note: parsed.data.note || null,
+        recorded_by: user.id,
+      })
+    if (progressError) throw new Error("Could not record learner goal progress")
+  }
+
+  const nextStatus = goalStatusAfterProgress(goal.status, progressState)
+  if (nextStatus !== goal.status) {
+    const { error: statusError } = await supabase
+      .from("learner_goals")
+      .update({ status: nextStatus })
+      .eq("id", parsed.data.goalId)
+      .eq("learner_id", parsed.data.learnerId)
+    if (statusError) throw new Error("Goal progress was recorded but goal status could not be updated")
+  }
+
+  revalidatePath(`/admin/learners/${parsed.data.learnerId}`)
+  revalidatePath("/admin/operations")
 }
 
 export async function createAcademySession(formData: FormData) {

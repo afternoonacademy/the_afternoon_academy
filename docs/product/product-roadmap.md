@@ -256,3 +256,14 @@ This baseline should be treated as the starting point for future Phase 1 feature
 - Revisit provider API integration when manual signature checking becomes materially time-consuming or document volume justifies the recurring cost.
 - Future integration should automate signature-state updates, signed-PDF retrieval, audit evidence and document versioning without replacing the TAA family-document model.
 - Provider choice should remain replaceable; PandaDoc is a current candidate but is not a locked architectural dependency.
+
+
+### Teacher-first learner workspace & Teaching Frameworks — October 2026
+
+TAA is moving the learner record from a mixed teaching/admin page to a teacher-first workspace. The default Workspace focuses on active support, observable goals, the most recent useful evidence, helpful strategies and a fast post-session note. Attendance and Teaching History are separate teaching tabs; Family & Place and Communications remain Admin-only.
+
+Teaching Frameworks provide reusable Academy guidance such as General Homework Support, IGCSE Chemistry or Study Skills. A learner may have several framework assignments over time or concurrently, with one optional default. Learner-specific course, exam board, current unit and objectives sit on the assignment. A teacher may override the framework for one session without changing the learner's master context.
+
+The first General Homework Support workflow deliberately targets about 30–60 seconds and asks only: what were we working on, where did support become necessary if relevant, where did we get to, and what should we pick up next. Framework-specific labels, tips and examples may vary, but TAA does not ask tutors to recreate school reports.
+
+Teaching Framework guidance is versioned so older teaching notes retain the guidance used at the time. The Teaching Hub is readable by teachers and admins; global framework management is Admin-only. Identifiable learner data remains outside AI processing until the existing approval, safeguarding and data-protection conditions are met.

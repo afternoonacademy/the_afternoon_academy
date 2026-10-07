@@ -601,3 +601,26 @@ _Release note: PR #20 merged to the production branch._
 - Parent email is optional before payment: admins may agree dates by phone, WhatsApp, in person or email and then record cleared payment from a valid planned booking.
 - Correcting booking information still regenerates the one-off email draft for optional review/resend, without rewriting historical sent-email records.
 - Sending a corrected email while already Contacted leaves the lifecycle at Contacted.
+
+
+## 7 October 2026 — Teacher-first learner workspace release candidate
+
+- Redesigned Learner Records around a teaching-first Workspace rather than mixing teaching, billing, profile editing and communications on one long page.
+- Added separate Attendance and Teaching History tabs. The former Internal teaching timeline is now explicitly Teaching History and continues to render legacy notes.
+- Moved Family & Place and Communications into Admin-only tabs and moved profile/status editing to dedicated actions.
+- Added versioned Teaching Frameworks and learner-specific framework assignments. Learners can retain several support periods over time or concurrently, with an optional default and one-session override.
+- Added the Teaching Hub: teachers can read published crib sheets; admins can create, version, publish and archive Academy guidance.
+- Seeded General Homework Support with a deliberately lightweight note flow: What were we working on? / Where did they need support? / Where did we get to? / What should we pick up next?
+- Added contextual note snapshots so historical notes retain the framework/version guidance used when saved.
+- Added quick goal progress choices while keeping long narrative reporting optional.
+- Kept identifiable learner data out of AI calls in the new default note workflow.
+- Added Vercel deployment-economy rules to AGENTS.md after identifying that per-commit preview builds can exhaust project deployment limits.
+
+
+## 7 October 2026 — Family Updates linked to learner teaching evidence
+
+- Family Updates now assembles a curated monthly learning-evidence bundle from both legacy and contextual teacher notes, active/recent goals, goal-progress events, Teaching Framework/course/topic context and useful learner-profile context.
+- Admin reviews the exact monthly evidence before AI drafting. Attendance and commercial/payment data are deliberately excluded.
+- Vercel AI Gateway remains the controlled drafting path; evidence review continues to work if Gateway is not yet enabled.
+- Teaching Framework evidence/goal/avoid guidance can influence the monthly draft without exposing internal framework instructions to parents.
+- Parent email remains human-reviewed and editable. Sending is an explicit Admin action through Resend and the sent copy is logged as a learning_update in family communications.

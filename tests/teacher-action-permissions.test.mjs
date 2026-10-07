@@ -11,6 +11,7 @@ test("teacher-safe action policy is explicit", () => {
     "createTeacherUpdate",
     "createLearnerGoal",
     "updateLearnerGoalStatus",
+    "recordLearnerGoalProgress",
     "updateLearnerPersonalProfile",
     "addDeliverySeat",
     "addAdhocDeliverySeat",

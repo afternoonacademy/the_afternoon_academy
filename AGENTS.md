@@ -104,6 +104,23 @@ Because AI-generated code can look plausible while being wrong, encode important
 - Security review tools are an additional layer, not proof that the app is secure.
 - Preview deployments are for verification; production is not a test environment.
 
+### Deployment economy — Vercel previews are a limited resource
+
+Vercel preview/build capacity must be treated as a limited operational resource. TAA can hit Vercel deployment/rate limits if every small development commit triggers its own build.
+
+- **Do not use incremental Vercel deployments as the development loop.** A sequence of test-first edits, helper commits, UI commits, refactors or intermediate broken states must not each trigger a preview build merely because they are separate implementation steps.
+- **Batch implementation work into sensible development chunks before pushing to a branch that auto-deploys.** The agent is responsible for deciding the appropriate chunk size based on risk, feature boundaries and what actually needs browser/runtime verification.
+- **Prefer local/repository-level verification first:** automated tests, lint, typecheck, build and code review should catch ordinary implementation errors before a Vercel preview is requested.
+- **Create a preview deployment only when it adds information that local/static verification cannot provide**, such as integrated browser behaviour, Vercel runtime/environment behaviour, authentication/deployment protection, or founder acceptance of a coherent feature slice.
+- **Do not deliberately push known-red or intentionally incomplete TDD states to an auto-deploying branch.** RED tests belong in the development workspace; Vercel should receive a coherent green chunk.
+- **For a normal feature, aim for the minimum useful number of previews rather than a preview per commit.** Often one coherent release-candidate preview is enough; use additional previews only when a meaningful integration finding requires another verification cycle.
+- **Documentation-only or bookkeeping changes should be batched with the next appropriate code push where practical** rather than consuming a deployment on their own.
+- Before starting implementation on an auto-deploying branch, explicitly consider the repo's deployment trigger behaviour and plan the commit/push strategy accordingly.
+- If a workflow/tooling choice would create many deployments, change the workflow rather than accepting the deployment volume.
+- When reporting implementation progress, distinguish **commits** from **deployments**. Frequent logical checkpoints are acceptable internally; frequent Vercel builds are not required.
+
+The goal is not an arbitrary fixed deployment count. The agent must use engineering judgement to choose the fewest deployments that still provide safe, meaningful verification and human acceptance.
+
 ## Role model for AI-assisted work
 
 The same model may perform different roles at different times, but keep the responsibilities distinct:
@@ -201,3 +218,17 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Existing externally signed forms may be recorded without requiring a new TAA send.
 - Reusable parent-facing registration email wording belongs in Academy Setup email templates.
 - A future Adobe/PandaDoc/other signing API must update the same family-document state rather than create a parallel document system.
+
+
+### Learner teaching workspace invariant
+
+- The learner record is the long-term source of truth for teaching context. A learner may have several Teaching Framework assignments over time or concurrently; one active assignment may be the default.
+- A per-session framework selection or override changes that session only. It must never silently rewrite the learner's longer-term teaching context.
+- Teaching Frameworks are reusable Academy guidance for how TAA teaches and reviews a type of provision. Learner-specific course, exam board, topic and objectives belong on the learner assignment rather than duplicating the global framework.
+- Framework versions are historical evidence. Publishing new guidance must not rewrite the framework/version or prompt snapshot stored on an earlier teaching note.
+- The normal teaching-note workflow should remain proportionate and fast: target roughly 30–60 seconds for routine Homework Support. TAA complements school provision and does not require teachers to recreate school reports.
+- Routine teaching evidence should be concise and factual: what was worked on, where support was needed when useful, where the learner got to, and what should be picked up next.
+- Attendance and Teaching History are teaching surfaces. Family/place/commercial data and family communications remain separate Admin-only learner tabs.
+- Personal profile editing and learner lifecycle/status editing are configuration actions, not permanent cards on the day-to-day teaching workspace.
+- Teaching Hub is readable by Admin and Teacher; global framework creation/versioning/publishing/archiving is Admin-only.
+- No identifiable learner data may be sent to an AI provider through this workflow unless the existing TAA AI/privacy approval conditions are separately satisfied.

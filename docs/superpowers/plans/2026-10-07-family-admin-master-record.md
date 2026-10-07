@@ -1,6 +1,6 @@
 # Family Administrative Master Record Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (\`- [ ]\`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (\`- [x]\`) syntax for tracking.
 
 **Goal:** Make the Family profile the canonical household administration record with scalable tabbed navigation and cursor-paginated email history, while simplifying the Learner profile back to teaching-first ownership.
 
@@ -48,7 +48,7 @@
 - Produces: \`pageFamilyEmailRows(rows, pageSize = 25) -> { items, hasMore, nextCursor }\`
 - Consumes: no database dependency; pure functions only so cursor semantics are independently testable.
 
-- [ ] **Step 1: Write the failing cursor and page-boundary tests**
+- [x] **Step 1: Write the failing cursor and page-boundary tests**
 
 Add tests asserting:
 
@@ -62,7 +62,7 @@ Add tests asserting:
 Run: \`node --test tests/family-email-pagination.test.mjs\`  
 Expected: FAIL because the helper does not exist.
 
-- [ ] **Step 2: Implement the pure pagination helper**
+- [x] **Step 2: Implement the pure pagination helper**
 
 Use base64url JSON for the opaque cursor. Validate that \`createdAt\` parses as a date and \`id\` is a UUID-shaped string before returning it.
 
@@ -72,12 +72,12 @@ The PostgREST cursor filter must be equivalent to:
 
 Do not put family IDs or authorization data in the cursor.
 
-- [ ] **Step 3: Run the focused pagination tests**
+- [x] **Step 3: Run the focused pagination tests**
 
 Run: \`node --test tests/family-email-pagination.test.mjs\`  
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 \`git add lib/admin/family-email-history.mjs tests/family-email-pagination.test.mjs && git commit -m "feat: add family email pagination contract"\`
 
@@ -96,7 +96,7 @@ Expected: PASS.
 - Produces: \`GET /api/admin/families/:id/emails?cursor=<opaque>\`
 - The API response shape is exactly \`{ items, hasMore, nextCursor }\`.
 
-- [ ] **Step 1: Write failing route/data-contract tests**
+- [x] **Step 1: Write failing route/data-contract tests**
 
 Test source contracts that pin:
 
@@ -110,7 +110,7 @@ Test source contracts that pin:
 Run: \`node --test tests/family-email-route-contract.test.mjs\`  
 Expected: FAIL because loader/route do not exist.
 
-- [ ] **Step 2: Implement \`loadFamilyEmailPage\`**
+- [x] **Step 2: Implement \`loadFamilyEmailPage\`**
 
 Use \`supabaseAdmin\` because this is an authenticated internal Admin read path.
 
@@ -126,16 +126,16 @@ Apply:
 
 Pass returned rows through \`pageFamilyEmailRows\`.
 
-- [ ] **Step 3: Implement the Admin-only GET route**
+- [x] **Step 3: Implement the Admin-only GET route**
 
 Validate the family id as UUID. Call \`requireCapability("view_family_pipeline")\` before loading data. Decode/query failures caused by invalid cursors return HTTP 400 with a concise error; unexpected database errors return 500.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: \`node --test tests/family-email-route-contract.test.mjs tests/family-email-pagination.test.mjs\`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 \`git add lib/admin/load-family-emails.ts app/api/admin/families/[id]/emails/route.ts tests/family-email-route-contract.test.mjs && git commit -m "feat: paginate family email history"\`
 
@@ -154,7 +154,7 @@ Expected: PASS.
 - Fetches: Task 2 API endpoint when “Load older emails” is pressed.
 - Reuses: \`FamilyCommunications\` row/detail rendering rather than creating a second email-card format.
 
-- [ ] **Step 1: Write failing UI-contract tests**
+- [x] **Step 1: Write failing UI-contract tests**
 
 Pin these behaviours in source/component tests:
 
@@ -169,11 +169,11 @@ Pin these behaviours in source/component tests:
 Run: \`node --test tests/family-email-history-ui.test.mjs\`  
 Expected: FAIL.
 
-- [ ] **Step 2: Refactor \`FamilyCommunications\` into a reusable presentational list**
+- [x] **Step 2: Refactor \`FamilyCommunications\` into a reusable presentational list**
 
 Keep \`FamilyCommunication\` and existing labels/status formatting. Add only the props needed to render a list inside a caller-controlled scroll container; do not make this component fetch data.
 
-- [ ] **Step 3: Implement \`FamilyEmailHistory\` client pagination**
+- [x] **Step 3: Implement \`FamilyEmailHistory\` client pagination**
 
 State:
 
@@ -192,12 +192,12 @@ On load:
 
 Use a fixed-height panel around the list; do not make the whole Family page the email scroll surface.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: \`node --test tests/family-email-history-ui.test.mjs\`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 \`git add components/admin/family-communications.tsx components/admin/family-email-history.tsx tests/family-email-history-ui.test.mjs && git commit -m "feat: add scalable family email activity history"\`
 
@@ -216,7 +216,7 @@ Expected: PASS.
 - Consumes: existing \`FamilyBalanceManager\`, \`FamilyDocumentAuthorisation\`, \`SessionChangeLauncher\`
 - Produces: Family tabs with values exactly \`overview\`, \`children\`, \`payments\`, \`emails\`, \`documents\`
 
-- [ ] **Step 1: Write failing Family-profile structure tests**
+- [x] **Step 1: Write failing Family-profile structure tests**
 
 Assert:
 
@@ -230,7 +230,7 @@ Assert:
 Run: \`node --test tests/family-profile-tabs.test.mjs\`  
 Expected: FAIL.
 
-- [ ] **Step 2: Rework the header and tab shell**
+- [x] **Step 2: Rework the header and tab shell**
 
 Use the shared horizontal Tabs component with the same desktop scrollbar-safe class pattern already used by learner records:
 
@@ -238,7 +238,7 @@ Use the shared horizontal Tabs component with the same desktop scrollbar-safe cl
 
 Header shows family name, email, optional phone, concise state if available, and Back to Family Pipeline.
 
-- [ ] **Step 3: Build Overview**
+- [x] **Step 3: Build Overview**
 
 Render concise cards only:
 
@@ -249,7 +249,7 @@ Render concise cards only:
 
 Do not duplicate full histories.
 
-- [ ] **Step 4: Move existing child/session UI into Children & places**
+- [x] **Step 4: Move existing child/session UI into Children & places**
 
 Preserve all current logic and handlers for:
 
@@ -260,7 +260,7 @@ Preserve all current logic and handlers for:
 
 Add empty state when the family has no learners.
 
-- [ ] **Step 5: Move finance/admin UI into Payments & renewals**
+- [x] **Step 5: Move finance/admin UI into Payments & renewals**
 
 Preserve:
 
@@ -271,22 +271,22 @@ Preserve:
 
 Do not change calculation or mutation code.
 
-- [ ] **Step 6: Put paginated communications under Email history**
+- [x] **Step 6: Put paginated communications under Email history**
 
 Call \`loadFamilyEmailPage({ parentLeadId: id })\` once for the initial page and pass the result to \`FamilyEmailHistory\`.
 
 The initial Family page must not query all historical email rows.
 
-- [ ] **Step 7: Move registration/authorisation under Documents**
+- [x] **Step 7: Move registration/authorisation under Documents**
 
 Render \`FamilyDocumentAuthorisation\` in the Documents tab and add a short section heading that can accommodate future document cards.
 
-- [ ] **Step 8: Run Family profile tests**
+- [x] **Step 8: Run Family profile tests**
 
 Run: \`node --test tests/family-profile-tabs.test.mjs tests/family-email-history-ui.test.mjs tests/family-email-route-contract.test.mjs tests/family-email-pagination.test.mjs\`  
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 \`git add app/admin/families/[id]/page.tsx components/admin/family-profile tests/family-profile-tabs.test.mjs && git commit -m "feat: make family profile the admin master record"\`
 
@@ -306,7 +306,7 @@ If no \`components/admin/family-profile\` directory was needed, omit it from \`g
 - Produces: Admin-only compact Family reference with \`/admin/families/:parentLeadId\` link
 - Removes: full Family communications rendering and duplicated Family/place admin tab content.
 
-- [ ] **Step 1: Write failing ownership tests**
+- [x] **Step 1: Write failing ownership tests**
 
 Assert:
 
@@ -320,13 +320,13 @@ Assert:
 Run: \`node --test tests/learner-family-ownership.test.mjs\`  
 Expected: FAIL.
 
-- [ ] **Step 2: Remove duplicated family communication and place-management queries/UI**
+- [x] **Step 2: Remove duplicated family communication and place-management queries/UI**
 
 Delete the family communications query and the full Communications tab.
 
 Remove the separate full Family & place tab. Keep only the minimum entitlement/family lookup needed for the compact Admin reference.
 
-- [ ] **Step 3: Add the compact Admin-only Family reference**
+- [x] **Step 3: Add the compact Admin-only Family reference**
 
 For users with \`view_family_pipeline\`, show a small card/reference near the learner workspace containing:
 
@@ -336,12 +336,12 @@ For users with \`view_family_pipeline\`, show a small card/reference near the le
 
 Teachers must not render this block.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: \`node --test tests/learner-family-ownership.test.mjs tests/learner-workspace-policy.test.mjs tests/admin-route-policy.test.mjs\`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 \`git add app/admin/learners/[id]/page.tsx tests/learner-family-ownership.test.mjs && git commit -m "refactor: keep learner records teaching first"\`
 
@@ -358,7 +358,7 @@ Expected: PASS.
 - Consumes: completed Tasks 1–5
 - Produces: current project documentation and release evidence
 
-- [ ] **Step 1: Update baseline and change log**
+- [x] **Step 1: Update baseline and change log**
 
 Record:
 
@@ -368,17 +368,17 @@ Record:
 - learner profile teaching-first ownership
 - no changes to payment/renewal/session/document business semantics
 
-- [ ] **Step 2: Run the complete repository test suite**
+- [x] **Step 2: Run the complete repository test suite**
 
 Run: \`npm test\`  
 Expected: all tests PASS, 0 failures.
 
-- [ ] **Step 3: Run the production build**
+- [x] **Step 3: Run the production build**
 
 Run: \`npm run build\`  
 Expected: Next.js compile, TypeScript and static generation all PASS. The known middleware/proxy deprecation warning may remain; do not broaden this feature to fix it.
 
-- [ ] **Step 4: Perform a distinct whole-branch review**
+- [x] **Step 4: Perform a distinct whole-branch review**
 
 Review the final branch diff against the design spec, specifically checking:
 
@@ -390,11 +390,11 @@ Review the final branch diff against the design spec, specifically checking:
 
 Fix only findings within this feature's scope, rerun affected tests, and commit any review fixes separately.
 
-- [ ] **Step 5: Push once for the coherent release-candidate preview**
+- [x] **Step 5: Push once for the coherent release-candidate preview**
 
 Do not use Vercel as the development loop. Push the completed/reviewed branch once the local/repository verification is green.
 
-- [ ] **Step 6: Verify the Vercel preview**
+- [x] **Step 6: Verify the Vercel preview**
 
 Verify on desktop and mobile:
 
@@ -408,10 +408,15 @@ Verify on desktop and mobile:
 - learner profile contains only teaching surfaces plus Admin family reference
 - Teacher view does not expose family admin data
 
-- [ ] **Step 7: Human acceptance gate**
+- [x] **Step 7: Human acceptance gate**
 
 Do not merge or promote to production until the founder explicitly accepts the preview.
 
-- [ ] **Step 8: Commit documentation**
+- [x] **Step 8: Commit documentation**
 
 \`git add docs/product/project-change-log.md docs/engineering/current-baseline.md docs/superpowers/plans/2026-10-07-family-admin-master-record.md && git commit -m "docs: record family administrative master record"\`
+
+
+## Execution note
+
+Implemented natively in one batched feature slice. Targeted RED/GREEN verification covered pagination, route authorization/query contracts, bounded email history UI, five-tab Family information architecture, and learner/family ownership. Final repository/Vercel verification is recorded in the release report rather than using Vercel as an incremental development loop.

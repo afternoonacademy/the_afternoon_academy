@@ -624,3 +624,12 @@ _Release note: PR #20 merged to the production branch._
 - Vercel AI Gateway remains the controlled drafting path; evidence review continues to work if Gateway is not yet enabled.
 - Teaching Framework evidence/goal/avoid guidance can influence the monthly draft without exposing internal framework instructions to parents.
 - Parent email remains human-reviewed and editable. Sending is an explicit Admin action through Resend and the sent copy is logged as a learning_update in family communications.
+
+
+## 7 October 2026 — Family profile becomes administrative master record
+
+- Family profile is now the canonical household administrative record.
+- Added Overview, Children & places, Payments & renewals, Email history and Documents tabs.
+- Parent email history is bounded to 25 messages per page with deterministic server-side cursor pagination and a fixed-height scrollable activity view.
+- Learner records remain teaching-first; full family communications and place/financial administration are no longer duplicated there.
+- Existing payment, renewal, session-change, document, Resend and Family Updates business semantics are unchanged.

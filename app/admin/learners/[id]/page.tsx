@@ -6,7 +6,6 @@ import {
   recordAttendance,
   recordLearnerGoalProgress,
 } from "@/actions/learners"
-import { FamilyCommunications } from "@/components/admin/family-communications"
 import { TeacherSessionNote } from "@/components/admin/teacher-session-note"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -107,56 +106,28 @@ export default async function LearnerPage({ params }: PageProps) {
   const latestUpdate = updates[0] || null
   const activeGoals = goals.filter((goal) => goal.status === "active")
 
-  const [standingResult, entitlementResult, renewalResult, communicationsResult] =
-    canViewCommercial
-      ? await Promise.all([
-          supabaseAdmin
-            .from("standing_placements")
-            .select("id,weekday,table_number,seat_number,starts_at,status,effective_from,effective_to,session_price_plans(name,price_cents)")
-            .eq("learner_id", id)
-            .eq("status", "active")
-            .order("weekday")
-            .order("starts_at"),
-          supabaseAdmin
-            .from("child_payment_entitlements")
-            .select("period_start,period_end,status,selected_sessions,created_at")
-            .eq("learner_id", id)
-            .eq("status", "paid")
-            .order("period_end", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabaseAdmin
-            .from("renewal_cases")
-            .select("status,due_on,selected_sessions,email_sent_at")
-            .eq("learner_id", id)
-            .in("status", ["ready_to_send", "awaiting_payment", "overdue"])
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabaseAdmin
-            .from("email_delivery_log")
-            .select("id,parent_lead_id,child_lead_id,learner_id,renewal_case_id,email_kind,recipient_email,status,subject,body_text,sent_at,delivered_at,bounced_at,failed_at,delivery_detail,error_message,created_at,child_leads(first_name),learners(first_name)")
-            .eq("parent_lead_id", learner.parent_lead_id)
-            .order("created_at", { ascending: false }),
-        ])
-      : [{ data: [] }, { data: null }, { data: null }, { data: [] }]
+  const [entitlementResult, familyResult] = canViewCommercial
+    ? await Promise.all([
+        supabaseAdmin
+          .from("child_payment_entitlements")
+          .select("period_start,period_end,status,created_at")
+          .eq("learner_id", id)
+          .eq("status", "paid")
+          .order("period_end", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        learner.parent_lead_id
+          ? supabaseAdmin
+              .from("parent_leads")
+              .select("parent_name")
+              .eq("id", learner.parent_lead_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ])
+    : [{ data: null }, { data: null }]
 
-  const activePlaces = standingResult.data || []
   const latestEntitlement = entitlementResult.data
-  const renewal = renewalResult.data
-  const communications = communicationsResult.data || []
-  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
-  const paymentStatus =
-    renewal?.status === "awaiting_payment"
-      ? "Payment pending"
-      : renewal?.status === "ready_to_send" || renewal?.status === "overdue"
-        ? "Renewal due"
-        : latestEntitlement?.period_end && latestEntitlement.period_end >= today
-          ? "Paid"
-          : activePlaces.length
-            ? "Renewal due"
-            : "No active place"
+  const family = familyResult.data
 
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat("en-GB", {
@@ -228,8 +199,6 @@ export default async function LearnerPage({ params }: PageProps) {
           <TabsTrigger className="min-w-fit px-4 py-3" value="workspace">Workspace</TabsTrigger>
           <TabsTrigger className="min-w-fit px-4 py-3" value="attendance">Attendance</TabsTrigger>
           <TabsTrigger className="min-w-fit px-4 py-3" value="history">Teaching history</TabsTrigger>
-          {canViewCommercial ? <TabsTrigger className="min-w-fit px-4 py-3" value="family">Family & place</TabsTrigger> : null}
-          {canViewCommercial ? <TabsTrigger className="min-w-fit px-4 py-3" value="communications">Communications</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent className="space-y-5 pt-4" value="workspace">
@@ -382,6 +351,28 @@ export default async function LearnerPage({ params }: PageProps) {
               <TeacherSessionNote learnerId={id} today={today} assignments={sessionAssignments} />
             </CardContent>
           </Card>
+
+          {canViewCommercial && learner.parent_lead_id ? (
+            <Card>
+              <CardHeader><CardTitle>Family administration</CardTitle></CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 text-sm">
+                <div>
+                  <p className="font-medium">{family?.parent_name || "Family account"}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {latestEntitlement?.period_end
+                      ? `Paid through ${formatDate(latestEntitlement.period_end)}`
+                      : "No current paid period"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Payments, renewals, documents and parent communications are managed on the Family profile.
+                  </p>
+                </div>
+                <Button asChild variant="outline">
+                  <Link href={"/admin/families/" + learner.parent_lead_id}>Open family account</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </TabsContent>
 
         <TabsContent className="space-y-5 pt-4" value="attendance">
@@ -470,62 +461,6 @@ export default async function LearnerPage({ params }: PageProps) {
           </Card>
         </TabsContent>
 
-        {canViewCommercial ? (
-          <TabsContent className="space-y-5 pt-4" value="family">
-            <Card>
-              <CardHeader><CardTitle>Family & place</CardTitle></CardHeader>
-              <CardContent className="space-y-5 text-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={paymentStatus === "Paid" ? "default" : "secondary"}>{paymentStatus}</Badge>
-                  {latestEntitlement?.period_end ? <span>Paid through {formatDate(latestEntitlement.period_end)}</span> : null}
-                </div>
-                <div>
-                  <p className="font-medium">Recurring place</p>
-                  {activePlaces.length ? (
-                    <div className="mt-2 space-y-1 text-muted-foreground">
-                      {activePlaces.map((place) => {
-                        const plan = relationOne(place.session_price_plans)
-                        return (
-                          <p key={place.id}>
-                            {weekdayNames[place.weekday]} · {place.starts_at.slice(0, 5)} · Table {place.table_number}
-                            {place.seat_number ? ` · Seat ${place.seat_number}` : ""}
-                            {plan ? ` · ${plan.name} · €${(plan.price_cents / 100).toFixed(2)}/session` : ""}
-                          </p>
-                        )
-                      })}
-                    </div>
-                  ) : <p className="mt-1 text-muted-foreground">No active recurring place.</p>}
-                </div>
-                <div>
-                  <p className="font-medium">Booked paid dates</p>
-                  {paidDates.length ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {paidDates.map((date) => <Badge key={date} variant="outline">{formatDate(date)}</Badge>)}
-                    </div>
-                  ) : <p className="mt-1 text-muted-foreground">No paid service dates recorded.</p>}
-                </div>
-                {learner.parent_lead_id ? (
-                  <Button asChild variant="outline">
-                    <Link href={"/admin/families/" + learner.parent_lead_id}>Open family account</Link>
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ) : null}
-
-        {canViewCommercial ? (
-          <TabsContent className="pt-4" value="communications">
-            <Card>
-              <CardContent className="pt-6">
-                <FamilyCommunications
-                  communications={communications}
-                  emptyLabel="No parent communications have been recorded for this family yet."
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ) : null}
       </Tabs>
     </div>
   )

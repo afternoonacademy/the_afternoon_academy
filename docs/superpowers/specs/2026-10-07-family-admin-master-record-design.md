@@ -1,7 +1,7 @@
 # Family Administrative Master Record Design
 
 **Date:** 2026-10-07  
-**Status:** Approved in chat, pending written-spec review  
+**Status:** Approved and implemented on feature branch; pending founder preview acceptance  
 **Project:** The Afternoon Academy
 
 ## 1. Purpose

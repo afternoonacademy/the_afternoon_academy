@@ -155,6 +155,52 @@ export async function saveTeachingFrameworkDraft(formData: FormData) {
   revalidatePath("/admin/teaching/frameworks/" + parsed.data.frameworkId)
 }
 
+export async function createTeachingFrameworkDraftVersion(formData: FormData) {
+  const { internalUser } = await assertCapability("manage_teaching_frameworks")
+  const parsed = z.object({
+    frameworkId: z.string().uuid(),
+    sourceVersionId: z.string().uuid(),
+  }).safeParse({
+    frameworkId: formData.get("frameworkId"),
+    sourceVersionId: formData.get("sourceVersionId"),
+  })
+  if (!parsed.success) throw new Error("Framework version could not be identified")
+
+  const supabase = supabaseService()
+  const [{ data: source, error: sourceError }, { data: versions, error: versionsError }] =
+    await Promise.all([
+      supabase
+        .from("teaching_framework_versions")
+        .select("preparation_guidance,during_session_guidance,goal_guidance,evidence_guidance,avoid_guidance,reference_resources,prompt_config")
+        .eq("id", parsed.data.sourceVersionId)
+        .eq("framework_id", parsed.data.frameworkId)
+        .maybeSingle(),
+      supabase
+        .from("teaching_framework_versions")
+        .select("version_number")
+        .eq("framework_id", parsed.data.frameworkId),
+    ])
+
+  if (sourceError || !source) throw new Error("Published framework version not found")
+  if (versionsError) throw new Error("Could not read framework versions")
+
+  const { error } = await supabase.from("teaching_framework_versions").insert({
+    framework_id: parsed.data.frameworkId,
+    version_number: nextFrameworkVersionNumber(versions || []),
+    preparation_guidance: source.preparation_guidance,
+    during_session_guidance: source.during_session_guidance,
+    goal_guidance: source.goal_guidance,
+    evidence_guidance: source.evidence_guidance,
+    avoid_guidance: source.avoid_guidance,
+    reference_resources: source.reference_resources || [],
+    prompt_config: source.prompt_config || [],
+    created_by: internalUser.id,
+  })
+
+  if (error) throw new Error("Could not create a new framework draft")
+  revalidatePath("/admin/teaching/frameworks/" + parsed.data.frameworkId)
+}
+
 export async function publishTeachingFrameworkVersion(formData: FormData) {
   const { internalUser } = await assertCapability("manage_teaching_frameworks")
   const parsed = z.object({ frameworkId: z.string().uuid(), versionId: z.string().uuid() }).safeParse({
@@ -191,6 +237,19 @@ export async function publishTeachingFrameworkVersion(formData: FormData) {
     })
     .eq("id", parsed.data.frameworkId)
   if (error) throw new Error("Could not publish teaching framework")
+
+  const { error: assignmentError } = await supabase
+    .from("learner_teaching_frameworks")
+    .update({
+      framework_version_id: version.id,
+      updated_by: internalUser.id,
+      updated_at: now,
+    })
+    .eq("framework_id", parsed.data.frameworkId)
+    .in("status", ["active", "paused"])
+  if (assignmentError) {
+    throw new Error("Framework published, but learner teaching contexts could not be updated")
+  }
 
   revalidatePath("/admin/teaching")
   revalidatePath("/admin/teaching/frameworks/" + parsed.data.frameworkId)

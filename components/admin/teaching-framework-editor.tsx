@@ -1,4 +1,4 @@
-import { archiveTeachingFramework, publishTeachingFrameworkVersion, saveTeachingFrameworkDraft } from "@/actions/teaching-frameworks"
+import { archiveTeachingFramework, createTeachingFrameworkDraftVersion, publishTeachingFrameworkVersion, saveTeachingFrameworkDraft } from "@/actions/teaching-frameworks"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { TeachingPromptEditor } from "@/components/admin/teaching-prompt-editor"
@@ -56,9 +56,18 @@ export function TeachingFrameworkEditor({ framework, version }: Props) {
           <Button>Save framework draft</Button>
         </form>
       ) : (
-        <p className="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">
-          Published versions are locked so historical session notes keep the guidance that was used at the time. Create a new draft version to make changes.
-        </p>
+        <div className="rounded-xl border bg-muted/20 p-4 text-sm">
+          <p className="text-muted-foreground">
+            Published versions are locked so historical session notes keep the guidance that was used at the time.
+          </p>
+          {version ? (
+            <form action={createTeachingFrameworkDraftVersion} className="mt-3">
+              <input name="frameworkId" type="hidden" value={framework.id} />
+              <input name="sourceVersionId" type="hidden" value={version.id} />
+              <Button size="sm" variant="outline">Create editable version {version.version_number + 1}</Button>
+            </form>
+          ) : null}
+        </div>
       )}
 
       {version ? (

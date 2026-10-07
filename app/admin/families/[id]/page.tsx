@@ -32,17 +32,7 @@ export default async function FamilyAccountPage({ params }: PageProps) {
   const { id } = await params
   const today = new Date().toISOString().slice(0, 10)
 
-  const [
-    parentResult,
-    learnersResult,
-    placementsResult,
-    entitlementsResult,
-    templatesResult,
-    plansResult,
-    renewalsResult,
-    documentsResult,
-    initialEmailPage,
-  ] = await Promise.all([
+  const [parentResult, learnersResult] = await Promise.all([
     supabaseAdmin
       .from("parent_leads")
       .select("id,parent_name,email,phone,status,account_adjustments")
@@ -53,14 +43,36 @@ export default async function FamilyAccountPage({ params }: PageProps) {
       .select("id,first_name,year_group,status,child_lead_id,parent_lead_id")
       .eq("parent_lead_id", id)
       .order("first_name"),
+  ])
+
+  const parent = parentResult.data
+  if (!parent) notFound()
+
+  const learners = learnersResult.data || []
+  const learnerIds = learners.map((learner) => learner.id)
+  const scopedLearnerIds = learnerIds.length
+    ? learnerIds
+    : ["00000000-0000-0000-0000-000000000000"]
+
+  const [
+    placementsResult,
+    entitlementsResult,
+    templatesResult,
+    plansResult,
+    renewalsResult,
+    documentsResult,
+    initialEmailPage,
+  ] = await Promise.all([
     supabaseAdmin
       .from("standing_placements")
       .select("id,learner_id,weekday,starts_at,table_number,seat_number,effective_from,effective_to,status,session_price_plans(name,price_cents)")
+      .in("learner_id", learnerIds.length ? learnerIds : scopedLearnerIds)
       .eq("status", "active")
       .order("effective_from"),
     supabaseAdmin
       .from("child_payment_entitlements")
       .select("id,learner_id,period_start,period_end,status,selected_sessions")
+      .in("learner_id", learnerIds.length ? learnerIds : scopedLearnerIds)
       .eq("status", "paid")
       .order("period_end", { ascending: false }),
     supabaseAdmin
@@ -96,10 +108,6 @@ export default async function FamilyAccountPage({ params }: PageProps) {
     })),
   ])
 
-  const parent = parentResult.data
-  if (!parent) notFound()
-
-  const learners = learnersResult.data || []
   const placements = placementsResult.data || []
   const entitlements = entitlementsResult.data || []
   const renewals = renewalsResult.data || []

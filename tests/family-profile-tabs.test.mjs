@@ -30,3 +30,9 @@ test("family tab navigation uses desktop scrollbar-safe overflow", () => {
   assert.match(source, /overflow-x-auto overflow-y-hidden/)
   assert.match(source, /lg:overflow-visible/)
 })
+
+
+test("family operational queries are scoped to this household's learners", () => {
+  assert.match(source, /const learnerIds = learners\.map/)
+  assert.match(source, /\.in\("learner_id", learnerIds\.length/)
+})

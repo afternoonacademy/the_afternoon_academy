@@ -9,7 +9,8 @@ test("learner workspace does not duplicate family administration", () => {
   assert.doesNotMatch(source, /FamilyCommunications/)
   assert.doesNotMatch(source, />Communications</)
   assert.doesNotMatch(source, />Family & place</)
-  assert.doesNotMatch(source, /Booked paid dates/)\n  assert.doesNotMatch(source, /selected_sessions/)
+  assert.doesNotMatch(source, /Booked paid dates/)
+  assert.doesNotMatch(source, /selected_sessions/)
 })
 
 test("admins retain a concise link to the family master record", () => {

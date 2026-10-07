@@ -27,6 +27,7 @@ const kindLabel: Record<string, string> = {
   place_offer: "Place offer",
   planned_place: "Planned place email",
   payment_confirmed: "Payment confirmation",
+  payment_reminder: "Payment reminder",
   portal_access: "Portal access",
   learning_update: "Learning update",
   renewal_reminder: "Renewal email",
@@ -50,12 +51,8 @@ function statusVariant(status: string) {
 }
 
 function relatedName(item: FamilyCommunication) {
-  const learner = Array.isArray(item.learners)
-    ? item.learners[0]
-    : item.learners
-  const child = Array.isArray(item.child_leads)
-    ? item.child_leads[0]
-    : item.child_leads
+  const learner = Array.isArray(item.learners) ? item.learners[0] : item.learners
+  const child = Array.isArray(item.child_leads) ? item.child_leads[0] : item.child_leads
   return learner?.first_name || child?.first_name || null
 }
 
@@ -73,27 +70,32 @@ function formatTimestamp(value: string | null | undefined) {
 export function FamilyCommunications({
   communications,
   emptyLabel = "No parent communications recorded yet.",
+  showHeader = true,
+  title = "Family communications",
+  description = "Parent-facing communications only. Delivery status is tracked; open and click tracking are not used.",
 }: {
   communications: FamilyCommunication[]
   emptyLabel?: string
+  showHeader?: boolean
+  title?: string
+  description?: string
 }) {
   return (
     <section>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="font-semibold">Family communications</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Parent-facing communications only. Delivery status is tracked; open
-            and click tracking are not used.
-          </p>
+      {showHeader ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="font-semibold">{title}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {communications.length} message{communications.length === 1 ? "" : "s"}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {communications.length} message{communications.length === 1 ? "" : "s"}
-        </span>
-      </div>
+      ) : null}
 
       {communications.length ? (
-        <div className="mt-3 overflow-hidden rounded-lg border">
+        <div className={showHeader ? "mt-3 overflow-hidden rounded-lg border" : "overflow-hidden rounded-lg border"}>
           <div className="divide-y">
             {communications.map((item) => {
               const eventTime =
@@ -108,8 +110,7 @@ export function FamilyCommunications({
                   <summary className="grid cursor-pointer list-none gap-2 p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
                     <div className="min-w-0">
                       <p className="font-medium">
-                        {kindLabel[item.email_kind] ||
-                          item.email_kind.replaceAll("_", " ")}
+                        {kindLabel[item.email_kind] || item.email_kind.replaceAll("_", " ")}
                       </p>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
                         {item.subject || "No subject"} · {item.recipient_email}
@@ -117,12 +118,8 @@ export function FamilyCommunications({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <Badge variant={statusVariant(item.status)}>
-                        {statusLabel(item.status)}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {formatTimestamp(eventTime)}
-                      </span>
+                      <Badge variant={statusVariant(item.status)}>{statusLabel(item.status)}</Badge>
+                      <span className="text-xs text-muted-foreground">{formatTimestamp(eventTime)}</span>
                     </div>
                   </summary>
 
@@ -138,13 +135,9 @@ export function FamilyCommunications({
                         {item.delivery_detail || item.error_message}
                       </p>
                     ) : null}
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Subject
-                    </p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</p>
                     <p className="mt-1">{item.subject || "—"}</p>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Message sent
-                    </p>
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Message sent</p>
                     <div className="mt-2 whitespace-pre-wrap rounded-md border bg-background p-3 leading-relaxed">
                       {item.body_text || "Message body was not retained."}
                     </div>
@@ -155,7 +148,7 @@ export function FamilyCommunications({
           </div>
         </div>
       ) : (
-        <p className="mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        <p className={showHeader ? "mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground" : "rounded-lg border border-dashed p-4 text-sm text-muted-foreground"}>
           {emptyLabel}
         </p>
       )}

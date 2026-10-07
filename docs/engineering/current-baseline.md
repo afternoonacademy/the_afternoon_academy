@@ -219,3 +219,14 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Admin can preview the evidence without AI. Vercel AI Gateway is invoked only when the Admin requests a draft and remains dependent on the project's paid/approved Gateway configuration.
 - The parent-facing draft is editable and never auto-sent. Explicit send uses Resend and writes `email_delivery_log.email_kind = 'learning_update'` with the learner/family linkage so it appears in communications history.
 - The routine teacher session-note flow itself remains AI-free; Family Updates is the separate controlled Admin review boundary for monthly synthesis.
+
+
+### Family administrative master record — 7 October 2026
+
+- `/admin/families/[id]` is the canonical household administration surface and remains gated by `view_family_pipeline`.
+- Family tabs: Overview, Children & places, Payments & renewals, Email history, Documents.
+- Email history reads `email_delivery_log` in deterministic `created_at desc, id desc` order, 25 rows initially and 25 per next page through an Admin-only API route.
+- The email activity panel is bounded/scrollable; full retained body and delivery/error detail expand per message.
+- Initial or older-history email-load failures do not remove the rest of the Family profile; the email panel exposes retry.
+- Learner records own teaching, attendance, teaching history, goals, learner profile and Teaching Framework context. Admins receive only a concise family-account reference back to the Family profile.
+- Payment, renewal, standing-placement, session-change, family-balance and registration/document mutation logic is unchanged.

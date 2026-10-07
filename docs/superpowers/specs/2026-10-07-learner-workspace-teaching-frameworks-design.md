@@ -461,8 +461,9 @@ The slice is acceptable when:
 13. Changing or ending a framework assignment does not alter historical notes.
 14. Existing teacher updates with no framework still render correctly.
 15. Teacher cannot reach Admin-only Family & Place, Communications or framework-management actions directly.
-16. No new AI call sends identifiable learner data.
-17. Full automated tests, authorization tests, typecheck/build and preview verification pass before release.
+16. The default teacher session-note workflow does not send identifiable learner data to AI. The existing Admin-only Family Updates AI pathway may summarise curated monthly learning evidence only after Vercel AI Gateway and the existing TAA privacy/data-protection approval conditions are enabled and satisfied; every draft requires human review before sending.
+17. Family Updates previews the exact curated monthly evidence before AI drafting, excludes attendance/commercial data, supports both legacy and contextual session notes, and logs explicitly-sent learning-update emails in family communications.
+18. Full automated tests, authorization tests, typecheck/build and preview verification pass before release.
 
 ## 19. Testing strategy
 
@@ -506,3 +507,31 @@ Release sequence:
 9. production migration/release.
 
 Do not merge solely because the UI builds; preserve the existing operations, family, attendance and learner-history invariants throughout.
+
+
+## 21. Family Updates monthly evidence pipeline
+
+Family Updates is the downstream parent-communication use of the short teaching evidence captured during the month.
+
+The flow is:
+
+1. teacher records concise learner evidence during normal sessions;
+2. TAA assembles a curated monthly evidence bundle;
+3. Admin reviews that evidence before AI is invoked;
+4. the dedicated Family Updates route may use Vercel AI Gateway to draft a concise parent email and a separate internal next-month teaching plan;
+5. Admin reviews/edits the parent-facing draft;
+6. Admin explicitly sends the final email through Resend;
+7. the sent copy is recorded in `email_delivery_log` as `learning_update` and appears in learner/family communications.
+
+The evidence bundle may include:
+
+- legacy and contextual teacher/session notes;
+- relevant active goals and meaningful goal-progress events from the month;
+- teaching framework/subject/course/topic/objective context;
+- stable learner-profile context such as strengths, barriers, interests, helpful strategies and parent priorities when present.
+
+Attendance is deliberately excluded from the first version. Billing, payment, commercial state, communication history and unrelated administration are never supplied to the family-summary AI prompt.
+
+Teaching Framework guidance may influence AI interpretation through controlled evidence/goal/avoid guidance, but internal framework instructions are not shown as parent evidence and must not be exposed in the email.
+
+Family Updates remains an Admin-only, human-reviewed workflow. AI never sends automatically. If Vercel AI Gateway is not enabled, evidence review still works and the system explains that drafting is unavailable.

@@ -615,3 +615,12 @@ _Release note: PR #20 merged to the production branch._
 - Added quick goal progress choices while keeping long narrative reporting optional.
 - Kept identifiable learner data out of AI calls in the new default note workflow.
 - Added Vercel deployment-economy rules to AGENTS.md after identifying that per-commit preview builds can exhaust project deployment limits.
+
+
+## 7 October 2026 — Family Updates linked to learner teaching evidence
+
+- Family Updates now assembles a curated monthly learning-evidence bundle from both legacy and contextual teacher notes, active/recent goals, goal-progress events, Teaching Framework/course/topic context and useful learner-profile context.
+- Admin reviews the exact monthly evidence before AI drafting. Attendance and commercial/payment data are deliberately excluded.
+- Vercel AI Gateway remains the controlled drafting path; evidence review continues to work if Gateway is not yet enabled.
+- Teaching Framework evidence/goal/avoid guidance can influence the monthly draft without exposing internal framework instructions to parents.
+- Parent email remains human-reviewed and editable. Sending is an explicit Admin action through Resend and the sent copy is logged as a learning_update in family communications.

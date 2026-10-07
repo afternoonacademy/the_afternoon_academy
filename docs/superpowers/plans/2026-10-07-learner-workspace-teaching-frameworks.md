@@ -638,3 +638,29 @@ git commit -m "docs: record teaching framework learner workspace"
 - [ ] **Step 10: Open/update PR**
 
 Create or update the feature PR against `main` with test/build/preview/migration evidence and explicit production migration steps.
+
+
+### Task 11: Integrate learner evidence with monthly Family Updates
+
+**Files:**
+- Create: `lib/teaching/family-summary-evidence.mjs`
+- Create: `lib/email/learning-update.mjs`
+- Create: `actions/family-updates.ts`
+- Modify: `app/api/admin/family-summary/route.ts`
+- Modify: `components/admin/family-summary-workspace.tsx`
+- Modify: `app/admin/family-updates/page.tsx`
+- Test: `tests/family-summary-evidence.test.mjs`
+- Test: `tests/learning-update-email.test.mjs`
+
+**Interfaces:**
+- consumes contextual/legacy teacher updates, learner goals/progress, Teaching Framework assignment context and learner-profile context;
+- explicitly does not consume attendance or commercial/payment data;
+- produces a reviewable evidence bundle, an optional Vercel AI Gateway draft, and an explicit Resend send action logged as `learning_update`.
+
+- [x] Write and run RED/GREEN tests for evidence-bundle compatibility and no-attendance behaviour.
+- [x] Write and run RED/GREEN test for escaped learning-update email rendering.
+- [x] Add Admin-only evidence preview before AI drafting.
+- [x] Expand the AI prompt to contextual notes, legacy notes, goals/progress, teaching context and controlled framework guidance.
+- [x] Keep evidence preview operational when AI Gateway is unavailable.
+- [x] Add explicit human-reviewed send action through Resend and email delivery logging.
+- [ ] Run full repository tests/typecheck/build and verify the Family Updates preview on the next coherent Vercel preview deployment.

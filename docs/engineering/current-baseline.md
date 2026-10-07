@@ -209,3 +209,13 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - learner_goal_progress is append-only evidence for Progressing / Needs review / Achieved events; No change deliberately creates no unnecessary history row.
 - Published Teaching Frameworks are readable by Admin and Teacher. Framework management requires manage_teaching_frameworks and remains Admin-only.
 - The redesigned default note path does not call the AI drafting endpoint or send identifiable learner data to an AI provider.
+
+
+### Family Updates evidence pipeline — 7 October 2026
+
+- `/admin/family-updates` is the Admin-only review/send surface for monthly parent learning updates.
+- The family-summary evidence bundle reads monthly `teacher_updates` in both legacy and contextual formats, relevant `learner_goals` and `learner_goal_progress`, overlapping `learner_teaching_frameworks`, framework-version evidence/goal/avoid guidance, and selected `learner_profiles` context.
+- Attendance is intentionally not queried or supplied to the monthly family-summary AI prompt in this baseline.
+- Admin can preview the evidence without AI. Vercel AI Gateway is invoked only when the Admin requests a draft and remains dependent on the project's paid/approved Gateway configuration.
+- The parent-facing draft is editable and never auto-sent. Explicit send uses Resend and writes `email_delivery_log.email_kind = 'learning_update'` with the learner/family linkage so it appears in communications history.
+- The routine teacher session-note flow itself remains AI-free; Family Updates is the separate controlled Admin review boundary for monthly synthesis.

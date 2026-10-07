@@ -73,19 +73,20 @@ function formatTimestamp(value: string | null | undefined) {
 export function FamilyCommunications({
   communications,
   emptyLabel = "No parent communications recorded yet.",
+  title = "Family communications",
+  description = "Parent-facing communications only. Delivery status is tracked; open and click tracking are not used.",
 }: {
   communications: FamilyCommunication[]
   emptyLabel?: string
+  title?: string
+  description?: string
 }) {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-semibold">Family communications</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Parent-facing communications only. Delivery status is tracked; open
-            and click tracking are not used.
-          </p>
+          <h3 className="font-semibold">{title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
         </div>
         <span className="text-xs text-muted-foreground">
           {communications.length} message{communications.length === 1 ? "" : "s"}

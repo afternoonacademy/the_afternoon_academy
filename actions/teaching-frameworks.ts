@@ -30,12 +30,12 @@ const frameworkContentSchema = z.object({
 
 const frameworkActionSchema = z.object({ frameworkId: z.string().uuid() })
 
-function optionalText(value) {
+function optionalText(value: string | null | undefined) {
   const text = String(value || "").trim()
   return text || null
 }
 
-function parsePromptConfig(raw) {
+function parsePromptConfig(raw: string) {
   let parsed
   try {
     parsed = JSON.parse(raw)
@@ -45,7 +45,7 @@ function parsePromptConfig(raw) {
   return normalizeTeachingFrameworkPrompts(parsed)
 }
 
-function parseReferenceResources(raw) {
+function parseReferenceResources(raw: string | undefined) {
   const text = String(raw || "").trim()
   if (!text) return []
   try {

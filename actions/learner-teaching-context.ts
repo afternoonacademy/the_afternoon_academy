@@ -30,11 +30,15 @@ const idSchema = z.object({
   assignmentId: z.string().uuid(),
 })
 
-function nullable(value) {
+function nullable(value: string | null | undefined) {
   return value?.trim() ? value.trim() : null
 }
 
-async function clearDefaultForLearner(supabase, learnerId, exceptId) {
+async function clearDefaultForLearner(
+  supabase: ReturnType<typeof supabaseService>,
+  learnerId: string,
+  exceptId?: string,
+) {
   let query = supabase
     .from("learner_teaching_frameworks")
     .update({ is_default: false })

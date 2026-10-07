@@ -11,17 +11,20 @@ const communications = fs.readFileSync(
   "utf8",
 )
 
-test("family account restores complete email traceability", () => {
-  assert.match(familyPage, /from\("email_delivery_log"\)/)
-  assert.match(familyPage, /\.eq\("parent_lead_id", id\)/)
-  assert.match(familyPage, /\.order\("created_at", \{ ascending: false \}\)/)
-  assert.match(familyPage, /title="Email history"/)
-  assert.match(familyPage, /payment and renewal messages/)
+test("family account exposes recorded email traceability through the paginated history", () => {
+  assert.match(familyPage, /loadFamilyEmailPage/)
+  assert.match(familyPage, /FamilyEmailHistory/)
+  assert.match(familyPage, /value="emails"/)
+  assert.doesNotMatch(
+    familyPage,
+    /from\("email_delivery_log"\)[\s\S]*order\("created_at", \{ ascending: false \}\)/,
+  )
 })
 
-test("family communications component can be retitled for parent-level history", () => {
+test("family communications component remains reusable for the family email history", () => {
   assert.match(communications, /title = "Family communications"/)
   assert.match(communications, /description = "Parent-facing communications only/)
+  assert.match(communications, /showHeader = true/)
   assert.match(communications, /\{title\}/)
   assert.match(communications, /\{description\}/)
 })

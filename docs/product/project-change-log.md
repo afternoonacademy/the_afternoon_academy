@@ -691,3 +691,11 @@ Replaced repetitive sentence-by-sentence source attribution with a single clear 
 ## 19 October 2026 — Arturo Soria neighbourhood guide, first long-form pilot
 
 Published bilingual, locally researched neighbourhood article with six substantive sections, three FAQs, four contextual school-profile links, source links, local-service conversion path and differentiated SEO metadata. Target terms are qualitative SERP observations, not verified search-volume figures. Other neighbourhood placeholders remain unchanged pending individual research and writing. Preview branch only.
+
+
+## 19 October 2026 — Conde de Orgaz bilingual neighbourhood guide
+
+- Added seven substantial, independently researched sections and three FAQs in EN/ES, school-profile links, verified primary-source links, and neighbourhood-specific metadata.
+- Introduced explicit image placeholder pending original photography; no third-party copyrighted images copied.
+- Research: Montessori official school and transport pages; Lycée Français published services; Madrid municipal school directory. Keyword priorities remain qualitative, not search-volume estimates.
+- Preview branch only; production unchanged.

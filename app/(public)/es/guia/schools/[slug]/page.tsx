@@ -1,0 +1,9 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
+import { schools } from "@/lib/discovery/content"
+type Props={params:Promise<{slug:string}>}
+export function generateStaticParams(){return schools.filter(s=>s.verified).map(s=>({slug:s.slug}))}
+export async function generateMetadata({params}:Props):Promise<Metadata>{const {slug}=await params;const s=schools.find(s=>s.slug===slug&&s.verified);if(!s)return {};return {title:`Apoyo extraescolar cerca de ${s.name}`,description:`Guía independiente para familias de ${s.name} y apoyo académico en ${s.area}.`,alternates:{canonical:`/es/guia/schools/${slug}`,languages:{en:`/guide/schools/${slug}`,es:`/es/guia/schools/${slug}`}}}}
+export default async function Page({params}:Props){const {slug}=await params;const s=schools.find(s=>s.slug===slug&&s.verified);if(!s)notFound();return <DiscoveryLayout lang="es" switchHref={`/guide/schools/${slug}`}><p className="brand-kicker">Guía independiente de colegios y barrios</p><h1 className="mt-3 text-4xl font-bold">Apoyo extraescolar cerca de {s.name}</h1><p className="mt-4 brand-muted">Zona: {s.area}</p><p className="mt-6 max-w-3xl">Consulta siempre la <a className="underline" href={s.website} rel="noopener noreferrer" target="_blank">web oficial de {s.name}</a> para información sobre sedes, admisiones, currículo y calendario.</p><p className="mt-5 max-w-3xl">The Afternoon Academy ofrece apoyo académico y deberes en grupos reducidos en Calle Asura 40, Madrid. Somos un centro independiente, sin afiliación ni respaldo de {s.name}.</p><Link className="mt-6 inline-block underline" href="/es/guia">Explorar más recursos</Link><AcademyCTA lang="es"/></DiscoveryLayout>}

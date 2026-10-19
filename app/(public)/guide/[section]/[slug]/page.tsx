@@ -1,0 +1,9 @@
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
+import { sections, translated, root, sectionLabel } from "@/lib/discovery/content"
+type Props={params:Promise<{section:string;slug:string}>}
+const lookup=(section:string,slug:string)=>section in sections?sections[section as keyof typeof sections].find(x=>x.slug===slug):undefined
+export function generateStaticParams(){return Object.entries(sections).flatMap(([section,items])=>items.map(item=>({section,slug:item.slug})))}
+export async function generateMetadata({params}:Props):Promise<Metadata>{const {section,slug}=await params;const item=lookup(section,slug);if(!item)return {};return {title:item.en,description:item.enDescription,alternates:{canonical:root("en")+"/"+section+"/"+slug,languages:{en:root("en")+"/"+section+"/"+slug,es:root("es")+"/"+section+"/"+slug}}}}
+export default async function Page({params}:Props){const {section,slug}=await params;const item=lookup(section,slug);if(!item)notFound();return <DiscoveryLayout lang="en" switchHref={root("es")+"/"+section+"/"+slug}><p className="brand-kicker">{sectionLabel(section as keyof typeof sections,"en")}</p><h1 className="mt-3 text-4xl font-bold">{translated(item,"en").title}</h1><p className="mt-5 max-w-3xl text-lg brand-muted">{item.enDescription}</p><section className="mt-8 max-w-3xl space-y-4"><h2 className="text-2xl font-bold">A useful starting point for families</h2><p>Start with your child's school timetable, age and learning needs. Ask how any additional support fits alongside the school's teaching, homework expectations and your family's afternoon routine.</p><p>The Afternoon Academy is based at Calle Asura 40 in Arturo Soria. Families can ask about suitable sessions and availability without committing to a place.</p></section><AcademyCTA lang="en"/></DiscoveryLayout>}

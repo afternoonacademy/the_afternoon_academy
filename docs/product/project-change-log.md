@@ -670,3 +670,11 @@ Researched official school websites and added three differentiated factual secti
 ## 19 October 2026 — Warm editorial pass on bilingual school profiles
 
 Replaced repetitive sentence-by-sentence source attribution with a single clear source and independence note at the top of each profile. School facts remain unchanged and linked to official school sites. Adjusted introductory headings and Spanish non-affiliation copy. Preview-only change; no production release.
+
+
+## 19 October 2026 — School guides: editorial reading order
+
+- All six school profiles in English and Spanish now place school-specific educational and campus information immediately after the overview.
+- Consolidated official source and last-reviewed date into one section after the article.
+- Moved independent TAA information to a distinct closing section; removed repeated compliance paragraphs and duplicate summary copy.
+- Preview branch only; production unchanged. One consolidated commit.

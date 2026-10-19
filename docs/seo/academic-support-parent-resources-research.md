@@ -59,3 +59,21 @@ Reviewed: 2026-10-19. Language: English and Spanish. Market: Arturo Soria / nort
 - Google Search Console: impressions, clicks, CTR and queries per URL, split by language and query intent.
 - Conversion: guide -> academic support -> enquiry; track ethically without exposing children's data.
 - Refresh after 6–8 weeks of indexing, not on arbitrary invented keyword volumes.
+
+
+## Living research log — monthly update protocol
+
+Status: **living / maintained**, not a one-off brief. Owner: TAA. Review cadence: first day of each month; updates require founder approval before production publication.
+
+Monthly inputs requested from founder: Search Console export by page and query (impressions, clicks, CTR, average position); top EN/ES queries; any Google Trends observations with location/timeframe; enquiries/questions from parents without identifying children; notable education-policy or research updates.
+
+For every new keyword, record: observation date; exact query; language; location; intent; source (Search Console, Trends, parent enquiry or editorial hypothesis); metrics with timeframe where available; relevant URL; proposed content action; review decision. Never invent metrics or treat Google Trends relative index as search volume.
+
+| Date | Keyword / topic | Language | Source | Metric and window | Page | Action / status |
+|---|---|---|---|---|---|---|
+| 2026-10-19 | Homework support in English / ayuda con los deberes en inglés | EN/ES | Editorial hypothesis | Not measured | supports/homework | Initial article published to preview branch; await Search Console data |
+| 2026-10-19 | Homework without conflict / deberes sin discusiones | EN/ES | Editorial hypothesis | Not measured | resources/homework-without-conflict | Initial article published to preview branch; await Search Console data |
+
+### Publication record
+- 2026-10-19: Evidence-led EN/ES articles drafted for all 6 academic-support and 5 parent-resource routes. Each has a practical parent question, substantive advice, external research or official references, local context, reviewed date, and a relevant internal link. No search-volume claims or guaranteed learning outcomes.
+- Next review: verify live source links, monitor Search Console after indexing, replace editorial hypotheses with observed queries, update official admissions guidance by school year.

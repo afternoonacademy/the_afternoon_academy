@@ -745,3 +745,11 @@ Published bilingual, locally researched neighbourhood article with six substanti
 
 - Replaced the six bilingual neighbourhood image placeholders with the existing first-party Academy logo asset `/logo.png`, preserving the image space for later local photography.
 - No external unlicensed images; preview branch only.
+
+
+## 19 October 2026 — Evidence-led support and parent resource guides
+
+- Replaced generic EN/ES support and resource pages with 11 distinct bilingual evidence-based articles (22 pages).
+- Included EEF, DfE (England), and Comunidad de Madrid source links, practical parent advice, branded image and relevant internal links.
+- Made the SEO research brief a living monthly keyword/trend and editorial decision log.
+- Preview branch only; build and editorial QA pending.

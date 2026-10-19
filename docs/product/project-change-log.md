@@ -718,3 +718,11 @@ Published bilingual, locally researched neighbourhood article with six substanti
 
 - Vercel logs showed an extra closing brace in dynamic school links; corrected all three article branches in each language.
 - Await build verification before sharing as working preview.
+
+
+## 19 October 2026 — Remaining guides and school SEO
+
+- Authored full bilingual guides for Hortaleza, Chamartín and Canillas, each with six location-specific sections, three FAQs, school links, primary sources and image placeholders.
+- Added differentiated metadata for all three and linked all six neighbourhood guides from eight individual school pages.
+- Enhanced school-page metadata for name/campus intent and added practical school-specific FAQs. Keyword targeting is qualitative; no fabricated search volumes or ranking claims.
+- Preview branch only. Build and visual QA pending.

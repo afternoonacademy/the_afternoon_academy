@@ -726,3 +726,10 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Added differentiated metadata for all three and linked all six neighbourhood guides from eight individual school pages.
 - Enhanced school-page metadata for name/campus intent and added practical school-specific FAQs. Keyword targeting is qualitative; no fabricated search volumes or ranking claims.
 - Preview branch only. Build and visual QA pending.
+
+
+## 19 October 2026 — Fix six-guide build type error
+
+- Vercel build identified invalid `sections.schools` lookup in bilingual neighbourhood templates.
+- Import the independent `schools` collection and resolve school links through `schools.find` in EN/ES.
+- No production changes; revalidate preview deployment.

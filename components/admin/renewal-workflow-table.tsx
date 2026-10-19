@@ -496,12 +496,17 @@ function RenewalActions({
                     type="hidden"
                     value="Payment received before renewal email was required"
                   />
-                  <Input
-                    defaultValue={iso(new Date())}
-                    name="receivedOn"
-                    required
-                    type="date"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor={"renewal-received-" + row.caseId}>Actual payment received date</Label>
+                    <Input
+                      id={"renewal-received-" + row.caseId}
+                      defaultValue={iso(new Date())}
+                      name="receivedOn"
+                      required
+                      type="date"
+                    />
+                    <p className="text-xs text-muted-foreground">Change this to the date the bank transfer cleared. Today is only the default.</p>
+                  </div>
                   <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
                     <input className="mt-0.5" required type="checkbox" />
                     <span>

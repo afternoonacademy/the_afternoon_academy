@@ -164,7 +164,7 @@ export default async function FamilyAccountPage({ params }: PageProps) {
                   ? `${money(Math.abs(familyBalance))} credit`
                   : familyBalance > 0
                     ? `${money(familyBalance)} due`
-                    : "Settled"}
+                    : "No balance adjustments due"}
               </Badge>
             </div>
           </div>
@@ -205,9 +205,9 @@ export default async function FamilyAccountPage({ params }: PageProps) {
                     ? `${money(Math.abs(familyBalance))} credit`
                     : familyBalance > 0
                       ? `${money(familyBalance)} due`
-                      : "Settled"}
+                      : "No balance adjustments due"}
                 </p>
-                <p className="mt-1 text-muted-foreground">Household balance across all children.</p>
+                <p className="mt-1 text-muted-foreground">Account adjustments only. Renewal payments are recorded separately and may still be due.</p>
               </CardContent>
             </Card>
 
@@ -353,19 +353,21 @@ export default async function FamilyAccountPage({ params }: PageProps) {
 
         <TabsContent className="space-y-4 pt-4" value="payments">
           <Card>
-            <CardHeader><CardTitle>Family balance</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Family balance adjustments</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-xl border bg-muted/20 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current balance</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unallocated credit or debt</p>
                 <p className="mt-1 text-3xl font-bold">
                   {familyBalance < 0
                     ? `${money(Math.abs(familyBalance))} credit`
                     : familyBalance > 0
                       ? `${money(familyBalance)} due`
-                      : "Settled"}
+                      : "No balance adjustments due"}
                 </p>
               </div>
 
+              <p className="text-sm text-muted-foreground">This is not the renewal payment status. To record a bank transfer for the next paid period, use the Renewals workflow, where you can select the actual date received.</p>
+              <Link className="inline-flex rounded-md border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted" href="/admin/renewals">Open Renewals to record payment</Link>
               {familyBalance !== 0 ? (
                 <FamilyBalanceManager
                   familyBalanceCents={familyBalance}
@@ -424,6 +426,8 @@ export default async function FamilyAccountPage({ params }: PageProps) {
           <Card>
             <CardHeader><CardTitle>Renewals</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Payment received? Open Renewals, confirm the saved service dates, enter the payment received date and activate the paid period.</p>
+              <Link className="inline-flex rounded-md border px-3 py-2 font-semibold text-primary hover:bg-muted" href="/admin/renewals">Manage renewal payments</Link>
               {learners.length ? learners.map((learner) => {
                 const renewal = renewals.find((item) => item.learner_id === learner.id)
                 return (

@@ -678,3 +678,11 @@ Replaced repetitive sentence-by-sentence source attribution with a single clear 
 - Consolidated official source and last-reviewed date into one section after the article.
 - Moved independent TAA information to a distinct closing section; removed repeated compliance paragraphs and duplicate summary copy.
 - Preview branch only; production unchanged. One consolidated commit.
+
+
+## 19 October 2026 — Add ISM and Maristas school profiles
+
+- Added International School of Madrid and Colegio San José del Parque (Maristas) to the bilingual school guide data; directory now contains eight schools.
+- Each new guide has three school-specific factual sections in English and Spanish, with official school and institutional source references, a single non-affiliation introduction and a separate TAA closing section through the existing shared page template.
+- ISM campus addresses and age stages checked against its official admissions, contact and academic pages. Maristas address and leadership verified against the 2026 Marist directory, educational stages and services against Madrid City Council. Do not invent further Maristas school details until its site is accessible for verification.
+- One preview-branch commit; no production merge.

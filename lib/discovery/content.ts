@@ -1,7 +1,7 @@
 export type Language = "en" | "es"
 export type DiscoveryItem = { slug: string; en: string; es: string; enDescription: string; esDescription: string }
 export const neighbourhoods: DiscoveryItem[] = [
-{slug:"arturo-soria",en:"Arturo Soria",es:"Arturo Soria",enDescription:"Explore after-school routines, local school communities and academic support around Arturo Soria.",esDescription:"Descubre recursos para familias, colegios y apoyo extraescolar en Arturo Soria."},
+{slug:"arturo-soria",en:"Arturo Soria",es:"Arturo Soria",enDescription:"A practical family guide to Arturo Soria schools, transport and English-speaking after-school support.",esDescription:"Guía familiar de Arturo Soria: colegios, transporte y apoyo escolar en inglés."},
 {slug:"conde-orgaz",en:"Conde Orgaz",es:"Conde Orgaz",enDescription:"A local guide for families navigating school life around Conde Orgaz.",esDescription:"Guía local para familias y vida escolar en Conde Orgaz."},
 {slug:"piovera",en:"Piovera",es:"Piovera",enDescription:"School-life resources for families living in Piovera.",esDescription:"Recursos de vida escolar para familias de Piovera."},
 {slug:"hortaleza",en:"Hortaleza",es:"Hortaleza",enDescription:"Explore English-speaking academic support and school routines in Hortaleza.",esDescription:"Descubre apoyo académico en inglés y rutinas escolares en Hortaleza."},

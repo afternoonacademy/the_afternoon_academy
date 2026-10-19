@@ -686,3 +686,8 @@ Replaced repetitive sentence-by-sentence source attribution with a single clear 
 - Each new guide has three school-specific factual sections in English and Spanish, with official school and institutional source references, a single non-affiliation introduction and a separate TAA closing section through the existing shared page template.
 - ISM campus addresses and age stages checked against its official admissions, contact and academic pages. Maristas address and leadership verified against the 2026 Marist directory, educational stages and services against Madrid City Council. Do not invent further Maristas school details until its site is accessible for verification.
 - One preview-branch commit; no production merge.
+
+
+## 19 October 2026 — Arturo Soria neighbourhood guide, first long-form pilot
+
+Published bilingual, locally researched neighbourhood article with six substantive sections, three FAQs, four contextual school-profile links, source links, local-service conversion path and differentiated SEO metadata. Target terms are qualitative SERP observations, not verified search-volume figures. Other neighbourhood placeholders remain unchanged pending individual research and writing. Preview branch only.

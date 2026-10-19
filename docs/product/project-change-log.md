@@ -665,3 +665,8 @@ Founder required economical Vercel usage: batch related changes into a single co
 ## 19 October 2026 — Six expanded factual school profiles (preview only)
 
 Researched official school websites and added three differentiated factual sections per profile in both languages: stages/programmes, campus facilities, and practical/admissions information. Source attribution and official links remain visible. Correctly distinguished Montessori's two addresses and Brains MYP candidate status. No invented outcomes, rankings or school recommendations. One consolidated commit; preview and founder acceptance still required.
+
+
+## 19 October 2026 — Warm editorial pass on bilingual school profiles
+
+Replaced repetitive sentence-by-sentence source attribution with a single clear source and independence note at the top of each profile. School facts remain unchanged and linked to official school sites. Adjusted introductory headings and Spanish non-affiliation copy. Preview-only change; no production release.

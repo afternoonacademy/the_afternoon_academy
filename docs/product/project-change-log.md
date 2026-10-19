@@ -739,3 +739,9 @@ Published bilingual, locally researched neighbourhood article with six substanti
 
 - Corrected school-link labels in both neighbourhood templates: School has a `name` field, not `en` or `es`.
 - Change affects only preview branch; build verification required.
+
+
+## 19 October 2026 — Neighbourhood brand image placeholders
+
+- Replaced the six bilingual neighbourhood image placeholders with the existing first-party Academy logo asset `/logo.png`, preserving the image space for later local photography.
+- No external unlicensed images; preview branch only.

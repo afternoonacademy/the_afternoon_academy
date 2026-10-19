@@ -46,3 +46,29 @@ Missing/unverified school records remain unpublished; broken source or map links
 
 ## Open verification items
 Current TAA public URL and physical address; actual existing bilingual implementation; school campus sources and exact distances; production Supabase account/project identity (current connector only exposes unrelated Fixtup projects). These are verification items, not reasons to create a new database.
+
+
+## Founder-provided target schools and campus-first SEO strategy — 19 October 2026
+
+The following are founder-provided candidate URLs, **not yet independently verified or approved for indexing**. Research each campus location, school identity, ages/curriculum and local relevance using official school sources before publishing. Treat separate Hastings campuses as separate pages because local search intent and school journeys differ; distinguish their URLs and do not conflate with the whole Hastings network.
+
+| Candidate / campus | Official URL supplied | Editorial status |
+|---|---|---|
+| Hastings School — Lorenzo Solano Tendero (Arturo Soria intent) | https://www.hastingsschool.com/facilities-location/lorenzo-solano-tendero-campus/ | Verify address, campus and relevant ages |
+| Hastings School — Sobradiel campus | https://www.hastingsschool.com/facilities-location/sobradiel-campus/ | Verify address, campus and relevant ages |
+| Montessori Conde Orgaz | https://montessoricondeorgaz.es/ | Verify identity, location, age groups |
+| Maristas Ibérica | https://maristasiberica.com/ | This is a network site: identify the actual nearby school/campus before making a school page |
+| International School of Madrid | https://internationalschoolofmadrid.com/ | Verify relevant campus(es), age groups and catchment |
+| Brains Arturo Soria | https://www.colegiobrains.com/colegios/arturo-soria/ | Verify campus and curriculum |
+| Dallington School | https://dallingtonschool.com/ | Verify campus and age groups |
+| Lycée Français de Madrid | https://lfmadrid.org/ | Verify campus and neighbourhood relevance |
+
+### Content and URL architecture
+
+- Maintain one **school entity** and separate **campus entity** where multiple sites exist; campus page targets location-specific intent. Proposed Hastings slugs: `hastings-lorenzo-solano-tendero` and `hastings-sobradiel`. Existing generic `hastings-school` page should become a school-level overview or redirect, not compete with campus pages.
+- School pages answer: who the school serves (verified), exact campus and official source, nearby neighbourhood context, what a parent should check when planning after-school routines, and why TAA's Calle Asura 40 provision may be relevant. No fabricated walk times or affiliation.
+- Support existing and prospective parents differently: existing families need practical school-day and after-school support; prospective families need verified official admissions/curriculum links and neighbourhood orientation. Do not act as a school rankings or admissions authority.
+- Link school → campus → neighbourhood → relevant support → existing enquiry. Distinguish British, international, Montessori, Spanish and French curricula; never imply TAA teaches each school's exact curriculum unless independently substantiated.
+- Publish bilingual, independently useful pages only after verification and editorial review. Record source URL, last checked date, verified address, actual campus name, and any claims needing review. Unverified candidates stay draft/unindexed.
+- Prioritize geography and realistic journeys from TAA; being in the broad Madrid area does not automatically mean a school is a convenient neighbour.
+- Track discovery, qualified enquiries and enrolments by school/campus with privacy-respecting attribution and no learner-level public reporting.

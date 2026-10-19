@@ -272,3 +272,8 @@ Teaching Framework guidance is versioned so older teaching notes retain the guid
 ## Approved acquisition direction — School Discovery SEO (19 October 2026)
 
 Build a complete bilingual, useful school-neighbourhood discovery network around the Academy's Madrid catchment. School profiles, local guides, academic support and parent resources should serve both existing and prospective school families. TAA is the independent helpful neighbour, never an official school authority. Contextual enquiries must use the existing Family Pipeline. Release only verified differentiated content; measure qualified enrolments, not page count. Detailed implementation contract: `specs/school-discovery-seo.md`.
+
+
+## School discovery acquisition coverage — 19 October 2026
+
+Founder supplied eight candidate school/network sources including two distinct Hastings campuses. Implement campus-first profiles, bilingual parent resources and neighbourhood relevance. Source inventory and verification gates: `specs/school-discovery-seo.md`. All changes obey the mandatory Vercel deployment budget in `AGENTS.md`.

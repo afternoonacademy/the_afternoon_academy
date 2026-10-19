@@ -638,3 +638,8 @@ _Release note: PR #20 merged to the production branch._
 ## 19 October 2026 — School Discovery SEO approved for development (not released)
 
 Founder approved building the complete school discovery suite rather than a single-page pilot. Position TAA as a helpful independent neighbour to schools, supporting relationships with both schools and their families. Scope includes bilingual school profiles, neighbourhood guides, academic-support pages, useful parent resources, verified official links, SEO metadata, internal linking and contextual lead conversion through the existing Family Pipeline. No implied school affiliation or invented school facts/results. A feature branch and specification were created; production release remains gated by tests, preview and founder acceptance. See `specs/school-discovery-seo.md`.
+
+
+## 19 October 2026 — Deployment discipline and target school list (planning update, not release)
+
+Founder required economical Vercel usage: batch related changes into a single coherent commit/preview, avoid repeated deploys and read the policy in `AGENTS.md` every session. Founder supplied two Hastings campus URLs and candidate sources for Montessori Conde Orgaz, Maristas Ibérica, International School of Madrid, Brains Arturo Soria, Dallington and Lycée Français de Madrid. Treat as verification candidates, not confirmed school facts. Campus-first strategy and editorial gates recorded in `specs/school-discovery-seo.md`.

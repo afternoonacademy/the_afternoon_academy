@@ -652,3 +652,11 @@ Founder required economical Vercel usage: batch related changes into a single co
 - Added school guide navigation and limited sitemap indexing to reviewed school pages and guide hubs; generic unfinished support/resource templates remain outside the sitemap pending substantial content review.
 - Redirect legacy generic Hastings profile to a specific campus entry; no claimed affiliation, travel duration or school endorsement.
 - This is preview development, not a production release. Consolidated one-commit policy applies. No schema migration, live learner data change or new parent CRM.
+
+
+## 19 October 2026 — Founder-approved factual school directory editorial rule
+
+- School profiles are neutral, attributed digests of each school's own published information, not TAA opinions, rankings, assessments, visit advice or school-selection guidance.
+- Editorial independence and non-affiliation/sponsorship/endorsement must be explicit; official links and current-facts caveat mandatory.
+- Removed advice-led school-specific paragraphs from bilingual profile templates; added clear attribution and separation of TAA services. No school claims were added or invented.
+- Single batched preview-only update under Vercel deployment budget. Production remains unchanged.

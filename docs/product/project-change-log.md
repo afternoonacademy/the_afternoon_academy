@@ -643,3 +643,12 @@ Founder approved building the complete school discovery suite rather than a sing
 ## 19 October 2026 — Deployment discipline and target school list (planning update, not release)
 
 Founder required economical Vercel usage: batch related changes into a single coherent commit/preview, avoid repeated deploys and read the policy in `AGENTS.md` every session. Founder supplied two Hastings campus URLs and candidate sources for Montessori Conde Orgaz, Maristas Ibérica, International School of Madrid, Brains Arturo Soria, Dallington and Lycée Français de Madrid. Treat as verification candidates, not confirmed school facts. Campus-first strategy and editorial gates recorded in `specs/school-discovery-seo.md`.
+
+
+## 19 October 2026 — School discovery verified-content development slice (preview candidate)
+
+- Verified campus/stage distinctions on official school websites for Hastings Lorenzo Solano Tendero and Sobradiel; source-checked Brains Arturo Soria, Montessori Conde de Orgaz, Dallington and Lycée Français Conde de Orgaz.
+- Added six independent school/campus records with English/Spanish parent guidance, official source links and review dates. Maristas and International School of Madrid remain editorial candidates until campus-specific verification.
+- Added school guide navigation and limited sitemap indexing to reviewed school pages and guide hubs; generic unfinished support/resource templates remain outside the sitemap pending substantial content review.
+- Redirect legacy generic Hastings profile to a specific campus entry; no claimed affiliation, travel duration or school endorsement.
+- This is preview development, not a production release. Consolidated one-commit policy applies. No schema migration, live learner data change or new parent CRM.

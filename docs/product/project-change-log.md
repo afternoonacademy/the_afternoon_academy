@@ -760,3 +760,11 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Expanded all 22 EN/ES academic-support and parent-resource pages with deeper, scenario-led practical guidance informed by real parent questions.
 - Renamed global navigation link to Family Guides / Guías para familias; routes unchanged.
 - No production merge; preview build verification required.
+
+
+## 19 October 2026 — Founder-approved SEO, AI discovery and local authority strategy
+
+- Added approved combined discovery strategy to the existing living SEO research brief; did not create a competing strategy file.
+- Added prioritised implementation backlog (DISC-01 to DISC-12), evidence-based acceptance criteria, monthly scorecard, AI prompt test protocol, review cadence, decision log and official platform documentation.
+- Marked unknown baselines and unaudited items explicitly; no metrics or audit results invented.
+- Documentation only on preview branch; production unchanged.

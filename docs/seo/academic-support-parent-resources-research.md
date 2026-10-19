@@ -85,3 +85,95 @@ For every new keyword, record: observation date; exact query; language; location
 - Questions informed by public discussions in r/Parenting, r/UKParenting, r/Teachers, and r/ParentingADHD. Forum posts are anecdotal inspiration for questions, **not scientific evidence** or endorsements. Example discussions: https://www.reddit.com/r/Parenting/comments/1mu2350/ ; https://www.reddit.com/r/UKParenting/comments/1s6ey31/ ; https://www.reddit.com/r/Teachers/comments/1orqalq/ .
 - Changed public navigation label from School guide / Guía de colegios to Family Guides / Guías para familias, preserving URLs and internal SEO links.
 - Research and source links remain separate from the advice; professional guidance is not portrayed as a direct evaluation of TAA.
+
+---
+
+# Approved strategy: SEO + AI discovery + local authority
+**Approved:** 2026-10-19 | **Owner:** TAA founder | **Status:** Active living strategy | **Market:** Madrid, especially Arturo Soria / northeast Madrid | **Languages:** EN and ES
+
+## North-star outcome
+Increase **qualified parent enquiries and confirmed enrolments attributable to organic discovery**, while publishing genuinely useful, accurate family guidance. Article count, keyword density, AI mentions and traffic are supporting indicators, not the goal.
+
+### Principles and constraints
+1. Serve people first: address genuine parent questions in clear, warm, practical language. Do not publish shallow, mass-produced pages merely to target queries.
+2. Preserve verifiability: original local observations must be factual and approved; attribute named educators only with their permission and verified expertise; distinguish first-hand observations, research findings and editorial inference.
+3. Preserve independence: school guides do not imply school affiliation or endorsement. Never use identifiable children's stories, work or sensitive information without appropriate consent and safeguards.
+4. Preserve language quality: Spanish and English pages should each read naturally, not as mechanically translated keyword variants.
+5. Maintain technical fundamentals: public indexability, sitemap, canonical and hreflang, internal links, accessible rendered content, page performance, and accurate structured data when appropriate.
+6. Local relevance matters: consistent real-world name/address/contact/service information, Google Business Profile, legitimate reviews and relevant local references.
+7. AI visibility is probabilistic: allow relevant crawlers, make claims easy to verify, and test prompts systematically. No promises of citations, rankings or inclusion.
+8. Avoid gimmicks: no paid/artificial reviews, fabricated authorship, keyword stuffing, manufactured citations or unproven AI-ranking hacks. An llms.txt file is not a substitute for crawlable HTML or quality content.
+9. No production merge without founder approval; all edits via preview branch and normal QA.
+
+## Prioritised implementation backlog
+| ID | Priority | Workstream | Concrete acceptance criterion | Status | Evidence / next step |
+|---|---|---|---|---|---|
+| DISC-01 | P0 | Technical search and AI crawler audit | Verify production robots.txt, OAI-SearchBot, Googlebot/Bingbot access, sitemap coverage, HTTP status, indexing directives, canonical/hreflang, mobile HTML and internal links; record each finding with URL/date | **Not audited** | Inspect deployed production and Search Console; do not infer from source alone |
+| DISC-02 | P0 | Google Business Profile / local identity | Verify ownership and accurate categories, name, address, hours, contact, site URL, service description, images and genuine review process | **Needs verification** | Founder confirms live profile; avoid inventing listing status |
+| DISC-03 | P0 | Search Console baseline | Obtain EN/ES URL-level impressions, clicks, CTR, average position and indexing status over a defined date range | **No baseline supplied** | Founder supplies export or data |
+| DISC-04 | P1 | Editorial credibility | Every support/resource article has an authentic parent problem, actionable advice, named research sources, limitations, review date, internal link and an identified editorial reviewer where genuinely available | **Initial EN/ES content written; human review pending** | Review articles with teaching team, confirm service scope |
+| DISC-05 | P1 | Structured data and discoverability | Audit actual LocalBusiness/Organization/Article/Breadcrumb markup, validate against Google documentation and rendered page; add only accurate supported properties | **Not audited** | Technical audit and implementation if warranted |
+| DISC-06 | P1 | Parent-question research | Record anonymised real enquiries and recurring questions; select 2–3 monthly for improving existing pages before creating new ones | **Workflow proposed** | Founder supplies questions, with no child identifiers |
+| DISC-07 | P1 | AI answer visibility | Run stable prompts in ChatGPT search and Google AI Mode, record engine/date/region/prompt/citations/TAA presence/competitors; repeat monthly without claiming a fixed rank | **No baseline** | Establish initial prompt set and manual observations |
+| DISC-08 | P2 | Original practical resources | Publish 1–2 genuinely useful downloadable or printable parent tools; track engagement and enquiries | **Proposed** | First candidates: homework routine, school-visit checklist |
+| DISC-09 | P2 | Local authority | Seek relevant editorial mentions, community relationships, school-independent directories and legitimate local references; document link/mention quality | **Proposed** | Founder approves outreach |
+| DISC-10 | P2 | Conversion measurement | Track organic guide-to-enquiry journey, relevant contact-form source and enrolments without collecting unnecessary child data | **Not audited** | Confirm analytics consent and data collection |
+| DISC-11 | P2 | Freshness / accuracy | Review dated education research, school information and Comunidad de Madrid admissions guidance; correct or retire stale content | **Monthly process agreed** | Record source date and revision |
+| DISC-12 | P3 | New articles | Publish only where a distinct user need, original value and evidence gap justify a new page | **Gated** | Prefer improving existing pages first |
+
+**Status vocabulary:** Not audited / Needs verification / No baseline / Proposed / In progress / In preview / Verified / Published / Monitoring / Blocked. Change status only when there is supporting evidence.
+
+## Monthly progress scorecard (first review: 2026-11-01)
+Fill in actual observations, not estimates. For percentages use a defined period and denominator. Segment by language and page group where useful.
+
+| Metric | Baseline (2026-10-19) | Latest | Trend | Source / caveat |
+|---|---|---|---|---|
+| Google indexed guide pages (EN / ES) | Unknown | — | — | Search Console indexing report |
+| Organic impressions (EN / ES; 28 days) | Unknown | — | — | Search Console |
+| Organic clicks (EN / ES; 28 days) | Unknown | — | — | Search Console |
+| Organic CTR (EN / ES; 28 days) | Unknown | — | — | Search Console |
+| Average position (EN / ES; 28 days) | Unknown | — | — | Search Console; context-dependent |
+| Top non-branded local-intent queries | Not collected | — | — | Search Console query report |
+| Qualified enquiries from organic search | Unknown | — | — | Analytics/contact source, privacy-aware |
+| Confirmed enrolments from organic discovery | Unknown | — | — | CRM/parent self-report where available |
+| AI prompt tests mentioning TAA / total | Not tested | — | — | Fixed prompt panel, engine/version/date/locale |
+| AI prompt tests citing TAA site / total | Not tested | — | — | Separate from mentions; not a universal rank |
+| Verified independent local mentions | Not counted | — | — | Manual documented list |
+| Parent guides teacher-reviewed / total | Not recorded | — | — | Editorial review register |
+| Parent resources downloaded / used | Not tracked | — | — | Only after resource and compliant measurement exist |
+
+### AI discovery prompt panel (initial hypotheses, not results)
+Repeat identical prompts monthly in EN and ES where relevant. Log whether search/web access was enabled; outputs may vary between users and sessions.
+
+1. "My eight-year-old attends a British school near Arturo Soria and struggles with homework in English. What support is nearby?"
+2. "Where can I find English-speaking primary maths help near Conde de Orgaz in Madrid?"
+3. "How can I stop homework arguments with my seven-year-old, and when should I ask the teacher for help?"
+4. "What should I ask when choosing after-school academic support in northeast Madrid?"
+5. "Mi hijo va a un colegio británico en Madrid y necesita ayuda con los deberes en inglés cerca de Arturo Soria. ¿Qué opciones hay?"
+6. "¿Qué debo preguntar al visitar un colegio internacional en Madrid?"
+
+**Method:** date; tool; country/locale; signed-in vs anonymous where known; exact prompt; whether web/search enabled; TAA mentioned Y/N; TAA website cited Y/N; cited URLs; other businesses; accuracy; screenshot/link if available. No fabricated baselines. Treat as directional observations, not reliable market-share or ranking estimates.
+
+## Monthly operating cadence
+**First day of each month:** request from founder (a) Search Console performance and indexing data, (b) any Google Business Profile insights, (c) anonymised parent questions, (d) observed AI answers or permission to run available public tests, (e) updates to services, school details or local research.
+
+**During review:** compare with the previous period, identify meaningful changes and confidence level, choose at most three high-impact actions, assign owner and acceptance criterion, and propose edits in the preview branch. Record evidence and dates.
+
+**Before production:** founder reviews content, source accuracy, actual service claims, privacy implications and preview QA. Publish only after explicit approval.
+
+### Monthly decision log
+| Review date | Evidence observed | Decision | Owner | Status | Outcome / next review |
+|---|---|---|---|---|---|
+| 2026-10-19 | Founder approved combined search + AI + local strategy | Adopt strategy and measurable scorecard; prioritise technical and local baseline over publishing volume | TAA | Approved strategy; implementation not yet audited | First monthly review 2026-11-01 |
+
+## Reference standards and documentation
+- Google Search Central, creating helpful, reliable, people-first content: https://developers.google.com/search/docs/fundamentals/creating-helpful-content
+- Google Search Central, AI features and your website: https://developers.google.com/search/docs/appearance/ai-features
+- Google Search Central, spam policies: https://developers.google.com/search/docs/essentials/spam-policies
+- Google Search Central, structured data introduction: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+- Google Search Central, multilingual and multiregional sites: https://developers.google.com/search/docs/specialty/international/managing-multi-regional-sites
+- Google Business Profile guidelines: https://support.google.com/business/answer/3038177
+- OpenAI publisher and crawler guidance: https://platform.openai.com/docs/bots
+- Bing Webmaster Guidelines: https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a
+
+These sources describe guidance and eligibility, not guaranteed inclusion in Google or AI answers. Review source changes periodically.

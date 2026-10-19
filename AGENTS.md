@@ -232,3 +232,8 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Personal profile editing and learner lifecycle/status editing are configuration actions, not permanent cards on the day-to-day teaching workspace.
 - Teaching Hub is readable by Admin and Teacher; global framework creation/versioning/publishing/archiving is Admin-only.
 - No identifiable learner data may be sent to an AI provider through this workflow unless the existing TAA AI/privacy approval conditions are separately satisfied.
+
+
+## Public School Discovery SEO (October 2026)
+
+Implement against `specs/school-discovery-seo.md`. School and neighbourhood pages must be factual, independently branded and sourced; never imply affiliation, invent distances/results, or publish thin AI-generated doorway pages. Use existing lead pipeline and existing website design. No learner data in public pages or AI prompts. Publish only verified school records. Build on feature branch, test/review, one coherent preview and founder acceptance before release.

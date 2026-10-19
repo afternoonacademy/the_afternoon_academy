@@ -776,3 +776,13 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Added robots metadata for Googlebot, Bingbot and OAI-SearchBot with sitemap reference.
 - Aligned sitemap hostname with verified Vercel www primary domain.
 - Logged GBP baseline and pending Search Console metrics; no invented audit outcomes.
+
+
+## 19 October 2026 — Family Guides production release and handoff
+
+- Founder explicitly approved publication. GitHub PR #28 merged into `main` as commit `6a8aec3cd30f0b09e72bb28ce218e1bb399e240b`.
+- Vercel production deployment `dpl_3jbWt7m4WMiM3A57yQEMwYLtcLAa` reached `READY` for that commit.
+- Released bilingual Family Guides content and navigation, full discovery sitemap, explicit search crawler access rules, and approved living SEO + AI discovery strategy.
+- Google Business Profile already configured (founder-reported: 53 interactions, 50 directions requests, 3 website clicks; period unspecified). Google Search Console already configured, awaiting performance data.
+- Still to verify: production HTTP/crawler behavior, indexing, structured data, human editorial review, and source freshness. A green build does not prove search engine indexing or AI inclusion.
+- Handoff: pause further SEO/content work; next task is a separate feature fix. Do not mix unrelated changes into the released scope.

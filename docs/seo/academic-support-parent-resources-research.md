@@ -186,3 +186,12 @@ These sources describe guidance and eligibility, not guaranteed inclusion in Goo
 - **Pending:** production HTTP response checks for robots, sitemap, representative pages, rendered canonical/hreflang, structured data and Google Search Console indexing. Do not mark DISC-01 fully complete yet.
 - **Google Business Profile:** founder confirms profile is set up; reported 53 interactions, including 50 directions requests and 3 website clicks, period not provided. Directions are listing interactions, not unique visits. Shared premises do not automatically aggregate other business profiles' metrics; check distinct pin/entrance and search queries.
 - **Search Console:** founder confirms configured; data pending. No baseline yet.
+
+
+## 2026-10-19 release checkpoint
+- **Released to production:** PR #28, merge commit `6a8aec3cd30f0b09e72bb28ce218e1bb399e240b`; Vercel production deployment `dpl_3jbWt7m4WMiM3A57yQEMwYLtcLAa` status `READY`.
+- **DISC-01:** crawler/sitemap source changes shipped; live fetch/indexing and canonical/hreflang checks remain open.
+- **DISC-02:** Google Business Profile exists (founder confirmed); accurate profile details/pin still not independently audited. Reported 53 interactions = 50 directions requests + 3 website clicks, reporting period unspecified.
+- **DISC-03:** Google Search Console exists (founder confirmed), data not yet mature. Do not invent performance baseline.
+- **DISC-04 onward:** retain current backlog status until evidence is collected.
+- **Current project mode:** SEO work paused at founder request; next workstream is feature fix. Keep future changes scoped and logged.

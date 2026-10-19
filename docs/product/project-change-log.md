@@ -753,3 +753,10 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Included EEF, DfE (England), and Comunidad de Madrid source links, practical parent advice, branded image and relevant internal links.
 - Made the SEO research brief a living monthly keyword/trend and editorial decision log.
 - Preview branch only; build and editorial QA pending.
+
+
+## 19 October 2026 — Family Guides editorial expansion
+
+- Expanded all 22 EN/ES academic-support and parent-resource pages with deeper, scenario-led practical guidance informed by real parent questions.
+- Renamed global navigation link to Family Guides / Guías para familias; routes unchanged.
+- No production merge; preview build verification required.

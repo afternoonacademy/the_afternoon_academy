@@ -77,3 +77,11 @@ For every new keyword, record: observation date; exact query; language; location
 ### Publication record
 - 2026-10-19: Evidence-led EN/ES articles drafted for all 6 academic-support and 5 parent-resource routes. Each has a practical parent question, substantive advice, external research or official references, local context, reviewed date, and a relevant internal link. No search-volume claims or guaranteed learning outcomes.
 - Next review: verify live source links, monitor Search Console after indexing, replace editorial hypotheses with observed queries, update official admissions guidance by school year.
+
+
+## 19 October 2026 — Parent-question-led editorial revision
+
+- All 11 articles in both languages expanded with four contextual, practical sections each, retaining the existing evidence-backed sections. Editorial model: real-world parent situation, why it happens, practical response, limits, and useful source links.
+- Questions informed by public discussions in r/Parenting, r/UKParenting, r/Teachers, and r/ParentingADHD. Forum posts are anecdotal inspiration for questions, **not scientific evidence** or endorsements. Example discussions: https://www.reddit.com/r/Parenting/comments/1mu2350/ ; https://www.reddit.com/r/UKParenting/comments/1s6ey31/ ; https://www.reddit.com/r/Teachers/comments/1orqalq/ .
+- Changed public navigation label from School guide / Guía de colegios to Family Guides / Guías para familias, preserving URLs and internal SEO links.
+- Research and source links remain separate from the advice; professional guidance is not portrayed as a direct evaluation of TAA.

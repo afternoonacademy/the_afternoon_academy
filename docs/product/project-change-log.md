@@ -699,3 +699,9 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Introduced explicit image placeholder pending original photography; no third-party copyrighted images copied.
 - Research: Montessori official school and transport pages; Lycée Français published services; Madrid municipal school directory. Keyword priorities remain qualitative, not search-volume estimates.
 - Preview branch only; production unchanged.
+
+
+## 19 October 2026 — Fix neighbourhood article JSX parsing
+
+- Corrected two malformed dynamic school-link href expressions in each language template, identified from failed Vercel build logs.
+- No content changes; validation requires new Vercel build.

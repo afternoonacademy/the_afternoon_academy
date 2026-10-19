@@ -633,3 +633,8 @@ _Release note: PR #20 merged to the production branch._
 - Parent email history is bounded to 25 messages per page with deterministic server-side cursor pagination and a fixed-height scrollable activity view.
 - Learner records remain teaching-first; full family communications and place/financial administration are no longer duplicated there.
 - Existing payment, renewal, session-change, document, Resend and Family Updates business semantics are unchanged.
+
+
+## 19 October 2026 — School Discovery SEO approved for development (not released)
+
+Founder approved building the complete school discovery suite rather than a single-page pilot. Position TAA as a helpful independent neighbour to schools, supporting relationships with both schools and their families. Scope includes bilingual school profiles, neighbourhood guides, academic-support pages, useful parent resources, verified official links, SEO metadata, internal linking and contextual lead conversion through the existing Family Pipeline. No implied school affiliation or invented school facts/results. A feature branch and specification were created; production release remains gated by tests, preview and founder acceptance. See `specs/school-discovery-seo.md`.

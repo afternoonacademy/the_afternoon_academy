@@ -1,0 +1,9 @@
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
+import { sections, translated, root, sectionLabel } from "@/lib/discovery/content"
+type Props={params:Promise<{section:string;slug:string}>}
+const lookup=(section:string,slug:string)=>section in sections?sections[section as keyof typeof sections].find(x=>x.slug===slug):undefined
+export function generateStaticParams(){return Object.entries(sections).flatMap(([section,items])=>items.map(item=>({section,slug:item.slug})))}
+export async function generateMetadata({params}:Props):Promise<Metadata>{const {section,slug}=await params;const item=lookup(section,slug);if(!item)return {};return {title:item.es,description:item.esDescription,alternates:{canonical:root("es")+"/"+section+"/"+slug,languages:{en:root("en")+"/"+section+"/"+slug,es:root("es")+"/"+section+"/"+slug}}}}
+export default async function Page({params}:Props){const {section,slug}=await params;const item=lookup(section,slug);if(!item)notFound();return <DiscoveryLayout lang="es" switchHref={root("en")+"/"+section+"/"+slug}><p className="brand-kicker">{sectionLabel(section as keyof typeof sections,"es")}</p><h1 className="mt-3 text-4xl font-bold">{translated(item,"es").title}</h1><p className="mt-5 max-w-3xl text-lg brand-muted">{item.esDescription}</p><section className="mt-8 max-w-3xl space-y-4"><h2 className="text-2xl font-bold">Un punto de partida para familias</h2><p>Ten en cuenta el horario del colegio, la edad y las necesidades de aprendizaje. Pregunta cómo encaja el apoyo complementario con las clases, los deberes y la rutina familiar.</p><p>The Afternoon Academy está en Calle Asura 40, Arturo Soria. Puedes consultar horarios y disponibilidad sin reservar una plaza.</p></section><AcademyCTA lang="es"/></DiscoveryLayout>}

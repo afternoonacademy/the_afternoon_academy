@@ -733,3 +733,9 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Vercel build identified invalid `sections.schools` lookup in bilingual neighbourhood templates.
 - Import the independent `schools` collection and resolve school links through `schools.find` in EN/ES.
 - No production changes; revalidate preview deployment.
+
+
+## 19 October 2026 — Fix school label type error
+
+- Corrected school-link labels in both neighbourhood templates: School has a `name` field, not `en` or `es`.
+- Change affects only preview branch; build verification required.

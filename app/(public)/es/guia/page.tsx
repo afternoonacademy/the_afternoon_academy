@@ -1,0 +1,6 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+import { DiscoveryLayout, DiscoveryCards, AcademyCTA } from "@/components/discovery/discovery-layout"
+import { schools } from "@/lib/discovery/content"
+export const metadata:Metadata={title:"Guía de colegios y barrios de Madrid",description:"Guía independiente de colegios, barrios y apoyo académico extraescolar cerca de Arturo Soria, Madrid.",alternates:{canonical:"/es/guia",languages:{"en":"/guide","es":"/es/guia"}}}
+export default function Page(){return <DiscoveryLayout lang="es" switchHref="/guide"><p className="brand-kicker">Guía local para familias</p><h1 className="mt-3 mb-4 text-4xl font-bold">Tu colegio. Tu barrio. Tu comunidad.</h1><p className="mb-10 max-w-3xl brand-muted">Recursos útiles para familias internacionales en Madrid. Guía independiente de The Afternoon Academy.</p><section className="mb-12"><h2 className="mb-4 text-2xl font-bold">Colegios</h2>{schools.filter(s=>s.verified).map(s=><Link key={s.slug} className="brand-card block p-5" href={"/es/guia/schools/"+s.slug}><h3 className="text-lg font-semibold">{s.name}</h3><p className="brand-muted">{s.area}</p></Link>)}</section><DiscoveryCards lang="es"/><AcademyCTA lang="es"/></DiscoveryLayout>}

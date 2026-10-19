@@ -232,3 +232,18 @@ Treat the following as current production architecture unless a later roadmap/ch
 - Personal profile editing and learner lifecycle/status editing are configuration actions, not permanent cards on the day-to-day teaching workspace.
 - Teaching Hub is readable by Admin and Teacher; global framework creation/versioning/publishing/archiving is Admin-only.
 - No identifiable learner data may be sent to an AI provider through this workflow unless the existing TAA AI/privacy approval conditions are separately satisfied.
+
+
+## Public School Discovery SEO (October 2026)
+
+Implement against `specs/school-discovery-seo.md`. School and neighbourhood pages must be factual, independently branded and sourced; never imply affiliation, invent distances/results, or publish thin AI-generated doorway pages. Use existing lead pipeline and existing website design. No learner data in public pages or AI prompts. Publish only verified school records. Build on feature branch, test/review, one coherent preview and founder acceptance before release.
+
+
+## Vercel deployment budget — mandatory on every TAA task (19 October 2026)
+
+Vercel builds are a scarce shared resource. Every development session MUST read and follow this section before any GitHub write. Default is **zero remote commits during discovery and editing**; batch all related files and tests into **one atomic commit/push per coherent slice**, then wait for the resulting preview. Never commit each file separately. Avoid rapid successive pushes, empty commits, repeated preview redeploys, or deployment-triggering documentation-only edits when these can be bundled with the next code slice. Run local typecheck/lint/tests/build before remote push when execution is available. Check existing deployment state before triggering a new one; reuse the latest valid preview and do not rebuild unchanged commits. If a build fails, collect all errors, fix them together locally, and push one consolidated correction. Prefer draft PRs and require founder acceptance before production merge. Do not disable production protections or deployment checks merely to save builds. If tools cannot batch writes or run tests, disclose that limitation and minimize commits; do not claim successful checks. Record any unavoidable extra deployment and reason in the change log.
+
+
+## School guide editorial policy — mandatory (19 October 2026)
+
+TAA is an independent local directory publisher, NOT an authority on, reviewer of, or affiliate of the listed schools. Present only attributed, verifiable facts from each school's own current website or marketing materials. Attribute school descriptions explicitly (e.g. 'The school states...') and link to official sources. Do not invent school-specific facilities, curricula, outcomes, admissions, fees, transport, endorsements or rankings. Never judge whether a school is good or suitable for a child; avoid advice about what parents should ask a school on school-specific profile pages. Provide a neutral, useful digest organised by campus, published age/stage, curriculum/language, facilities, school day/extracurriculars, admissions/contact where substantiated; omit unverified fields rather than filling with generic opinion. Clearly distinguish a short, separately labelled TAA service section from the school profile. Every page must state that TAA is not affiliated with, sponsored by or endorsed by the school, and that current information should be confirmed directly with the school. Avoid copying lengthy marketing text verbatim: paraphrase accurately with attribution. Publish only records whose claims have been checked against cited official URLs; retain review dates. Bilingual translations must not introduce extra facts.

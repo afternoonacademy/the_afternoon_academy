@@ -12,6 +12,8 @@ const copy = {
     tagline: "British curriculum support for children in Madrid.",
     home: "Home",
     contact: "Contact",
+    guide: "Family Guides",
+    guideHref: "/guide",
     location: "Location",
     timetable: "Apply for a place",
     cta: "Apply for a place",
@@ -28,6 +30,8 @@ const copy = {
     tagline: "Apoyo académico en inglés para familias en Madrid.",
     home: "Inicio",
     contact: "Contacto",
+    guide: "Guías para familias",
+    guideHref: "/es/guia",
     location: "Ubicación",
     timetable: "Solicita una plaza",
     cta: "Solicita una plaza",
@@ -71,6 +75,7 @@ export function PublicHeader({
           >
             {t.home}
           </Link>
+          <Link href={t.guideHref} className="text-sm font-medium text-muted-foreground hover:text-foreground">{t.guide}</Link>
 
           <Link
             href={t.contactHref}
@@ -133,6 +138,7 @@ export function PublicFooter({
           <Link href={t.homeHref} className="hover:text-foreground">
             {t.home}
           </Link>
+          <Link href={t.guideHref} className="text-sm font-medium text-muted-foreground hover:text-foreground">{t.guide}</Link>
 
           <Link href={t.contactHref} className="hover:text-foreground">
             {t.contact}

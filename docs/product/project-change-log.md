@@ -633,3 +633,146 @@ _Release note: PR #20 merged to the production branch._
 - Parent email history is bounded to 25 messages per page with deterministic server-side cursor pagination and a fixed-height scrollable activity view.
 - Learner records remain teaching-first; full family communications and place/financial administration are no longer duplicated there.
 - Existing payment, renewal, session-change, document, Resend and Family Updates business semantics are unchanged.
+
+
+## 19 October 2026 — School Discovery SEO approved for development (not released)
+
+Founder approved building the complete school discovery suite rather than a single-page pilot. Position TAA as a helpful independent neighbour to schools, supporting relationships with both schools and their families. Scope includes bilingual school profiles, neighbourhood guides, academic-support pages, useful parent resources, verified official links, SEO metadata, internal linking and contextual lead conversion through the existing Family Pipeline. No implied school affiliation or invented school facts/results. A feature branch and specification were created; production release remains gated by tests, preview and founder acceptance. See `specs/school-discovery-seo.md`.
+
+
+## 19 October 2026 — Deployment discipline and target school list (planning update, not release)
+
+Founder required economical Vercel usage: batch related changes into a single coherent commit/preview, avoid repeated deploys and read the policy in `AGENTS.md` every session. Founder supplied two Hastings campus URLs and candidate sources for Montessori Conde Orgaz, Maristas Ibérica, International School of Madrid, Brains Arturo Soria, Dallington and Lycée Français de Madrid. Treat as verification candidates, not confirmed school facts. Campus-first strategy and editorial gates recorded in `specs/school-discovery-seo.md`.
+
+
+## 19 October 2026 — School discovery verified-content development slice (preview candidate)
+
+- Verified campus/stage distinctions on official school websites for Hastings Lorenzo Solano Tendero and Sobradiel; source-checked Brains Arturo Soria, Montessori Conde de Orgaz, Dallington and Lycée Français Conde de Orgaz.
+- Added six independent school/campus records with English/Spanish parent guidance, official source links and review dates. Maristas and International School of Madrid remain editorial candidates until campus-specific verification.
+- Added school guide navigation and limited sitemap indexing to reviewed school pages and guide hubs; generic unfinished support/resource templates remain outside the sitemap pending substantial content review.
+- Redirect legacy generic Hastings profile to a specific campus entry; no claimed affiliation, travel duration or school endorsement.
+- This is preview development, not a production release. Consolidated one-commit policy applies. No schema migration, live learner data change or new parent CRM.
+
+
+## 19 October 2026 — Founder-approved factual school directory editorial rule
+
+- School profiles are neutral, attributed digests of each school's own published information, not TAA opinions, rankings, assessments, visit advice or school-selection guidance.
+- Editorial independence and non-affiliation/sponsorship/endorsement must be explicit; official links and current-facts caveat mandatory.
+- Removed advice-led school-specific paragraphs from bilingual profile templates; added clear attribution and separation of TAA services. No school claims were added or invented.
+- Single batched preview-only update under Vercel deployment budget. Production remains unchanged.
+
+
+## 19 October 2026 — Six expanded factual school profiles (preview only)
+
+Researched official school websites and added three differentiated factual sections per profile in both languages: stages/programmes, campus facilities, and practical/admissions information. Source attribution and official links remain visible. Correctly distinguished Montessori's two addresses and Brains MYP candidate status. No invented outcomes, rankings or school recommendations. One consolidated commit; preview and founder acceptance still required.
+
+
+## 19 October 2026 — Warm editorial pass on bilingual school profiles
+
+Replaced repetitive sentence-by-sentence source attribution with a single clear source and independence note at the top of each profile. School facts remain unchanged and linked to official school sites. Adjusted introductory headings and Spanish non-affiliation copy. Preview-only change; no production release.
+
+
+## 19 October 2026 — School guides: editorial reading order
+
+- All six school profiles in English and Spanish now place school-specific educational and campus information immediately after the overview.
+- Consolidated official source and last-reviewed date into one section after the article.
+- Moved independent TAA information to a distinct closing section; removed repeated compliance paragraphs and duplicate summary copy.
+- Preview branch only; production unchanged. One consolidated commit.
+
+
+## 19 October 2026 — Add ISM and Maristas school profiles
+
+- Added International School of Madrid and Colegio San José del Parque (Maristas) to the bilingual school guide data; directory now contains eight schools.
+- Each new guide has three school-specific factual sections in English and Spanish, with official school and institutional source references, a single non-affiliation introduction and a separate TAA closing section through the existing shared page template.
+- ISM campus addresses and age stages checked against its official admissions, contact and academic pages. Maristas address and leadership verified against the 2026 Marist directory, educational stages and services against Madrid City Council. Do not invent further Maristas school details until its site is accessible for verification.
+- One preview-branch commit; no production merge.
+
+
+## 19 October 2026 — Arturo Soria neighbourhood guide, first long-form pilot
+
+Published bilingual, locally researched neighbourhood article with six substantive sections, three FAQs, four contextual school-profile links, source links, local-service conversion path and differentiated SEO metadata. Target terms are qualitative SERP observations, not verified search-volume figures. Other neighbourhood placeholders remain unchanged pending individual research and writing. Preview branch only.
+
+
+## 19 October 2026 — Conde de Orgaz bilingual neighbourhood guide
+
+- Added seven substantial, independently researched sections and three FAQs in EN/ES, school-profile links, verified primary-source links, and neighbourhood-specific metadata.
+- Introduced explicit image placeholder pending original photography; no third-party copyrighted images copied.
+- Research: Montessori official school and transport pages; Lycée Français published services; Madrid municipal school directory. Keyword priorities remain qualitative, not search-volume estimates.
+- Preview branch only; production unchanged.
+
+
+## 19 October 2026 — Fix neighbourhood article JSX parsing
+
+- Corrected two malformed dynamic school-link href expressions in each language template, identified from failed Vercel build logs.
+- No content changes; validation requires new Vercel build.
+
+
+## 19 October 2026 — Piovera bilingual neighbourhood guide
+
+- Added seven Piovera-specific editorial sections and three FAQs in English and Spanish, with focus on Maristas San José del Parque, Piovera/Conde de Orgaz geography, school journeys and age-appropriate academic support.
+- Added four relevant school-profile links, official institutional source links, differentiated bilingual metadata and a labelled image placeholder.
+- Kept school descriptions factual and independent, with TAA services separated. Preview branch only.
+
+
+## 19 October 2026 — Follow-up JSX syntax correction
+
+- Vercel logs showed an extra closing brace in dynamic school links; corrected all three article branches in each language.
+- Await build verification before sharing as working preview.
+
+
+## 19 October 2026 — Remaining guides and school SEO
+
+- Authored full bilingual guides for Hortaleza, Chamartín and Canillas, each with six location-specific sections, three FAQs, school links, primary sources and image placeholders.
+- Added differentiated metadata for all three and linked all six neighbourhood guides from eight individual school pages.
+- Enhanced school-page metadata for name/campus intent and added practical school-specific FAQs. Keyword targeting is qualitative; no fabricated search volumes or ranking claims.
+- Preview branch only. Build and visual QA pending.
+
+
+## 19 October 2026 — Fix six-guide build type error
+
+- Vercel build identified invalid `sections.schools` lookup in bilingual neighbourhood templates.
+- Import the independent `schools` collection and resolve school links through `schools.find` in EN/ES.
+- No production changes; revalidate preview deployment.
+
+
+## 19 October 2026 — Fix school label type error
+
+- Corrected school-link labels in both neighbourhood templates: School has a `name` field, not `en` or `es`.
+- Change affects only preview branch; build verification required.
+
+
+## 19 October 2026 — Neighbourhood brand image placeholders
+
+- Replaced the six bilingual neighbourhood image placeholders with the existing first-party Academy logo asset `/logo.png`, preserving the image space for later local photography.
+- No external unlicensed images; preview branch only.
+
+
+## 19 October 2026 — Evidence-led support and parent resource guides
+
+- Replaced generic EN/ES support and resource pages with 11 distinct bilingual evidence-based articles (22 pages).
+- Included EEF, DfE (England), and Comunidad de Madrid source links, practical parent advice, branded image and relevant internal links.
+- Made the SEO research brief a living monthly keyword/trend and editorial decision log.
+- Preview branch only; build and editorial QA pending.
+
+
+## 19 October 2026 — Family Guides editorial expansion
+
+- Expanded all 22 EN/ES academic-support and parent-resource pages with deeper, scenario-led practical guidance informed by real parent questions.
+- Renamed global navigation link to Family Guides / Guías para familias; routes unchanged.
+- No production merge; preview build verification required.
+
+
+## 19 October 2026 — Founder-approved SEO, AI discovery and local authority strategy
+
+- Added approved combined discovery strategy to the existing living SEO research brief; did not create a competing strategy file.
+- Added prioritised implementation backlog (DISC-01 to DISC-12), evidence-based acceptance criteria, monthly scorecard, AI prompt test protocol, review cadence, decision log and official platform documentation.
+- Marked unknown baselines and unaudited items explicitly; no metrics or audit results invented.
+- Documentation only on preview branch; production unchanged.
+
+
+## 19 October 2026 — Pre-release crawler and sitemap fixes
+
+- Expanded sitemap to include all bilingual Family Guides pages, not only schools.
+- Added robots metadata for Googlebot, Bingbot and OAI-SearchBot with sitemap reference.
+- Aligned sitemap hostname with verified Vercel www primary domain.
+- Logged GBP baseline and pending Search Console metrics; no invented audit outcomes.

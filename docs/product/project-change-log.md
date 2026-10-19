@@ -768,3 +768,11 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Added prioritised implementation backlog (DISC-01 to DISC-12), evidence-based acceptance criteria, monthly scorecard, AI prompt test protocol, review cadence, decision log and official platform documentation.
 - Marked unknown baselines and unaudited items explicitly; no metrics or audit results invented.
 - Documentation only on preview branch; production unchanged.
+
+
+## 19 October 2026 — Pre-release crawler and sitemap fixes
+
+- Expanded sitemap to include all bilingual Family Guides pages, not only schools.
+- Added robots metadata for Googlebot, Bingbot and OAI-SearchBot with sitemap reference.
+- Aligned sitemap hostname with verified Vercel www primary domain.
+- Logged GBP baseline and pending Search Console metrics; no invented audit outcomes.

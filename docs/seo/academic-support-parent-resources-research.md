@@ -177,3 +177,12 @@ Repeat identical prompts monthly in EN and ES where relevant. Log whether search
 - Bing Webmaster Guidelines: https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a
 
 These sources describe guidance and eligibility, not guaranteed inclusion in Google or AI answers. Review source changes periodically.
+
+
+## 2026-10-19 technical pre-release findings
+- **Verified from preview branch source:** sitemap previously included only home, index and verified school pages; neighbourhoods, support and resources were omitted. Corrected to include all section pages in both languages.
+- **Verified from preview branch source:** no `app/robots.ts` existed. Added explicit crawl permissions for Googlebot, Bingbot and OAI-SearchBot plus sitemap reference. This does not prove actual crawler fetch or indexing; production HTTP tests and Search Console are still required.
+- **Verified from Vercel project domain configuration:** `theafternoonacademy.com` redirects (308) to `www.theafternoonacademy.com`; sitemap now uses the canonical www hostname.
+- **Pending:** production HTTP response checks for robots, sitemap, representative pages, rendered canonical/hreflang, structured data and Google Search Console indexing. Do not mark DISC-01 fully complete yet.
+- **Google Business Profile:** founder confirms profile is set up; reported 53 interactions, including 50 directions requests and 3 website clicks, period not provided. Directions are listing interactions, not unique visits. Shared premises do not automatically aggregate other business profiles' metrics; check distinct pin/entrance and search queries.
+- **Search Console:** founder confirms configured; data pending. No baseline yet.

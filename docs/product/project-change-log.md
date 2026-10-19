@@ -660,3 +660,8 @@ Founder required economical Vercel usage: batch related changes into a single co
 - Editorial independence and non-affiliation/sponsorship/endorsement must be explicit; official links and current-facts caveat mandatory.
 - Removed advice-led school-specific paragraphs from bilingual profile templates; added clear attribution and separation of TAA services. No school claims were added or invented.
 - Single batched preview-only update under Vercel deployment budget. Production remains unchanged.
+
+
+## 19 October 2026 — Six expanded factual school profiles (preview only)
+
+Researched official school websites and added three differentiated factual sections per profile in both languages: stages/programmes, campus facilities, and practical/admissions information. Source attribution and official links remain visible. Correctly distinguished Montessori's two addresses and Brains MYP candidate status. No invented outcomes, rankings or school recommendations. One consolidated commit; preview and founder acceptance still required.

@@ -3,7 +3,7 @@ export type DiscoveryItem = { slug: string; en: string; es: string; enDescriptio
 export const neighbourhoods: DiscoveryItem[] = [
 {slug:"arturo-soria",en:"Arturo Soria",es:"Arturo Soria",enDescription:"A practical family guide to Arturo Soria schools, transport and English-speaking after-school support.",esDescription:"Guía familiar de Arturo Soria: colegios, transporte y apoyo escolar en inglés."},
 {slug:"conde-orgaz",en:"Conde Orgaz",es:"Conde Orgaz",enDescription:"Schools, campuses, family routines and after-school support around Conde de Orgaz, Madrid.",esDescription:"Colegios, sedes, vida familiar y apoyo escolar cerca de Conde de Orgaz, Madrid."},
-{slug:"piovera",en:"Piovera",es:"Piovera",enDescription:"School-life resources for families living in Piovera.",esDescription:"Recursos de vida escolar para familias de Piovera."},
+{slug:"piovera",en:"Piovera",es:"Piovera",enDescription:"Piovera family guide: Maristas, nearby schools, school-run routines and English-speaking academic support.",esDescription:"Guía de Piovera: Maristas, colegios cercanos, rutinas familiares y apoyo escolar en inglés."},
 {slug:"hortaleza",en:"Hortaleza",es:"Hortaleza",enDescription:"Explore English-speaking academic support and school routines in Hortaleza.",esDescription:"Descubre apoyo académico en inglés y rutinas escolares en Hortaleza."},
 {slug:"chamartin",en:"Chamartín",es:"Chamartín",enDescription:"Practical information for international families in Chamartín.",esDescription:"Información práctica para familias internacionales en Chamartín."},
 {slug:"canillas",en:"Canillas",es:"Canillas",enDescription:"Discover local education resources and after-school support near Canillas.",esDescription:"Recursos educativos y apoyo extraescolar cerca de Canillas."}

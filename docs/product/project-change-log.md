@@ -712,3 +712,9 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Added seven Piovera-specific editorial sections and three FAQs in English and Spanish, with focus on Maristas San José del Parque, Piovera/Conde de Orgaz geography, school journeys and age-appropriate academic support.
 - Added four relevant school-profile links, official institutional source links, differentiated bilingual metadata and a labelled image placeholder.
 - Kept school descriptions factual and independent, with TAA services separated. Preview branch only.
+
+
+## 19 October 2026 — Follow-up JSX syntax correction
+
+- Vercel logs showed an extra closing brace in dynamic school links; corrected all three article branches in each language.
+- Await build verification before sharing as working preview.

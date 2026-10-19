@@ -17,6 +17,7 @@ import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { FamilyRenewalRow } from "@/lib/admin/family-renewals"
 
@@ -496,12 +497,17 @@ function RenewalActions({
                     type="hidden"
                     value="Payment received before renewal email was required"
                   />
-                  <Input
-                    defaultValue={iso(new Date())}
-                    name="receivedOn"
-                    required
-                    type="date"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor={"renewal-received-" + row.caseId}>Actual payment received date</Label>
+                    <Input
+                      id={"renewal-received-" + row.caseId}
+                      defaultValue={iso(new Date())}
+                      name="receivedOn"
+                      required
+                      type="date"
+                    />
+                    <p className="text-xs text-muted-foreground">Change this to the date the bank transfer cleared. Today is only the default.</p>
+                  </div>
                   <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
                     <input className="mt-0.5" required type="checkbox" />
                     <span>

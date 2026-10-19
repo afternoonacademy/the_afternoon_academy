@@ -786,3 +786,12 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Google Business Profile already configured (founder-reported: 53 interactions, 50 directions requests, 3 website clicks; period unspecified). Google Search Console already configured, awaiting performance data.
 - Still to verify: production HTTP/crawler behavior, indexing, structured data, human editorial review, and source freshness. A green build does not prove search engine indexing or AI inclusion.
 - Handoff: pause further SEO/content work; next task is a separate feature fix. Do not mix unrelated changes into the released scope.
+
+
+## 19 October 2026 — Family renewal payment workflow fix (preview)
+
+- Clarified that zero family balance adjustments do not mean a renewal has been paid; replaced misleading 'Settled' account-adjustment labels.
+- Added direct links from family Payments & renewals to the existing exact-date renewal payment workflow.
+- Labelled the editable actual payment received date in both pre-email and awaiting-payment renewal flows, with guidance that the field defaults to today but can be backdated to the bank-cleared date.
+- Existing renewal server action already stores receivedOn and activates the exact paid period; no payment data was modified and no database migration is required.
+- Preview only; validate build and Lucia/Jorge scenarios before production.

@@ -1,0 +1,9 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
+import { schools } from "@/lib/discovery/content"
+type Props={params:Promise<{slug:string}>}
+export function generateStaticParams(){return schools.filter(s=>s.verified).map(s=>({slug:s.slug}))}
+export async function generateMetadata({params}:Props):Promise<Metadata>{const {slug}=await params;const s=schools.find(s=>s.slug===slug&&s.verified);if(!s)return {};return {title:`After-school support near ${s.name}, Madrid`,description:`Independent family guide to ${s.name} and academic support around ${s.area}.`,alternates:{canonical:`/guide/schools/${slug}`,languages:{en:`/guide/schools/${slug}`,es:`/es/guia/schools/${slug}`}}}}
+export default async function Page({params}:Props){const {slug}=await params;const s=schools.find(s=>s.slug===slug&&s.verified);if(!s)notFound();return <DiscoveryLayout lang="en" switchHref={`/es/guia/schools/${slug}`}><p className="brand-kicker">Independent school neighbourhood guide</p><h1 className="mt-3 text-4xl font-bold">After-school support near {s.name}</h1><p className="mt-4 brand-muted">School community: {s.area}</p><p className="mt-6 max-w-3xl">{s.campusNote}</p><p className="mt-4">For admissions, campus details, curriculum and school-specific dates, always consult the <a className="underline" href={s.website} rel="noopener noreferrer" target="_blank">official {s.name} website</a>.</p><p className="mt-5 max-w-3xl">The Afternoon Academy offers independent small-group homework and academic support at Calle Asura 40, Madrid. Contact us to discuss whether a session is appropriate for your child. We are not affiliated with or endorsed by {s.name}.</p><Link className="mt-6 inline-block underline" href="/guide">Explore more local resources</Link><AcademyCTA lang="en"/></DiscoveryLayout>}

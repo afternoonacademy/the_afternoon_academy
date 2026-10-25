@@ -1,5 +1,10 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Preview build correction
+
+- Investigated Vercel failed build: TypeScript error from mismatched Promise.all destructuring in Operations loader (`closures` received standing placements). Reordered queries to match destructuring; no changes to live records.
+
+
 ## 25 October 2026 — Operations Hub one-off seat times (preview)
 
 - Separate standard table selectors from dated seat teaching times; no extra Academy-wide time selector for one-off changes.

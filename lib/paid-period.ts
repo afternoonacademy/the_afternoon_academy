@@ -32,6 +32,8 @@ export type PaidPeriodSession = {
   tableNumber: number
   seatNumber: number | null
   startsAt: string
+  actualStartsAt?: string
+  timeTbc?: boolean
   durationMinutes: number
   teacherName: string | null
   focus: string | null

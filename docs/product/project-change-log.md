@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Preview candidate: dated renewal teaching-time overrides
+
+- Added Admin-only renewal planning controls for confirmed one-off teaching times or Time TBC while retaining standing allocated `startsAt` for capacity.
+- Structured renewal email renders agreed teaching time or Time to confirm; recurring placement, dates, prices and capacity unchanged.
+- Existing server-side standing-place validation remains enforced, optional time metadata validated by Zod.
+- No schema migration or production data update. Family profile and Operations integration remain outstanding before release.
+
+
 
 ## 25 October 2026 — Renewal planning window opens 10 days before paid-through
 

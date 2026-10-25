@@ -226,6 +226,14 @@ export function PaidPeriodBuilder({
     }))
   }
 
+  function changeTeachingTime(target: PaidPeriodSession, mode: "standard" | "confirmed" | "tbc", time?: string) {
+    setSessions((current) => current.map((session) =>
+      session.placementId === target.placementId && session.date === target.date
+        ? { ...session, timeTbc: mode === "tbc", actualStartsAt: mode === "confirmed" ? time : undefined }
+        : session,
+    ))
+  }
+
   function removeSession(target: PaidPeriodSession) {
     setSessions((current) =>
       current.filter(
@@ -673,7 +681,18 @@ export function PaidPeriodBuilder({
                                   ? `${days[placement.weekday]} · `
                                   : ""}
                                 Table {session.tableNumber} ·{" "}
-                                {session.startsAt}
+                                {session.startsAt} (allocated)
+                                {purpose === "plan" ? (
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <select aria-label={`Teaching time status for ${dateLabel(session.date)}`} className="rounded border bg-background px-2 py-1 text-xs" value={session.timeTbc ? "tbc" : session.actualStartsAt ? "confirmed" : "standard"} onChange={(event) => changeTeachingTime(session, event.target.value as "standard" | "confirmed" | "tbc", session.actualStartsAt || session.startsAt)}>
+                                      <option value="standard">As allocated</option>
+                                      <option value="confirmed">Different time</option>
+                                      <option value="tbc">Time TBC</option>
+                                    </select>
+                                    {session.actualStartsAt && !session.timeTbc ? <input aria-label={`Actual start time for ${dateLabel(session.date)}`} className="w-28 rounded border bg-background px-2 py-1 text-xs" type="time" value={session.actualStartsAt} onChange={(event) => changeTeachingTime(session, "confirmed", event.target.value)} /> : null}
+                                    {session.timeTbc ? <span className="text-xs font-semibold text-amber-700">Teaching time to confirm</span> : null}
+                                  </div>
+                                ) : null}
                               </td>
                               <td className="px-3 py-2">
                                 {session.replacement ? (

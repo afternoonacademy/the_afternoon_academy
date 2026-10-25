@@ -205,6 +205,7 @@ Treat the following as current production architecture unless a later roadmap/ch
 - **Leads are counted and displayed at family level.** One parent with multiple children is one Lead family row, with children nested beneath it.
 - **Customers are counted at family level and include families in renewal.** Renewal is a subset/status of Customers, not a mutually exclusive replacement category.
 - **Renewal state is visible from Customers.** A learner currently requiring renewal action is flagged in the paid-through badge while remaining in the Customer family row.
+- **Renewal planning opens before payment expiry.** The Admin renewal action window opens 10 calendar days before the learner's latest paid-through date, and any already-open renewal case remains visible. This is an overlapping planning/contact state only: the learner remains a Customer and current paid sessions remain paid until the actual paid-through boundary.
 - **Pre-conversion lead details are editable without changing lifecycle.** Parent contact fields and eligible child/timetable details may be corrected before conversion; payments, bookings, sent communications and lifecycle state remain untouched.
 - **Authenticated parent portal access remains separate from the lead/family record.** A `parent_leads` record may exist without a parent login.
 - **No Child login/role exists.**

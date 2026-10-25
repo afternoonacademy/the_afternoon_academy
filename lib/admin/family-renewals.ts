@@ -4,7 +4,7 @@ import type {
   PaidPeriodSession,
 } from "@/lib/paid-period"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
-import { isRenewalDue } from "@/lib/admin/renewal-eligibility.mjs"
+import { shouldShowRenewal } from "@/lib/admin/renewal-eligibility.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 const iso = (date: Date) => date.toISOString().slice(0, 10)
@@ -201,9 +201,22 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
 
   const rows: FamilyRenewalRow[] = []
   for (const entitlement of latestByLearner.values()) {
-    // A learner enters Renewals on their final paid service date, not weeks
-    // beforehand. Until then they remain an active paid customer.
-    if (!isRenewalDue(entitlement.period_end, todayIso)) continue
+    const renewal = casesByLearnerSource.get(
+      entitlement.learner_id + ":" + entitlement.payment_entitlement_id,
+    )
+
+    // Renewal is an overlapping admin action window, not a change to paid
+    // customer status. Open it 10 days before paid-through, and never hide an
+    // already-open case just because its paid-through date is still ahead.
+    if (
+      !shouldShowRenewal({
+        periodEnd: entitlement.period_end,
+        today: todayIso,
+        hasOpenCase: Boolean(renewal),
+      })
+    ) {
+      continue
+    }
 
     const learner = relation(entitlement.learners)
     const parent = learner ? relation(learner.parent_leads) : null
@@ -212,9 +225,6 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     const learnerPlacements = placementsByLearner.get(learner.id) || []
     if (!learnerPlacements.length) continue
 
-    const renewal = casesByLearnerSource.get(
-      learner.id + ":" + entitlement.payment_entitlement_id,
-    )
     if (renewal?.status === "renewed" || renewal?.status === "not_renewing") {
       continue
     }

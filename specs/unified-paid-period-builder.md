@@ -175,16 +175,17 @@ A renewal email is not a prerequisite for recording a genuine cleared payment.
 - The learner-specific child payment entitlements remain independent.
 
 
-## Renewal eligibility timing — 5 October 2026
+## Renewal eligibility timing — superseded 25 October 2026
 
-Renewal workflow eligibility is based on the learner's actual latest paid-through date, not an advance warning window.
+The former final-paid-date-only eligibility rule is superseded. Renewal planning needs to begin before the last paid session so Admin can account for closures, holiday replacements and parent communication in time.
 
-- A learner remains in **Customers** while their latest paid period ends after today.
-- On the learner's final paid date, they become eligible for **Renewals → Needs renewal**.
-- Operations continues to show paid dated seats as paid for dates covered by an entitlement.
-- Future recurring capacity without paid coverage is shown separately as **Renewal due · place held**.
-- There is no automatic 21-day early renewal status. Staff may still deliberately start a renewal from the Renewals workflow once the learner is due.
-
+- The Admin renewal action window opens **10 calendar days before the learner's latest paid-through date**.
+- A learner remains an active **Customer** throughout this window; Renewal is an overlapping action subset, not a replacement customer state.
+- Opening the renewal window does not make remaining paid sessions unpaid, overdue or payment-pending.
+- Operations continues to treat dates covered by the current entitlement as paid. The separate **Renewal due · place held** operational state applies only after paid coverage has actually expired.
+- An already-open renewal case is always shown in Renewals even if its paid-through date is more than 10 days away, so Admin-created work cannot disappear from the workflow.
+- The renewal case itself is still created deliberately when Admin starts the renewal plan. Merely viewing the Family Pipeline does not create database records or send email.
+- The existing exact-date planner, Academy closure handling, replacement-session workflow, editable parent email and explicit payment confirmation remain unchanged.
 
 ## First-period exceptions and post-payment changes — October 2026
 

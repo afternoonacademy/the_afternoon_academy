@@ -1,5 +1,12 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Per-date teaching time in renewal planner (preview)
+
+- Admin can choose usual time, different time, or TBC independently for each dated renewal session before saving.
+- The selected exception is preserved in renewal JSON, reflected in parent email and saved-plan summary; standing placements remain unchanged.
+- Pending acceptance and integrated Operations Hub verification before production release.
+
+
 ## 25 October 2026 — Preview build correction
 
 - Investigated Vercel failed build: TypeScript error from mismatched Promise.all destructuring in Operations loader (`closures` received standing placements). Reordered queries to match destructuring; no changes to live records.

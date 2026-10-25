@@ -136,6 +136,55 @@ async function createDatedOperationsSeats(
       note: session.replacement ? "Paid replacement session" : null,
       supabase,
     })
+    // The paid seat remains attached to its standing time. A one-off teaching
+    // time belongs to the individual seat, never to the Academy-wide session.
+    if (session.actualStartsAt || session.timeTbc) {
+      const { data: delivery, error: deliveryError } = await supabase
+        .from("delivery_sessions")
+        .select("id")
+        .eq("service_date", session.date)
+        .eq("academy_table_id", session.academyTableId)
+        .eq("starts_at", session.startsAt)
+        .single()
+      if (deliveryError || !delivery) throw new Error("Could not locate the dated teaching session")
+      const { data: seat, error: seatError } = await supabase
+        .from("delivery_seats")
+        .select("id")
+        .eq("delivery_session_id", delivery.id)
+        .eq("learner_id", learnerId)
+        .eq("status", "scheduled")
+        .single()
+      if (seatError || !seat) throw new Error("Could not locate the learner's dated seat")
+      const { data: previous, error: previousError } = await supabase
+        .from("delivery_seat_time_overrides")
+        .select("actual_starts_at,time_tbc")
+        .eq("delivery_seat_id", seat.id)
+        .maybeSingle()
+      if (previousError) throw new Error("Could not check the previous teaching time")
+      const actualStartsAt = session.timeTbc ? null : session.actualStartsAt || null
+      const { error: overrideError } = await supabase
+        .from("delivery_seat_time_overrides")
+        .upsert({
+          delivery_seat_id: seat.id,
+          allocated_starts_at: session.startsAt,
+          actual_starts_at: actualStartsAt,
+          time_tbc: Boolean(session.timeTbc),
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "delivery_seat_id" })
+      if (overrideError) throw new Error("Could not save the dated teaching time")
+      const { error: auditError } = await supabase
+        .from("delivery_seat_time_override_audit")
+        .insert({
+          delivery_seat_id: seat.id,
+          changed_by: userId,
+          previous_starts_at: previous?.actual_starts_at || null,
+          new_starts_at: actualStartsAt,
+          previous_tbc: Boolean(previous?.time_tbc),
+          new_tbc: Boolean(session.timeTbc),
+        })
+      if (auditError) throw new Error("Could not audit the dated teaching time")
+    }
     allocated.push({
       ...session,
       learnerId,

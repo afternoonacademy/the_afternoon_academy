@@ -1,5 +1,12 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Paid renewal seat teaching-time transfer (preview)
+
+- On payment activation, per-date renewal actual time or TBC is written to the individual Operations delivery seat override, preserving standing session time and table selectors.
+- Audit entry records changes; failure to write an override blocks successful completion. No test payments or production family payment changes made.
+- Requires acceptance test with synthetic learner/payment data before production release.
+
+
 ## 25 October 2026 — Per-date teaching time in renewal planner (preview)
 
 - Admin can choose usual time, different time, or TBC independently for each dated renewal session before saving.

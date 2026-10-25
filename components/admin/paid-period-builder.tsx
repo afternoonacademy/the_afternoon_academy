@@ -226,6 +226,14 @@ export function PaidPeriodBuilder({
     }))
   }
 
+  function updateTeachingTime(target: PaidPeriodSession, mode: "standard" | "different" | "tbc", value?: string) {
+    setSessions((current) => current.map((item) =>
+      item.placementId === target.placementId && item.date === target.date && item.startsAt === target.startsAt
+        ? { ...item, actualStartsAt: mode === "different" ? value : undefined, timeTbc: mode === "tbc" }
+        : item,
+    ))
+  }
+
   function removeSession(target: PaidPeriodSession) {
     setSessions((current) =>
       current.filter(
@@ -669,11 +677,32 @@ export function PaidPeriodBuilder({
                                 {dateLabel(session.date)}
                               </td>
                               <td className="px-3 py-2 text-muted-foreground">
-                                {placement
-                                  ? `${days[placement.weekday]} · `
-                                  : ""}
-                                Table {session.tableNumber} ·{" "}
-                                {session.startsAt}
+                                {placement ? `${days[placement.weekday]} · ` : ""}
+                                Table {session.tableNumber} · {session.startsAt}
+                                {purpose === "plan" ? (
+                                  <div className="mt-2 space-y-1">
+                                    <select
+                                      aria-label={`Teaching time for ${dateLabel(session.date)}`}
+                                      className="w-full rounded border bg-background px-2 py-1 text-xs"
+                                      value={session.timeTbc ? "tbc" : session.actualStartsAt ? "different" : "standard"}
+                                      onChange={(event) => updateTeachingTime(session, event.target.value as "standard" | "different" | "tbc", session.actualStartsAt || session.startsAt)}
+                                    >
+                                      <option value="standard">Usual time</option>
+                                      <option value="different">Different time</option>
+                                      <option value="tbc">Time TBC</option>
+                                    </select>
+                                    {session.actualStartsAt && !session.timeTbc ? (
+                                      <input
+                                        aria-label={`New teaching time for ${dateLabel(session.date)}`}
+                                        className="w-full rounded border bg-background px-2 py-1 text-xs"
+                                        type="time"
+                                        value={session.actualStartsAt}
+                                        onChange={(event) => updateTeachingTime(session, "different", event.target.value)}
+                                      />
+                                    ) : null}
+                                    {session.actualStartsAt || session.timeTbc ? <span className="text-xs font-semibold text-amber-700">One-off teaching time</span> : null}
+                                  </div>
+                                ) : null}
                               </td>
                               <td className="px-3 py-2">
                                 {session.replacement ? (

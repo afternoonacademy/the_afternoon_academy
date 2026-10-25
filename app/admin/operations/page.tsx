@@ -35,6 +35,8 @@ export default async function AdminPage({
     { data: tables },
     { data: weeklyTemplates },
     { data: closures },
+    { data: standingPlaces },
+    { data: timeOverrides },
   ] = await Promise.all([
     supabaseAdmin
       .from("delivery_sessions")
@@ -73,6 +75,16 @@ export default async function AdminPage({
       .select("reason,starts_on,ends_on")
       .lte("starts_on", date)
       .gte("ends_on", date),
+    supabaseAdmin
+      .from("standing_placements")
+      .select("learner_id,academy_table_id,seat_number,starts_at,duration_minutes,weekday,effective_from,effective_to")
+      .eq("status", "active")
+      .eq("weekday", new Date(`${date}T12:00:00Z`).getUTCDay())
+      .lte("effective_from", date)
+      .or(`effective_to.is.null,effective_to.gte.${date}`),
+    supabaseAdmin
+      .from("delivery_seat_time_overrides")
+      .select("delivery_seat_id,actual_starts_at,time_tbc"),
   ]);
 
   const sessionIds = new Set((sessions || []).map((session) => session.id));
@@ -138,6 +150,8 @@ export default async function AdminPage({
         expectedRenewalSeats={expectedRenewalSeats}
         expectedPlannedSeats={expectedPlannedSeats}
         seats={visibleSeats}
+        standingPlaces={standingPlaces || []}
+        timeOverrides={timeOverrides || []}
         sessions={sessions || []}
         tables={tables || []}
         weeklyTemplates={weeklyTemplates || []}

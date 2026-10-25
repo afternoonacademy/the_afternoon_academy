@@ -1,5 +1,40 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Paid renewal seat teaching-time transfer (preview)
+
+- On payment activation, per-date renewal actual time or TBC is written to the individual Operations delivery seat override, preserving standing session time and table selectors.
+- Audit entry records changes; failure to write an override blocks successful completion. No test payments or production family payment changes made.
+- Requires acceptance test with synthetic learner/payment data before production release.
+
+
+## 25 October 2026 — Per-date teaching time in renewal planner (preview)
+
+- Admin can choose usual time, different time, or TBC independently for each dated renewal session before saving.
+- The selected exception is preserved in renewal JSON, reflected in parent email and saved-plan summary; standing placements remain unchanged.
+- Pending acceptance and integrated Operations Hub verification before production release.
+
+
+## 25 October 2026 — Preview build correction
+
+- Investigated Vercel failed build: TypeScript error from mismatched Promise.all destructuring in Operations loader (`closures` received standing placements). Reordered queries to match destructuring; no changes to live records.
+
+
+## 25 October 2026 — Operations Hub one-off seat times (preview)
+
+- Separate standard table selectors from dated seat teaching times; no extra Academy-wide time selector for one-off changes.
+- Paid seats display actual teaching time in amber when different from their standing allocation; Admin can edit or mark TBC from the seat itself.
+- Added per-delivery-seat dated override and append-only change audit, restricted to trusted server-side Admin actions; no change to paid entitlement, standing placements, seat capacity, or historic email.
+- Requires preview acceptance and verification before production merge.
+
+
+## 25 October 2026 — Preview candidate: dated renewal teaching-time overrides
+
+- Added Admin-only renewal planning controls for confirmed one-off teaching times or Time TBC while retaining standing allocated `startsAt` for capacity.
+- Structured renewal email renders agreed teaching time or Time to confirm; recurring placement, dates, prices and capacity unchanged.
+- Existing server-side standing-place validation remains enforced, optional time metadata validated by Zod.
+- No schema migration or production data update. Family profile and Operations integration remain outstanding before release.
+
+
 
 ## 25 October 2026 — Renewal planning window opens 10 days before paid-through
 

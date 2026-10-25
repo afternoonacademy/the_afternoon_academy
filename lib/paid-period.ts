@@ -23,6 +23,8 @@ export type PaidPeriodPlacement = {
 }
 
 export type PaidPeriodSession = {
+  actualStartsAt?: string
+  timeTbc?: boolean
   learnerId: string | null
   learnerName: string
   childLeadId?: string | null

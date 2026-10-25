@@ -8,6 +8,7 @@ import {
   addDeliverySeat,
   recordAttendance,
   recordRenewalExpectedAttendance,
+  saveDeliverySeatTeachingTime,
   saveAdhocDeliverySession,
   updateDailyDeliverySession,
 } from "@/actions/learners";
@@ -32,6 +33,8 @@ type Session = {
   focus: string | null;
   status: string;
 };
+type StandingPlace = { learner_id: string; academy_table_id: string; seat_number: number | null; starts_at: string; duration_minutes: number };
+type TimeOverride = { delivery_seat_id: string; actual_starts_at: string | null; time_tbc: boolean };
 type Seat = {
   id: string;
   delivery_session_id: string;
@@ -90,6 +93,8 @@ function TableCard({
   seats,
   expectedRenewalSeats,
   expectedPlannedSeats,
+  standingPlaces,
+  timeOverrides,
   learners,
   attendance,
 }: {
@@ -100,45 +105,33 @@ function TableCard({
   seats: Seat[];
   expectedRenewalSeats: RenewalExpectedSeat[];
   expectedPlannedSeats: PlannedExpectedSeat[];
+  standingPlaces: StandingPlace[];
+  timeOverrides: TimeOverride[];
   learners: Learner[];
   attendance: Attendance[];
 }) {
-  const times = useMemo(
-    () =>
-      [
-        ...new Set([
-          ...standardTimes,
-          ...sessions.map((session) => session.starts_at.slice(0, 5)),
-          ...templates.map((template) => template.starts_at.slice(0, 5)),
-          ...expectedRenewalSeats.map((seat) => seat.startsAt),
-          ...expectedPlannedSeats.map((seat) => seat.startsAt),
-        ]),
-      ].sort(),
-    [expectedPlannedSeats, expectedRenewalSeats, sessions, templates],
-  );
-  const [time, setTime] = useState(times[0]);
-  const session = sessions.find(
-    (item) => item.starts_at.slice(0, 5) === time,
-  );
-  const template = templates.find(
-    (item) => item.starts_at.slice(0, 5) === time,
-  );
-  const renewalSeats = expectedRenewalSeats.filter(
-    (item) => item.startsAt === time,
-  );
-  const plannedSeats = expectedPlannedSeats.filter(
-    (item) => item.startsAt === time,
-  );
+  // A one-off delivery time must never create a new Academy-wide selector.
+  const times = useMemo(() => [...new Set([...standardTimes, ...templates.map((t) => t.starts_at.slice(0, 5))])].sort(), [templates]);
+  const [time, setTime] = useState("17:00");
+  const placeForSeat = (seat: Seat) => standingPlaces.find((place) =>
+    place.learner_id === seat.learner_id && place.academy_table_id === table.id && place.seat_number === seat.seat_number);
+  const allocatedTime = (seat: Seat) => placeForSeat(seat)?.starts_at.slice(0, 5) ||
+    (standardTimes.includes(sessions.find((session) => session.id === seat.delivery_session_id)?.starts_at.slice(0, 5) || "")
+      ? sessions.find((session) => session.id === seat.delivery_session_id)!.starts_at.slice(0, 5) : standardTimes[0]);
+  const session = sessions.find((item) => item.starts_at.slice(0, 5) === time);
+  const template = templates.find((item) => item.starts_at.slice(0, 5) === time);
+  const renewalSeats = expectedRenewalSeats.filter((item) => item.startsAt === time);
+  const plannedSeats = expectedPlannedSeats.filter((item) => item.startsAt === time);
   const capacity = table.seat_capacity || 6;
-  const sessionSeats = session
-    ? seats.filter((seat) => seat.delivery_session_id === session.id)
-    : [];
+  const sessionSeats = seats.filter((seat) =>
+    sessions.some((item) => item.id === seat.delivery_session_id) && allocatedTime(seat) === time);
+  const attendanceSessionId = (seat: Seat) => seat.delivery_session_id;
   const learnerById = new Map(
     learners.map((learner) => [learner.id, learner]),
   );
   const attendanceByLearner = new Map(
     attendance
-      .filter((item) => item.delivery_session_id === session?.id)
+      .filter((item) => sessionSeats.some((seat) => seat.delivery_session_id === item.delivery_session_id))
       .map((item) => [item.learner_id, item.status]),
   );
   const duration =
@@ -328,6 +321,30 @@ function TableCard({
                       </p>
                     ) : null}
 
+                    {seat ? (() => {
+                      const delivery = sessions.find((item) => item.id === seat.delivery_session_id);
+                      const override = timeOverrides.find((item) => item.delivery_seat_id === seat.id);
+                      const original = allocatedTime(seat);
+                      const actual = override?.actual_starts_at?.slice(0, 5) || delivery?.starts_at.slice(0, 5) || original;
+                      const different = actual !== original || override?.time_tbc;
+                      return (
+                        <details className={`mt-2 rounded-lg px-2 py-1 ${different ? "bg-amber-200 text-amber-950" : "bg-white/10 text-white"}`}>
+                          <summary className="cursor-pointer text-[11px] font-semibold">{override?.time_tbc ? "Time TBC" : `${actual}–${finishTime(actual, delivery?.duration_minutes || 50)}`}{different ? " · One-off" : ""}</summary>
+                          <form action={saveDeliverySeatTeachingTime} className="mt-2 space-y-1 text-left">
+                            <input type="hidden" name="deliverySeatId" value={seat.id} />
+                            <input type="hidden" name="serviceDate" value={date} />
+                            <label className="block text-[10px]">Allocated: {original}</label>
+                            <select name="timeStatus" defaultValue={override?.time_tbc ? "tbc" : actual !== original ? "different" : "standard"} className="w-full rounded border px-1 py-1 text-xs text-slate-900">
+                              <option value="standard">Original time</option>
+                              <option value="different">Different time</option>
+                              <option value="tbc">Time TBC</option>
+                            </select>
+                            <input type="time" name="actualStartsAt" defaultValue={actual} className="w-full rounded border px-1 py-1 text-xs text-slate-900" />
+                            <Button size="sm" className="w-full bg-white text-slate-900 hover:bg-amber-100">Save time</Button>
+                          </form>
+                        </details>
+                      );
+                    })() : null}
                     <div className="mt-2 flex justify-center gap-1">
                       {(["present", "absent"] as const).map((value) =>
                         renewalDue && renewalSeat ? (
@@ -404,7 +421,7 @@ function TableCard({
                             <input
                               name="deliverySessionId"
                               type="hidden"
-                              value={session!.id}
+                              value={seat!.delivery_session_id}
                             />
                             <input name="status" type="hidden" value={value} />
                             <Button
@@ -510,6 +527,8 @@ export function TodayDeliveryBoard({
   attendance,
   tables,
   weeklyTemplates,
+  standingPlaces,
+  timeOverrides,
 }: {
   date: string;
   sessions: Session[];
@@ -521,6 +540,8 @@ export function TodayDeliveryBoard({
   tables: AcademyTable[];
   eligibleLearnerIds: string[];
   weeklyTemplates: WeeklyTemplate[];
+  standingPlaces: StandingPlace[];
+  timeOverrides: TimeOverride[];
 }) {
   const teachingTables = tables
     .filter((table) => table.table_number > 0)
@@ -552,6 +573,8 @@ export function TodayDeliveryBoard({
             key={table.id}
             learners={learners}
             seats={seats}
+            standingPlaces={standingPlaces.filter((place) => place.academy_table_id === table.id)}
+            timeOverrides={timeOverrides}
             sessions={sessions.filter(
               (session) => session.academy_table_id === table.id,
             )}

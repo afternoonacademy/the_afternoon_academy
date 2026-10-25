@@ -1247,6 +1247,50 @@ export async function cancelDeliverySession(formData: FormData) {
   revalidatePath("/admin/sessions");
 }
 
+export async function saveDeliverySeatTeachingTime(formData: FormData) {
+  const { user } = await requireAdmin();
+  const parsed = z.object({
+    deliverySeatId: z.string().uuid(),
+    serviceDate: z.string().date(),
+    timeStatus: z.enum(["standard", "different", "tbc"]),
+    actualStartsAt: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/),
+  }).safeParse({
+    deliverySeatId: formData.get("deliverySeatId"),
+    serviceDate: formData.get("serviceDate"),
+    timeStatus: formData.get("timeStatus"),
+    actualStartsAt: formData.get("actualStartsAt"),
+  });
+  if (!parsed.success) throw new Error("Invalid dated teaching time");
+  const { deliverySeatId, serviceDate, timeStatus, actualStartsAt } = parsed.data;
+  const db = supabaseService();
+  const { data: seat, error: seatError } = await db.from("delivery_seats")
+    .select("id,learner_id,delivery_session_id,seat_number,delivery_sessions!inner(service_date,academy_table_id,starts_at)")
+    .eq("id", deliverySeatId).single();
+  if (seatError || !seat) throw new Error("Seat not found");
+  const delivery = Array.isArray(seat.delivery_sessions) ? seat.delivery_sessions[0] : seat.delivery_sessions;
+  if (!delivery || delivery.service_date !== serviceDate) throw new Error("Seat date changed; refresh the page");
+  const { data: place } = await db.from("standing_placements").select("starts_at")
+    .eq("learner_id", seat.learner_id).eq("academy_table_id", delivery.academy_table_id)
+    .eq("seat_number", seat.seat_number).eq("status", "active")
+    .lte("effective_from", serviceDate).or(`effective_to.is.null,effective_to.gte.${serviceDate}`).maybeSingle();
+  const allocated = String(place?.starts_at || delivery.starts_at).slice(0, 5);
+  const nextTime = timeStatus === "different" ? actualStartsAt : null;
+  const { data: previous } = await db.from("delivery_seat_time_overrides")
+    .select("actual_starts_at,time_tbc").eq("delivery_seat_id", deliverySeatId).maybeSingle();
+  const { error } = await db.from("delivery_seat_time_overrides").upsert({
+    delivery_seat_id: deliverySeatId, allocated_starts_at: allocated,
+    actual_starts_at: nextTime, time_tbc: timeStatus === "tbc", updated_by: user.id,
+  }, { onConflict: "delivery_seat_id" });
+  if (error) throw new Error("Could not save teaching time");
+  await db.from("delivery_seat_time_override_audit").insert({
+    delivery_seat_id: deliverySeatId, changed_by: user.id,
+    previous_starts_at: previous?.actual_starts_at || null,
+    new_starts_at: nextTime, previous_tbc: previous?.time_tbc || false,
+    new_tbc: timeStatus === "tbc",
+  });
+  revalidatePath("/admin/operations");
+}
+
 export async function updateDailyDeliverySession(formData: FormData) {
   const { user } = await requireAdmin();
   const parsed = updateDeliverySessionSchema.safeParse({

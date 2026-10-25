@@ -1,0 +1,2 @@
+-- Superseded by delivery_sessions_service_date_academy_table_starts_at_key.
+drop index if exists public.delivery_sessions_date_table_unique;

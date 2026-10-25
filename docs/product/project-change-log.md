@@ -1,5 +1,15 @@
 # The Afternoon Academy — Project Change Log
 
+
+## 25 October 2026 — Renewal planning window opens 10 days before paid-through
+
+- Changed Family Pipeline renewal eligibility from final-paid-date-only to an Admin action window beginning 10 calendar days before each learner's latest paid-through date.
+- Families remain Customers during the renewal window; early renewal visibility does not change paid entitlement, attendance or Operations paid status.
+- Existing open renewal cases remain visible even when they are outside the normal 10-day window, preventing Admin work from disappearing from the workflow.
+- Renewal cases are still created only by explicit Admin action; page loads do not auto-create cases or send communication.
+- Existing exact-date renewal planning, Academy closure/replacement handling, editable parent email, explicit cleared-payment confirmation and recurring-capacity rules are unchanged.
+- No database migration or permission change is required.
+
 ## 6 October 2026 — Lightweight parent registration & authorisation tracking
 
 ### Release candidate

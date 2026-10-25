@@ -21,8 +21,8 @@ Family Pipeline is the single lifecycle surface:
 3. Parent email reviewed and explicitly sent.
 4. Cleared payment manually confirmed.
 5. Learner activated with exact dated paid sessions and Operations seats.
-6. Learner remains a paid customer until the final paid service date.
-7. Renewal becomes due on the final paid date and stays due until renewed or deliberately closed/released.
+6. Learner remains a paid customer through the final paid service date even when the renewal action window is already open.
+7. The Admin renewal action window opens 10 calendar days before the learner's latest paid-through date. An already-open renewal case remains visible even before that window. This early visibility is planning/contact workflow only: paid coverage and Operations paid status remain unchanged until the actual paid-through boundary, after which an unresolved renewal is operationally due until renewed or deliberately closed/released.
 
 Sibling children remain independent learners/payment entitlements even when they share one parent/family account.
 

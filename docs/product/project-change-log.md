@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 October 2026 — Operations Hub one-off seat times (preview)
+
+- Separate standard table selectors from dated seat teaching times; no extra Academy-wide time selector for one-off changes.
+- Paid seats display actual teaching time in amber when different from their standing allocation; Admin can edit or mark TBC from the seat itself.
+- Added per-delivery-seat dated override and append-only change audit, restricted to trusted server-side Admin actions; no change to paid entitlement, standing placements, seat capacity, or historic email.
+- Requires preview acceptance and verification before production merge.
+
+
 ## 25 October 2026 — Preview candidate: dated renewal teaching-time overrides
 
 - Added Admin-only renewal planning controls for confirmed one-off teaching times or Time TBC while retaining standing allocated `startsAt` for capacity.

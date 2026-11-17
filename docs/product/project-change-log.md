@@ -2,7 +2,7 @@
 
 ## 17 November 2026 — Invitation-only staff signup (release candidate)
 
-- Founder requested a working staff magic-link signup after identifying that the existing public signup did not configure staff access. Added email-only staff signup, Admin approval/withdrawal in Academy Setup, Resend delivery of Supabase invitation/magic links and explicit token confirmation. Jessica Admin access is authorised, but no account/invitation/email has been created yet.
+- Founder requested a working staff magic-link signup after identifying that the existing public signup did not configure staff access. Added email-only staff signup, Admin approval/withdrawal in Academy Setup, Resend delivery of Supabase invitation/magic links and explicit token confirmation. the approved staff member Admin access is authorised, but no account/invitation/email has been created yet.
 - Added protected staff_invitations and service-only request/admission RPCs. Confirmed mailbox ownership, expiry/revocation, role conflicts and existing profile identity are checked before atomic public.users/user_roles provisioning. Added current Teacher role to legacy role constraint without deleting tutor values. Unknown/denied requests get generic responses; persistent throttling caps approved email delivery requests.
 - Staff tokens use fragments removed by the confirmation page, explicit same-origin POST, configured HTTPS origin, no auth-page analytics and no token/provider logging. Existing password/Google/Parent flow remains available, Teacher landing is corrected, and password redirect now shares invitation-aware admission instead of inventing a Parent profile.
 - Added local Postgres execution tests via PGlite plus provider/Server Action tests. 154/154 tests pass; independent security review passed. Production build/typecheck passes with synthetic .invalid settings; changed-file lint passes. Full lint retains six existing errors in untouched files. Hosted Supabase email delivery, cross-device login and browser role-boundary acceptance remain outstanding.
@@ -11,7 +11,7 @@
 
 ## 17 November 2026 — Missing Wednesday recurring timetable configuration corrected
 
-- Investigated the Leads → Recurring table and time dropdown in the confirmed TAA Supabase project (`krslaehcjanqffrzycci`). Code already supported Wednesday; the live weekly_table_templates table contained four active slots on Monday, Tuesday, Thursday and Friday but no Wednesday rows.
+- Investigated the Leads → Recurring table and time dropdown in the confirmed TAA Supabase project (`[production project reference omitted]`). Code already supported Wednesday; the live weekly_table_templates table contained four active slots on Monday, Tuesday, Thursday and Friday but no Wednesday rows.
 - Added the four missing Wednesday configurations: Table 1 and Table 2 at 17:00 and 18:00, each 50 minutes, effective 17 November 2026. Reused the existing Monday focus and price-plan defaults. Teacher assignment remains unassigned as on the source slots.
 - Used one transactional, idempotent configuration insert with a source-count guard. No schema/RLS change, existing booking/payment/attendance mutation or email send. No application code/redeployment is needed for the configuration fix.
 - Verified with the same active-template predicates as the Leads dropdown and the Operations date loader: four Wednesday options; four templates for 18 November; zero active weekend templates. Configured weekday capacity is now 120 seat-sessions/week (previously 96), correctly reflecting the additional weekday.
@@ -887,3 +887,14 @@ Published bilingual, locally researched neighbourhood article with six substanti
 - Labelled the editable actual payment received date in both pre-email and awaiting-payment renewal flows, with guidance that the field defaults to today but can be backdated to the bank-cleared date.
 - Existing renewal server action already stores receivedOn and activates the exact paid period; no payment data was modified and no database migration is required.
 - Preview only; validate build and Lucia/Jorge scenarios before production.
+
+
+## Staff signup release authorisation — 17 November 2026
+
+The founder explicitly instructed “Just launch” after receiving the preview/testing limitations. This authorises release without the outstanding protected-preview browser acceptance; it does not turn those checks into passed tests. Code d2638775009aa8a65a1994595d677cc55c4d8f2a passed Vercel preview, 154 automated tests, synthetic-settings production build/typecheck, changed-file lint and independent security review. Full lint has six existing unrelated errors.
+
+Applied staff_magic_link_signup to the confirmed TAA Supabase project before application activation. Verified invitation RLS enabled, no anon table read or authenticated insert, no anon/authenticated claim execution, and service-role claim execution enabled. Approved the founder-requested staff email as Admin with approval_source=founder, no fabricated approver identity, expiry 24 November 2026. Approval is not an authenticated account or email verification and sends no email. Staff permissions are still granted only after mailbox verification. Open /staff/sign-up to request the link.
+
+Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
+
+Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.

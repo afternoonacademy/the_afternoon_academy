@@ -248,7 +248,7 @@ Limits remain explicit: local build used synthetic .invalid Supabase settings an
 
 ## Wednesday recurring timetable — verified 17 November 2026
 
-Live TAA project `krslaehcjanqffrzycci` now has active recurring templates Monday–Friday: two tables, each at 17:00 and 18:00 for 50 minutes. Wednesday was missing from live configuration despite existing code support; four rows were added effective 17 November. Leads and Operations both read those records. Weekend active-template count remains zero; weekend enquiries remain demand-only. Configured weekday capacity is 120 seat-sessions/week. See the change log for verification and rollback IDs. No application redeployment or schema migration was required.
+Live TAA project `[production project reference omitted]` now has active recurring templates Monday–Friday: two tables, each at 17:00 and 18:00 for 50 minutes. Wednesday was missing from live configuration despite existing code support; four rows were added effective 17 November. Leads and Operations both read those records. Weekend active-template count remains zero; weekend enquiries remain demand-only. Configured weekday capacity is 120 seat-sessions/week. See the change log for verification and rollback IDs. No application redeployment or schema migration was required.
 
 ## Staff signup release candidate — not yet live
 
@@ -256,5 +256,16 @@ Live TAA project `krslaehcjanqffrzycci` now has active recurring templates Monda
 - Additive migration `20261117191220_staff_magic_link_signup.sql` supplies protected invitations and service-only throttle/verified-email admission RPCs. Apply to accepted environment BEFORE this application version; new Parent/Staff onboarding depends on it. Existing account login remains supported.
 - Root profile/role admission no longer fabricates Parent profiles via the password redirect; Parent invitation rules remain in the shared callback. Teacher and Admin land through `/admin`.
 - Email origin uses configured HTTPS NEXT_PUBLIC_SITE_URL. Preview must use a separate Supabase configuration and accepted preview origin to test real email/session flow. The normal production URL must not silently receive preview auth links.
-- Local synthetic Postgres (PGlite), provider doubles and independent security review verify core invariants. Hosted auth delivery, cross-device session and role-boundary browser acceptance remain outstanding. No production migration, Jessica account/permission creation or email send has occurred.
+- Local synthetic Postgres (PGlite), provider doubles and independent security review verify core invariants. Hosted auth delivery, cross-device session and role-boundary browser acceptance remain outstanding. No production migration, the approved staff member account/permission creation or email send has occurred.
 - Pending Wednesday documentation correction from PR #33 is included in this coherent feature slice to avoid a separate documentation deployment.
+
+
+## Staff signup release authorisation — 17 November 2026
+
+The founder explicitly instructed “Just launch” after receiving the preview/testing limitations. This authorises release without the outstanding protected-preview browser acceptance; it does not turn those checks into passed tests. Code d2638775009aa8a65a1994595d677cc55c4d8f2a passed Vercel preview, 154 automated tests, synthetic-settings production build/typecheck, changed-file lint and independent security review. Full lint has six existing unrelated errors.
+
+Applied staff_magic_link_signup to the confirmed TAA Supabase project before application activation. Verified invitation RLS enabled, no anon table read or authenticated insert, no anon/authenticated claim execution, and service-role claim execution enabled. Approved the founder-requested staff email as Admin with approval_source=founder, no fabricated approver identity, expiry 24 November 2026. Approval is not an authenticated account or email verification and sends no email. Staff permissions are still granted only after mailbox verification. Open /staff/sign-up to request the link.
+
+Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
+
+Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.

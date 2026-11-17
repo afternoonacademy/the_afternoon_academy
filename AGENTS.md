@@ -259,3 +259,21 @@ TAA is an independent local directory publisher, NOT an authority on, reviewer o
 - Operations selectors reflect real configured/delivery allocations, including custom times; seat teaching overrides never create global time selectors. Unconfigured weekends have no phantom evening slots.
 - Record planned place saves only. It may regenerate an internal draft, but must not send or log an email.
 - PR #32 release was explicitly authorised by the founder on 17 November 2026. Keep the documented browser/database verification limits visible; do not convert mocked tests into claims of real database verification.
+
+## Staff onboarding release candidate — 17 November 2026
+
+- Read `specs/staff-magic-link-signup.md` before changing auth admission. Staff roles come only from protected Admin-approved invitations after Supabase verifies email ownership. Public signup must never choose/grant a role or silently elevate an existing Parent.
+- Keep public.users/user_roles consistent through the transactional service-only claim RPC. Retain legacy tutor values; Teacher is the current application role. Accepted invitations cannot restore subsequently removed access.
+- Preserve generic public responses, persistent request throttles and explicit POST confirmation. Keep token hashes out of logs/analytics/server request URLs; use fragment links and configured HTTPS origin, never request host headers.
+- Migration precedes code activation for new Parent/Staff onboarding. Isolated preview email/session/role verification and founder acceptance are required before production release. No production migration/the approved staff member account/email was performed during implementation.
+
+
+## Staff signup release authorisation — 17 November 2026
+
+The founder explicitly instructed “Just launch” after receiving the preview/testing limitations. This authorises release without the outstanding protected-preview browser acceptance; it does not turn those checks into passed tests. Code d2638775009aa8a65a1994595d677cc55c4d8f2a passed Vercel preview, 154 automated tests, synthetic-settings production build/typecheck, changed-file lint and independent security review. Full lint has six existing unrelated errors.
+
+Applied staff_magic_link_signup to the confirmed TAA Supabase project before application activation. Verified invitation RLS enabled, no anon table read or authenticated insert, no anon/authenticated claim execution, and service-role claim execution enabled. Approved the founder-requested staff email as Admin with approval_source=founder, no fabricated approver identity, expiry 24 November 2026. Approval is not an authenticated account or email verification and sends no email. Staff permissions are still granted only after mailbox verification. Open /staff/sign-up to request the link.
+
+Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
+
+Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.

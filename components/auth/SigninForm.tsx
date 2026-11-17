@@ -150,7 +150,7 @@ export function SigninForm() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-  Admin access is currently invitation-only.
+  Staff access is invitation-only. <Link className="underline" href="/staff/sign-up">Staff signup & magic link</Link>
 </p>
         </form>
       </CardContent>

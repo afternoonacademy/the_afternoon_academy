@@ -285,3 +285,18 @@ PR #32 extends the existing Family Pipeline rather than adding a booking subsyst
 Staff may capture an incomplete family lead (including WhatsApp enquiries without email) and progressively complete it through selection controls. Specific place planning and email sending retain their own data prerequisites. Saving a planned place never sends email. Operational capacity/session reporting remains weekday-only; actual cash and customer records remain factual.
 
 Founder explicitly authorised merge/release on 17 November 2026 after preview delivery. Weekend provision, new prices and staffing remain separate future decisions. See the current baseline, feature specification and change log for implementation evidence and outstanding real-environment verification limits.
+
+### Staff access onboarding — release candidate, 17 November 2026
+
+Admin-approved email signup and passwordless staff login are implemented for preview. Academy Setup approves Admin/Teacher access; the recipient must verify their mailbox before any staff permission is granted. This does not introduce public staff registration or change Parent/Child roles. the approved staff member requested Admin invitation is authorised by the founder, with operational provisioning still pending release. Hosted email/session acceptance and migration-before-code rollout remain required.
+
+
+## Staff signup release authorisation — 17 November 2026
+
+The founder explicitly instructed “Just launch” after receiving the preview/testing limitations. This authorises release without the outstanding protected-preview browser acceptance; it does not turn those checks into passed tests. Code d2638775009aa8a65a1994595d677cc55c4d8f2a passed Vercel preview, 154 automated tests, synthetic-settings production build/typecheck, changed-file lint and independent security review. Full lint has six existing unrelated errors.
+
+Applied staff_magic_link_signup to the confirmed TAA Supabase project before application activation. Verified invitation RLS enabled, no anon table read or authenticated insert, no anon/authenticated claim execution, and service-role claim execution enabled. Approved the founder-requested staff email as Admin with approval_source=founder, no fabricated approver identity, expiry 24 November 2026. Approval is not an authenticated account or email verification and sends no email. Staff permissions are still granted only after mailbox verification. Open /staff/sign-up to request the link.
+
+Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
+
+Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.

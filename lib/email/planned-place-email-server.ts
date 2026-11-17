@@ -86,7 +86,10 @@ export type PlannedPlaceEmailDraft = {
   persisted: boolean
 }
 
-function bookingVersion(bookings: any[]) {
+function bookingVersion(bookings: Array<{
+  id: string; status: string; weekday: number; table_number: number; seat_number: number;
+  starts_at: string; planned_sessions: unknown; session_price_plan_id: string | null;
+}>) {
   return JSON.stringify(
     [...bookings]
       .map((booking) => ({
@@ -260,7 +263,7 @@ export async function loadPlannedPlaceEmailDraft({
   })
 
   return {
-    to: parent.email,
+    to: parent.email || "",
     subject: selected.subject,
     body: selected.body,
     bookingIds: (bookings || []).map((booking) => booking.id),

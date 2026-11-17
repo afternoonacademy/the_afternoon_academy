@@ -479,6 +479,9 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
     parentLeadId: parsed.data.parentLeadId,
     childLeadId: parsed.data.childLeadId,
   })
+  if (!z.string().email().safeParse(freshDraft.to).success) {
+    throw new Error("Add a valid parent email in lead details before sending. The planned place is still saved.")
+  }
   const sendContent = normalizePlannedPlaceSendContent({
     subject: parsed.data.subject,
     body: parsed.data.body,

@@ -22,7 +22,7 @@ type LeadOverviewRow = {
   child_first_name: string | null
   timetable_preference_id: string
   parent_name: string
-  email: string
+  email: string | null
   phone: string | null
   area: string | null
   school_name: string | null
@@ -30,7 +30,7 @@ type LeadOverviewRow = {
   status: string
   source: string
   enquiry_type: string
-  child_age: number
+  child_age: number | null
   school_year: string | null
   curriculum: string | null
   support_needs: string[] | null
@@ -331,7 +331,7 @@ export default async function AdminLeadsPage() {
       learnerId: null,
       childName: lead.child_first_name || "Child",
       parentName: lead.parent_name,
-      email: lead.email,
+      email: lead.email || "—",
       reason: "Lead closed",
       closedAt: null,
     })

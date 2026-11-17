@@ -1,3 +1,5 @@
+import { formatEnquiryTime } from "@/lib/leads/enquiry-options.mjs"
+
 type EmailLanguage = "en" | "es"
 
 type LeadEmailChild = {
@@ -84,7 +86,7 @@ function leadChildrenHtml(data: LeadEmailData) {
           <p><strong>Support needed:</strong> ${escapeHtml(formatArray(child.supportNeeds))}</p>
           ${child.courseOrExamBoard ? `<p><strong>Course / exam board:</strong> ${escapeHtml(child.courseOrExamBoard)}</p>` : ""}
           <p><strong>Preferred days:</strong> ${escapeHtml(formatArray(child.preferredDays))}</p>
-          <p><strong>Preferred times:</strong> ${escapeHtml(formatArray(child.preferredTimes))}</p>
+          <p><strong>Preferred times:</strong> ${escapeHtml(formatArray(child.preferredTimes.map(formatEnquiryTime)))}</p>
           <p><strong>Likely frequency:</strong> ${escapeHtml(formatValue(child.preferredFrequency))}</p>
           <p><strong>Notes:</strong> ${escapeHtml(child.notes || "None")}</p>
         </div>
@@ -106,7 +108,7 @@ function leadChildrenText(data: LeadEmailData) {
           `Support needed: ${formatArray(child.supportNeeds)}`,
           child.courseOrExamBoard ? `Course / exam board: ${child.courseOrExamBoard}` : null,
           `Preferred days: ${formatArray(child.preferredDays)}`,
-          `Preferred times: ${formatArray(child.preferredTimes)}`,
+          `Preferred times: ${formatArray(child.preferredTimes.map(formatEnquiryTime))}`,
           `Likely frequency: ${formatValue(child.preferredFrequency)}`,
           `Notes: ${child.notes || "None"}`,
         ]

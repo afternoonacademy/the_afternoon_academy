@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { operationsSessionTimes, deliveryAllocationTime } from "@/lib/admin/operations-session-times.mjs";
 import { useMemo, useState } from "react";
 
 import {
@@ -76,7 +77,7 @@ const types = [
   "Creative learning",
   "Other",
 ];
-const standardTimes = ["17:00", "18:00"];
+
 
 const finishTime = (start: string, minutes: number) => {
   const [hour, minute] = start.slice(0, 5).split(":").map(Number);
@@ -93,7 +94,6 @@ function TableCard({
   seats,
   expectedRenewalSeats,
   expectedPlannedSeats,
-  standingPlaces,
   timeOverrides,
   learners,
   attendance,
@@ -110,14 +110,11 @@ function TableCard({
   learners: Learner[];
   attendance: Attendance[];
 }) {
-  // A one-off delivery time must never create a new Academy-wide selector.
-  const times = useMemo(() => [...new Set([...standardTimes, ...templates.map((t) => t.starts_at.slice(0, 5))])].sort(), [templates]);
-  const [time, setTime] = useState("17:00");
-  const placeForSeat = (seat: Seat) => standingPlaces.find((place) =>
-    place.learner_id === seat.learner_id && place.academy_table_id === table.id && place.seat_number === seat.seat_number);
-  const allocatedTime = (seat: Seat) => placeForSeat(seat)?.starts_at.slice(0, 5) ||
-    (standardTimes.includes(sessions.find((session) => session.id === seat.delivery_session_id)?.starts_at.slice(0, 5) || "")
-      ? sessions.find((session) => session.id === seat.delivery_session_id)!.starts_at.slice(0, 5) : standardTimes[0]);
+  // Only real table/session allocations create selectors; seat overrides stay metadata.
+  const times = useMemo(() => operationsSessionTimes({ date, templates, sessions, renewalSeats: expectedRenewalSeats, plannedSeats: expectedPlannedSeats }), [date, templates, sessions, expectedRenewalSeats, expectedPlannedSeats]);
+  const [selectedTime, setTime] = useState<string | null>(null);
+  const time = selectedTime && times.includes(selectedTime) ? selectedTime : times[0] || "";
+  const allocatedTime = (seat: Seat) => deliveryAllocationTime(seat, sessions);
   const session = sessions.find((item) => item.starts_at.slice(0, 5) === time);
   const template = templates.find((item) => item.starts_at.slice(0, 5) === time);
   const renewalSeats = expectedRenewalSeats.filter((item) => item.startsAt === time);
@@ -163,6 +160,11 @@ function TableCard({
     ...renewalSeats.map((seat) => "learner:" + seat.learnerId),
     ...plannedSeats.map((seat) => "lead:" + seat.childLeadId),
   ]).size;
+
+  if (!time) return <section className="rounded-3xl border bg-white p-5">
+    <h3 className="font-bold">{table.name || `Table ${table.table_number}`}</h3>
+    <p className="mt-2 text-sm text-muted-foreground">No sessions configured for this date. Weekend enquiries do not create sessions or capacity.</p>
+  </section>;
 
   return (
     <section className="rounded-3xl border border-indigo-100 bg-white p-4 shadow-sm">

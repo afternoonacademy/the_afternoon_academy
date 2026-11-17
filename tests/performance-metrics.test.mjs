@@ -43,7 +43,7 @@ test("cash, paid sessions, capacity and pending value stay distinct", () => {
       { learner_id: "l2", weekday: 2, academy_table_id: "t1", starts_at: "17:00:00", status: "active", effective_to: "2026-12-31" },
     ],
     weeklyTemplates: [
-      { academy_table_id: "t1", status: "active", effective_from: "2026-09-01", effective_to: null },
+      { academy_table_id: "t1", weekday: 2, status: "active", effective_from: "2026-09-01", effective_to: null },
     ],
     academyTables: [{ id: "t1", status: "active", seat_capacity: 6 }],
     pendingBookings: [

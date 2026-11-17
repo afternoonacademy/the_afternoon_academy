@@ -1,6 +1,6 @@
 # The Afternoon Academy — Current Engineering Baseline
 
-_Status: consolidated 5 October 2026. Read this before starting the next feature slice._
+_Status: current release contract accepted 17 November 2026 through PR #32. Read this before starting the next feature slice._
 
 This document is the concise engineering handoff for the current TAA application. It does not replace the product roadmap, change log, security model or feature specifications; it links the operational decisions that future work must preserve.
 
@@ -18,7 +18,7 @@ Family Pipeline is the single lifecycle surface:
 
 1. Lead received.
 2. Recurring place and exact first-period dates planned.
-3. Parent email reviewed and explicitly sent.
+3. Parent contacted through the agreed channel; reviewing/sending an email is optional and explicit.
 4. Cleared payment manually confirmed.
 5. Learner activated with exact dated paid sessions and Operations seats.
 6. Learner remains a paid customer through the final paid service date even when the renewal action window is already open.
@@ -28,6 +28,11 @@ Sibling children remain independent learners/payment entitlements even when they
 
 ## Timetable and payment invariants
 
+- Public live timetable is Monday–Friday, 17:00–17:50 / 18:00–18:50. Saturday/Sunday preferences are demand-only with day-scoped hourly tokens in the existing preferred_times array, not confirmed availability.
+- Admin lead create/edit fields are optional, including email and child age. Unknown child names/age/email remain null; unknown parent name remains blank; supplied values are validated. WhatsApp is a source. Shared day/time/frequency controls replace typed keywords.
+- Weekday operational KPIs exclude weekend service dates/templates/placements; genuine cash and customer/pipeline records are retained. Wednesday is included. Enquiry demand never creates operational capacity.
+- Operations time selectors use actual table/session allocations (including custom configured hours), never per-seat teaching-time overrides. Unconfigured weekends show no phantom default slots.
+- Record planned place sends no email; explicit email sending requires a valid parent email. Confirmed places still require configured sessions, open dates and capacity.
 - Standing placements describe the long-term recurring arrangement.
 - Exact selected dated sessions are the source of truth for quoted value, payment entitlement and dated Operations delivery.
 - Session price plans are reusable records identified by ID; display names may repeat at different rates.
@@ -230,3 +235,12 @@ Database-security hardening items identified by the 5 October Supabase advisor r
 - Initial or older-history email-load failures do not remove the rest of the Family profile; the email panel exposes retry.
 - Learner records own teaching, attendance, teaching history, goals, learner profile and Teaching Framework context. Admins receive only a concise family-account reference back to the Family profile.
 - Payment, renewal, standing-placement, session-change, family-balance and registration/document mutation logic is unchanged.
+
+
+## PR #32 release handoff — 17 November 2026
+
+Founder authorised merge/release of the weekday-offer/weekend-demand and partial-lead changes. No migration, environment change, RLS/auth change or live data rewrite is required. Weekend classes are not activated by this release.
+
+Evidence: 146/146 automated tests, TypeScript and production build pass; independent source review approved. Preview for code commit `0877de0f2795ccde49b763576bc52e8796aefdeb` passed Vercel deployment checks. Full lint retains six existing errors in unrelated files.
+
+Limits remain explicit: local build used synthetic .invalid Supabase settings and Node 24; Vercel uses Node 22. Browser preview access was sign-in protected, and actual TAA database round-trip/nullability was not tested. Database-double tests do not prove real persistence. Retain those as follow-up verification items; deployment status is recorded by PR/GitHub Vercel checks. Source revert is the rollback route.

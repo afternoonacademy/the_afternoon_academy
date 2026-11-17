@@ -34,10 +34,10 @@ export function PerformanceSummary({
   const cards = [
     ["Revenue received", money(metrics.revenueCents), "Paid cash received in the selected period."],
     ["Active families", String(metrics.activeFamilyCount), `${metrics.activeLearnerCount} active learners`],
-    ["Paid sessions", String(metrics.paidSessions), "Exact paid service dates in the selected period."],
-    ["Recurring learner-sessions / week", String(metrics.recurringLearnerSessionsPerWeek), `${metrics.teachingBlocksPerWeek} active teaching blocks`],
+    ["Paid weekday sessions", String(metrics.paidSessions), "Monday–Friday paid service dates in the selected period."],
+    ["Weekday learner-sessions / week", String(metrics.recurringLearnerSessionsPerWeek), `${metrics.teachingBlocksPerWeek} active teaching blocks`],
     [
-      "Live capacity utilisation",
+      "Weekday capacity utilisation",
       metrics.capacityUtilization === null
         ? "—"
         : `${Math.round(metrics.capacityUtilization * 100)}%`,
@@ -58,7 +58,7 @@ export function PerformanceSummary({
           </p>
           <h2 className="mt-1 text-2xl font-bold text-[#26345f]">Performance</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Cash, customer and live capacity signals. Pending value is kept separate from revenue.
+            Capacity and session KPIs cover Monday–Friday only. Weekend enquiries add no capacity. Cash and customer totals remain factual.
           </p>
         </div>
         <form className="flex items-end gap-2" method="get">

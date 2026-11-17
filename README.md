@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Afternoon Academy
 
-## Getting Started
+Education operations platform and bilingual public website for The Afternoon Academy in Madrid. Source: `afternoonacademy/the_afternoon_academy`; production website: https://www.theafternoonacademy.com/.
 
-First, run the development server:
+## Start here
 
-```bash
+Read [AGENTS.md](AGENTS.md) before making changes. Required project sources:
+
+- [Current engineering baseline](docs/engineering/current-baseline.md)
+- [Product roadmap](docs/product/product-roadmap.md)
+- [Project change log](docs/product/project-change-log.md)
+- [Development workflow](docs/engineering/agentic-development.md)
+- [Security model](docs/security/security-model.md)
+- [Feature specifications](specs/README.md)
+
+## Stack and local checks
+
+Next.js 16 App Router, React 19, Supabase/Postgres, Vercel and Resend. Use Node 22 (`.nvmrc`) and the committed npm lockfile.
+
+```sh
+npm ci
+npm test
+npx tsc --noEmit
+npm run lint
+npm run build
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Use approved non-production environment settings and synthetic data. Never copy real child/family records into local fixtures, commit credentials or expose service-role keys to the browser. A build with synthetic environment values proves compilation, not database integration.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Current operating contract
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Live public offer: Monday–Friday, 17:00–17:50 or 18:00–18:50.
+- Saturday/Sunday enquiry preferences gauge hourly demand; weekend provision is not opened automatically.
+- Admin lead intake/editing is progressive and optional, including no email. Public contact/consent requirements remain in place.
+- Family Pipeline owns the lifecycle. Standing places define recurring arrangements; exact paid service dates define delivery/payment entitlement.
+- Record planned place saves without sending email. Email sending is separate and explicit.
+- Operational capacity/session KPIs are weekday-only; actual cash/customer records remain factual.
 
-## Learn More
+PR #32 release was authorised on 17 November 2026. Tests: 146 passing; TypeScript and production build passing; independent source review complete. Six unrelated baseline lint errors remain. Real TAA database round-trip and automated browser verification remain unverified; see the baseline/change log for the exact limits.
 
-To learn more about Next.js, take a look at the following resources:
+## Release discipline
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Use focused branches, local checks, independent review, economical previews and founder acceptance before merge. Batch source changes so intermediate commits do not exhaust Vercel builds. Do not use production as a test environment. No database migration is part of PR #32; rollback is a source revert.

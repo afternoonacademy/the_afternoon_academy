@@ -42,7 +42,7 @@ export async function loadPerformanceMetrics({
       .eq("status", "active"),
     supabaseAdmin
       .from("weekly_table_templates")
-      .select("academy_table_id,status,effective_from,effective_to")
+      .select("weekday,academy_table_id,status,effective_from,effective_to")
       .eq("status", "active"),
     supabaseAdmin
       .from("academy_tables")

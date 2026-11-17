@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isEnquiryTime, missingTimeGroups, retainTimesForDays } from "../leads/enquiry-options.mjs"
 
 export const supportNeedValues = [
   "homework_help",
@@ -32,10 +33,11 @@ export const childLeadFormSchema = z.object({
     .min(1, "Select at least one support need"),
   courseOrExamBoard: z.string().trim().max(120).optional(),
   preferredDays: z
-    .array(z.enum(["monday", "tuesday", "thursday", "friday"]))
+    .array(z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]))
     .min(1, "Select at least one preferred day"),
   preferredTimes: z
-    .array(z.enum(["17:00-17:50", "18:00-18:50"]))
+    .array(z.string().refine(isEnquiryTime, "Choose a valid time preference"))
+    .max(50)
     .min(1, "Select at least one preferred time"),
   preferredFrequency: z.enum([
     "one_day",
@@ -45,6 +47,13 @@ export const childLeadFormSchema = z.object({
     "not_sure",
   ]),
   notes: z.string().trim().max(1200).optional(),
+}).superRefine((child, context) => {
+  for (const group of missingTimeGroups(child.preferredDays, child.preferredTimes)) {
+    context.addIssue({ code: "custom", path: ["preferredTimes"], message: `Choose at least one ${group} time preference` })
+  }
+  if (retainTimesForDays(child.preferredDays, child.preferredTimes).length !== child.preferredTimes.length) {
+    context.addIssue({ code: "custom", path: ["preferredTimes"], message: "Choose times only for your selected days" })
+  }
 })
 
 export const leadFormSchema = z.object({

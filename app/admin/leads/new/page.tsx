@@ -14,7 +14,7 @@ export default async function NewFamilyLeadPage() {
           <p className="text-sm text-muted-foreground">Family pipeline</p>
           <h2 className="text-3xl font-bold">Add family lead</h2>
           <p className="mt-1 text-muted-foreground">
-            Record a phone, email, referral or walk-in enquiry. Add each child
+            Record a WhatsApp, phone, email, referral or walk-in enquiry. Add each child
             separately so their support needs and timetable preferences stay
             independent.
           </p>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import Script from "next/script"
+import { SiteAnalytics } from "@/components/site-analytics"
 
 import { Toaster } from "@/components/ui/sonner"
 
@@ -80,17 +79,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         {children}
         <Toaster richColors position="top-center" />
-        <Analytics />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-YRGHJMDL58"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag("js", new Date());
-gtag("config", "G-YRGHJMDL58");`}
-        </Script>
+        <SiteAnalytics />
       </body>
     </html>
   )

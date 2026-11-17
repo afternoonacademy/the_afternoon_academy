@@ -259,3 +259,10 @@ TAA is an independent local directory publisher, NOT an authority on, reviewer o
 - Operations selectors reflect real configured/delivery allocations, including custom times; seat teaching overrides never create global time selectors. Unconfigured weekends have no phantom evening slots.
 - Record planned place saves only. It may regenerate an internal draft, but must not send or log an email.
 - PR #32 release was explicitly authorised by the founder on 17 November 2026. Keep the documented browser/database verification limits visible; do not convert mocked tests into claims of real database verification.
+
+## Staff onboarding release candidate — 17 November 2026
+
+- Read `specs/staff-magic-link-signup.md` before changing auth admission. Staff roles come only from protected Admin-approved invitations after Supabase verifies email ownership. Public signup must never choose/grant a role or silently elevate an existing Parent.
+- Keep public.users/user_roles consistent through the transactional service-only claim RPC. Retain legacy tutor values; Teacher is the current application role. Accepted invitations cannot restore subsequently removed access.
+- Preserve generic public responses, persistent request throttles and explicit POST confirmation. Keep token hashes out of logs/analytics/server request URLs; use fragment links and configured HTTPS origin, never request host headers.
+- Migration precedes code activation for new Parent/Staff onboarding. Isolated preview email/session/role verification and founder acceptance are required before production release. No production migration/Jessica account/email was performed during implementation.

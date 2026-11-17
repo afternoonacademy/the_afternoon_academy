@@ -1,5 +1,23 @@
 # The Afternoon Academy — Project Change Log
 
+## 17 November 2026 — Invitation-only staff signup (release candidate)
+
+- Founder requested a working staff magic-link signup after identifying that the existing public signup did not configure staff access. Added email-only staff signup, Admin approval/withdrawal in Academy Setup, Resend delivery of Supabase invitation/magic links and explicit token confirmation. Jessica Admin access is authorised, but no account/invitation/email has been created yet.
+- Added protected staff_invitations and service-only request/admission RPCs. Confirmed mailbox ownership, expiry/revocation, role conflicts and existing profile identity are checked before atomic public.users/user_roles provisioning. Added current Teacher role to legacy role constraint without deleting tutor values. Unknown/denied requests get generic responses; persistent throttling caps approved email delivery requests.
+- Staff tokens use fragments removed by the confirmation page, explicit same-origin POST, configured HTTPS origin, no auth-page analytics and no token/provider logging. Existing password/Google/Parent flow remains available, Teacher landing is corrected, and password redirect now shares invitation-aware admission instead of inventing a Parent profile.
+- Added local Postgres execution tests via PGlite plus provider/Server Action tests. 154/154 tests pass; independent security review passed. Production build/typecheck passes with synthetic .invalid settings; changed-file lint passes. Full lint retains six existing errors in untouched files. Hosted Supabase email delivery, cross-device login and browser role-boundary acceptance remain outstanding.
+- Migration must run before code activation; existing profiles are checked first so established account login does not depend on the new RPC. Preview requires isolated Supabase keys/database and accepted HTTPS preview site origin. No production schema/auth/data/email changes made. Rollback retains additive schema/history and restores previous app version.
+- One coherent code/documentation push is planned after local verification, reusing pending Wednesday correction documentation from PR #33 rather than triggering a separate docs build. Production merge remains gated by acceptance.
+
+## 17 November 2026 — Missing Wednesday recurring timetable configuration corrected
+
+- Investigated the Leads → Recurring table and time dropdown in the confirmed TAA Supabase project (`krslaehcjanqffrzycci`). Code already supported Wednesday; the live weekly_table_templates table contained four active slots on Monday, Tuesday, Thursday and Friday but no Wednesday rows.
+- Added the four missing Wednesday configurations: Table 1 and Table 2 at 17:00 and 18:00, each 50 minutes, effective 17 November 2026. Reused the existing Monday focus and price-plan defaults. Teacher assignment remains unassigned as on the source slots.
+- Used one transactional, idempotent configuration insert with a source-count guard. No schema/RLS change, existing booking/payment/attendance mutation or email send. No application code/redeployment is needed for the configuration fix.
+- Verified with the same active-template predicates as the Leads dropdown and the Operations date loader: four Wednesday options; four templates for 18 November; zero active weekend templates. Configured weekday capacity is now 120 seat-sessions/week (previously 96), correctly reflecting the additional weekday.
+- Added template IDs: 0aa05515-5aa0-4b35-9fde-ab485fb0a3c6, 545ccad5-4575-4591-a548-b150ce798a1b, 9afbfd02-434e-4664-a5b4-62e384ce0504, 74cf794d-ccf0-467f-a672-d572eb6c56e9. If rollback is needed, pause these configurations prospectively after checking any subsequently created bookings; never delete linked/historical records.
+- Verification is database/query-level; authenticated browser interaction is not claimed. This fixes the configuration gap left unverified in PR #32.
+
 ## 17 November 2026 — PR #32 founder release authorisation and documentation handoff
 
 - Founder explicitly instructed merge and documentation update after preview delivery. This is release authorisation, not a claim that the automated browser/database acceptance checks were completed.

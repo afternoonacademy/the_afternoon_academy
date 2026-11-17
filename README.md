@@ -42,3 +42,9 @@ PR #32 release was authorised on 17 November 2026. Tests: 146 passing; TypeScrip
 ## Release discipline
 
 Use focused branches, local checks, independent review, economical previews and founder acceptance before merge. Batch source changes so intermediate commits do not exhaust Vercel builds. Do not use production as a test environment. No database migration is part of PR #32; rollback is a source revert.
+
+### Staff signup (release candidate)
+
+Staff use `/staff/sign-up` after an Admin approves their email and Admin/Teacher role in Academy Setup → Staff access. Signup uses a one-time email link, without a password. Opening the email link displays an explicit Continue confirmation; no role is granted until verified email ownership matches the protected invitation. Approval alone sends no email.
+
+Apply `supabase/migrations/20261117191220_staff_magic_link_signup.sql` before activating this version. Preview email/session checks require a separate Supabase configuration and HTTPS `NEXT_PUBLIC_SITE_URL` set to the accepted preview origin; normal Resend configuration/sender is reused. See `specs/staff-magic-link-signup.md` for acceptance and release ordering. Production migration and Jessica's authorised Admin invitation remain pending release.

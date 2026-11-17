@@ -285,3 +285,7 @@ PR #32 extends the existing Family Pipeline rather than adding a booking subsyst
 Staff may capture an incomplete family lead (including WhatsApp enquiries without email) and progressively complete it through selection controls. Specific place planning and email sending retain their own data prerequisites. Saving a planned place never sends email. Operational capacity/session reporting remains weekday-only; actual cash and customer records remain factual.
 
 Founder explicitly authorised merge/release on 17 November 2026 after preview delivery. Weekend provision, new prices and staffing remain separate future decisions. See the current baseline, feature specification and change log for implementation evidence and outstanding real-environment verification limits.
+
+### Staff access onboarding — release candidate, 17 November 2026
+
+Admin-approved email signup and passwordless staff login are implemented for preview. Academy Setup approves Admin/Teacher access; the recipient must verify their mailbox before any staff permission is granted. This does not introduce public staff registration or change Parent/Child roles. Jessica's requested Admin invitation is authorised by the founder, with operational provisioning still pending release. Hosted email/session acceptance and migration-before-code rollout remain required.

@@ -170,3 +170,13 @@ Pre-conversion lead correction requires the dedicated lead-edit capability and m
 - Pre-conversion editing retains family/child/timetable relationship checks and the atomic existing RPC; it cannot alter lifecycle, payments, plans or historical sent communications.
 - Weekend day/time tokens are non-authoritative preferences stored in existing protected text arrays, not capacity reservations or confirmed delivery. No child data is transferred to an AI provider.
 - Saving plans does not send email. Explicit planned/renewal sending validates the stored recipient before any delivery log/provider submission; missing contact details do not create phantom communications.
+
+## Staff signup — pending release, 17 November 2026
+
+Staff signup is invitation-only; authentication alone never grants a staff role. Admin approves email and access level in Academy Setup. Public requests contain email only and receive generic results. A service-only atomic reservation enforces one request per minute and ten per UTC day for an approved/accepted email. Unknown/expired/revoked requests send nothing. Delivery outcomes retain sent/failed only, without token/provider payloads.
+
+Supabase generates a one-time invitation/magic-link token, delivered via the existing Resend sender. The link carries its hash in a fragment (not server request URLs), removed by the confirmation component. Explicit same-origin Server Action POST verifies the token; GET never consumes it. Auth/staff pages exclude analytics. The server derives link origin only from configured HTTPS NEXT_PUBLIC_SITE_URL, never forwarded host headers or public input.
+
+The service-only complete_staff_invitation RPC checks auth.users confirmed email, locks the approved invitation, rejects expiry/revocation/identity/role conflicts, and atomically writes public.users and user_roles. Public users cannot read/write invitations or execute either RPC. Parent/different-role profiles are not elevated. Accepted invitations cannot recreate removed access. Teacher is added as an allowed user_roles value without rewriting legacy tutor roles. Pending withdrawal records actor/time and is not advertised as active-account deactivation.
+
+All login methods now share invitation-aware admission; existing profiles do not depend on the new claim RPC to log in. Teacher routes to Operations via /admin. New Parent/Staff admission requires the migration, so migration MUST precede code activation. Use isolated preview configuration with synthetic staff accounts before acceptance; production is not a test environment. No production migration or Jessica provisioning/email has occurred in this implementation. See specs/staff-magic-link-signup.md for release ordering and rollback.

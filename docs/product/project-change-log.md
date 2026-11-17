@@ -1,5 +1,14 @@
 # The Afternoon Academy — Project Change Log
 
+## 17 November 2026 — Seven-day family enquiry availability (release candidate)
+
+- Founder requested bookings/enquiries on all days. Added Wednesday, Saturday and Sunday to the shared English/Spanish child-preference fields used by the public form and Admin manual family entry.
+- Widened shared server validation to accept all seven days, retaining required-day and invalid-value checks and independent sibling preferences.
+- Updated both homepages and the bilingual Arturo Soria guide to advertise Monday–Sunday availability and superseded the specification's future-only wording for Wednesday/weekends.
+- No schema, authorization, payment, recurring-placement, closure or historical-data changes. Staff still confirm places against configured timetable sessions and capacity.
+- Regression coverage exercises every day, mixed/all-day siblings, invalid/empty preferences and bilingual field coverage. One consolidated source push is planned after local checks and independent review; preview and founder acceptance remain required before production merge.
+- Verification: 136/136 automated tests, standalone TypeScript and changed-file ESLint pass. Production build passes with synthetic `.invalid` Supabase settings (no live data access). Independent review found and resolved the guide-copy inconsistency. Full-repository ESLint remains blocked by seven pre-existing errors in untouched files. Local browser verification is unavailable because the cloud browser cannot reach the local server; integrated preview and persistence checks remain pending. Local runtime is Node 24; the deployment target remains Node 22.
+
 ## 25 October 2026 — Paid renewal seat teaching-time transfer (preview)
 
 - On payment activation, per-date renewal actual time or TBC is written to the individual Operations delivery seat override, preserving standing session time and table selectors.

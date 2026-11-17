@@ -32,7 +32,7 @@ export const childLeadFormSchema = z.object({
     .min(1, "Select at least one support need"),
   courseOrExamBoard: z.string().trim().max(120).optional(),
   preferredDays: z
-    .array(z.enum(["monday", "tuesday", "thursday", "friday"]))
+    .array(z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]))
     .min(1, "Select at least one preferred day"),
   preferredTimes: z
     .array(z.enum(["17:00-17:50", "18:00-18:50"]))

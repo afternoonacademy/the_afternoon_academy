@@ -28,6 +28,7 @@ Sibling children remain independent learners/payment entitlements even when they
 
 ## Timetable and payment invariants
 
+- Family enquiry and Admin manual-entry day preferences cover Monday–Sunday, including Wednesday and weekends. Shared validation accepts all seven days; confirmed places still require configured sessions, open dates and capacity.
 - Standing placements describe the long-term recurring arrangement.
 - Exact selected dated sessions are the source of truth for quoted value, payment entitlement and dated Operations delivery.
 - Session price plans are reusable records identified by ID; display names may repeat at different rates.

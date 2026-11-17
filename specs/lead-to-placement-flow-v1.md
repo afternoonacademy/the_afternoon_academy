@@ -52,7 +52,7 @@ Create one clear, human-led route from enquiry to a confirmed place while preser
 
 ## Revised operations scope
 
-- **TAA1 (main room):** a simple weekly timetable across Monday–Sunday. Staff can add recurring general homework-support slots, assign a teacher, and see six visible seats with learner names for each confirmed place. Wednesday, Saturday and Sunday remain available for future sessions.
+- **TAA1 (main room):** a simple weekly timetable across Monday–Sunday. Staff can add recurring general homework-support slots, assign a teacher, and see six visible seats with learner names for each confirmed place. All seven days are accepted as enquiry preferences; confirmed places depend on configured sessions, closures and capacity.
 - **Tutor Room:** a separate dated one-to-one booking calendar. It has no pre-set opening hours; a staff member can book any chosen date/time, duration, learner and teacher. A protected overlap check prevents two bookings in the same room at the same time.
 - A full teacher profile is deliberately deferred. Teacher assignment remains a simple named field until the Academy has multiple staff and needs availability, cover, qualifications and safeguarding records.
 
@@ -265,3 +265,11 @@ A child may be offered more than one recurring Academy day in the same initial p
 - Locale switching on a Focus Group page must keep the visitor on the equivalent Focus Group page rather than returning them to the generic homepage.
 - Both main landing pages use the same repeatable family enquiry form, allowing one parent submission to include multiple children with independent support needs, school context, days, times and frequency.
 - The Focus Group-specific interest form remains a single-student interest register, but its public copy, validation feedback, acknowledgement email and thank-you destination follow the page language.
+
+## Seven-day enquiry availability — 17 November 2026
+
+- Public English/Spanish family enquiries and Admin manual family entry offer Monday through Sunday, including Wednesday and weekends, for every child independently.
+- Shared server validation accepts each of the seven day values, any combination and all seven together. Empty preferences and unknown values remain invalid.
+- Both homepages describe Monday–Sunday availability. The existing 17:00–17:50 and 18:00–18:50 time preferences remain in place.
+- An enquiry is not a confirmed booking. Staff continue to allocate configured sessions against closures and capacity; this change does not create timetable sessions or reopen calendar closures.
+- Existing family/child/timetable-preference storage and permissions are reused, without a migration or historical-record rewrite.

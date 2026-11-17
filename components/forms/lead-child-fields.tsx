@@ -36,8 +36,11 @@ const supportNeeds = [
 const days = [
   { value: "monday", en: "Monday", es: "Lunes" },
   { value: "tuesday", en: "Tuesday", es: "Martes" },
+  { value: "wednesday", en: "Wednesday", es: "Miércoles" },
   { value: "thursday", en: "Thursday", es: "Jueves" },
   { value: "friday", en: "Friday", es: "Viernes" },
+  { value: "saturday", en: "Saturday", es: "Sábado" },
+  { value: "sunday", en: "Sunday", es: "Domingo" },
 ]
 
 const times = [

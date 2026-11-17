@@ -244,3 +244,8 @@ Founder authorised merge/release of the weekday-offer/weekend-demand and partial
 Evidence: 146/146 automated tests, TypeScript and production build pass; independent source review approved. Preview for code commit `0877de0f2795ccde49b763576bc52e8796aefdeb` passed Vercel deployment checks. Full lint retains six existing errors in unrelated files.
 
 Limits remain explicit: local build used synthetic .invalid Supabase settings and Node 24; Vercel uses Node 22. Browser preview access was sign-in protected, and actual TAA database round-trip/nullability was not tested. Database-double tests do not prove real persistence. Retain those as follow-up verification items; deployment status is recorded by PR/GitHub Vercel checks. Source revert is the rollback route.
+
+
+## Wednesday recurring timetable — verified 17 November 2026
+
+Live TAA project `krslaehcjanqffrzycci` now has active recurring templates Monday–Friday: two tables, each at 17:00 and 18:00 for 50 minutes. Wednesday was missing from live configuration despite existing code support; four rows were added effective 17 November. Leads and Operations both read those records. Weekend active-template count remains zero; weekend enquiries remain demand-only. Configured weekday capacity is 120 seat-sessions/week. See the change log for verification and rollback IDs. No application redeployment or schema migration was required.

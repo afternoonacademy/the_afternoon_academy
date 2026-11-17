@@ -276,3 +276,12 @@ Build a complete bilingual, useful school-neighbourhood discovery network around
 ## School discovery acquisition coverage — 19 October 2026
 
 Founder supplied eight candidate school/network sources including two distinct Hastings campuses. Implement campus-first profiles, bilingual parent resources and neighbourhood relevance. Source inventory and verification gates: `specs/school-discovery-seo.md`. All changes obey the mandatory Vercel deployment budget in `AGENTS.md`.
+
+
+## Phase 1 acquisition and intake baseline — accepted 17 November 2026
+
+PR #32 extends the existing Family Pipeline rather than adding a booking subsystem. Wednesday joins the advertised Monday–Friday evening offer. Weekend enquiries collect separately scoped hourly demand without opening weekend provision or adding operational capacity.
+
+Staff may capture an incomplete family lead (including WhatsApp enquiries without email) and progressively complete it through selection controls. Specific place planning and email sending retain their own data prerequisites. Saving a planned place never sends email. Operational capacity/session reporting remains weekday-only; actual cash and customer records remain factual.
+
+Founder explicitly authorised merge/release on 17 November 2026 after preview delivery. Weekend provision, new prices and staffing remain separate future decisions. See the current baseline, feature specification and change log for implementation evidence and outstanding real-environment verification limits.

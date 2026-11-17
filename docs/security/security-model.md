@@ -164,7 +164,7 @@ Teacher-safe mutations are limited to approved teaching/learner-record actions. 
 Pre-conversion lead correction requires the dedicated lead-edit capability and may update only approved source fields. It must not mutate lifecycle status, payments, planned booking history, or historical sent communications. Converted learner identity is maintained through Learner Records.
 
 
-## Partial Admin leads and weekend demand — 17 November 2026 preview
+## Partial Admin leads and weekend demand — release authorised 17 November 2026
 
 - Optional Admin lead details do not weaken public contact/consent validation or server-side staff capabilities. Supplied email/age values are validated; unknown child names/age/email remain null (compatible with existing name constraints), never fake contact addresses or zero ages.
 - Pre-conversion editing retains family/child/timetable relationship checks and the atomic existing RPC; it cannot alter lifecycle, payments, plans or historical sent communications.

@@ -1,5 +1,14 @@
 # The Afternoon Academy — Project Change Log
 
+## 17 November 2026 — PR #32 founder release authorisation and documentation handoff
+
+- Founder explicitly instructed merge and documentation update after preview delivery. This is release authorisation, not a claim that the automated browser/database acceptance checks were completed.
+- Final accepted behavior is the weekday offer, quiet day-scoped weekend demand, optional Admin intake/editing with WhatsApp, weekday operational KPIs and correctly grouped nonstandard Operations times. Record planned place sends no email. The original seven-day advertised offer below is superseded by the later weekday-only correction.
+- Updated root agent rules, README, roadmap, current engineering baseline, feature specification and security release status together. Workflow/security policies remain binding.
+- Code commit 0877de0f2795ccde49b763576bc52e8796aefdeb passed Vercel preview deployment. Verification remains 146/146 tests, TypeScript/build and independent review, with six existing unrelated lint errors. No migration/environment/production-data changes.
+- Real TAA database persistence and automated browser interaction remain unverified; retained explicitly in release handoff rather than marked passed.
+- One final documentation commit is required by the founder request before merge. Its automatic preview build is unavoidable under the existing branch integration; no extra code or repeated redeployment is included. Production deployment status will follow the merge commit through GitHub/Vercel checks.
+
 ## 17 November 2026 — Weekday offer, weekend demand and partial leads (preview revision)
 
 - Founder clarified weekdays are live; weekends are demand research only. Supersedes the earlier Monday–Sunday advertised-availability wording. EN/ES landing pages and local guide now advertise Monday–Friday at the existing evening times.

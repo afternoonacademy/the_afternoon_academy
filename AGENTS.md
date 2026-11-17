@@ -248,3 +248,14 @@ Vercel builds are a scarce shared resource. Every development session MUST read 
 ## School guide editorial policy — mandatory (19 October 2026)
 
 TAA is an independent local directory publisher, NOT an authority on, reviewer of, or affiliate of the listed schools. Present only attributed, verifiable facts from each school's own current website or marketing materials. Attribute school descriptions explicitly (e.g. 'The school states...') and link to official sources. Do not invent school-specific facilities, curricula, outcomes, admissions, fees, transport, endorsements or rankings. Never judge whether a school is good or suitable for a child; avoid advice about what parents should ask a school on school-specific profile pages. Provide a neutral, useful digest organised by campus, published age/stage, curriculum/language, facilities, school day/extracurriculars, admissions/contact where substantiated; omit unverified fields rather than filling with generic opinion. Clearly distinguish a short, separately labelled TAA service section from the school profile. Every page must state that TAA is not affiliated with, sponsored by or endorsed by the school, and that current information should be confirmed directly with the school. Avoid copying lengthy marketing text verbatim: paraphrase accurately with attribution. Publish only records whose claims have been checked against cited official URLs; retain review dates. Bilingual translations must not introduce extra facts.
+
+
+## Enquiry and weekday operations baseline — 17 November 2026
+
+- Advertise live weekday sessions Monday–Friday, 17:00–17:50 / 18:00–18:50. Saturday/Sunday are demand-only enquiries with separate day-scoped hourly preferences; never represent those as confirmed availability.
+- Admin lead intake/edit fields are optional; public contact/consent requirements remain enforced. Unknown child name/age/email store as null. Planning still requires the child's name; explicit email sending requires a valid recipient.
+- Use the shared Admin/public day/time/frequency controls; preserve independent sibling and per-day preferences. WhatsApp is an explicit source.
+- Operational session/recurring/capacity KPIs exclude weekend services/templates/placements and include Wednesday. Keep genuine cash receipts and customer/pipeline records factual.
+- Operations selectors reflect real configured/delivery allocations, including custom times; seat teaching overrides never create global time selectors. Unconfigured weekends have no phantom evening slots.
+- Record planned place saves only. It may regenerate an internal draft, but must not send or log an email.
+- PR #32 release was explicitly authorised by the founder on 17 November 2026. Keep the documented browser/database verification limits visible; do not convert mocked tests into claims of real database verification.

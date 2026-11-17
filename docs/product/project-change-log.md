@@ -1,5 +1,16 @@
 # The Afternoon Academy — Project Change Log
 
+## 17 November 2026 — Weekday offer, weekend demand and partial leads (preview revision)
+
+- Founder clarified weekdays are live; weekends are demand research only. Supersedes the earlier Monday–Sunday advertised-availability wording. EN/ES landing pages and local guide now advertise Monday–Friday at the existing evening times.
+- Added separate hourly Saturday/Sunday preference capture to public and Admin forms. Existing preferred_times text[] stores day-scoped weekend demand tokens; no automatic session/capacity creation.
+- Admin manual entry and pre-conversion edits accept incomplete data, including no email/age. Added WhatsApp source and shared selection controls for days, times, support and frequency; preserved server authorization, lifecycle, paid records and communication history.
+- Operational session/capacity KPIs explicitly exclude weekends and include Wednesday. Real cash receipts and customer/pipeline records remain factual. Operations shows actual configured/delivery allocation times and no phantom unconfigured weekend hours.
+- Confirmed Record planned place sends no email; explicit planned/renewal sends now reject a missing/invalid recipient before delivery logging/provider submission.
+- No migration, RLS/auth change, production data update, new provider or automatic weekend opening. One additional consolidated commit/preview requested for this founder audit revision; production remains gated by review and acceptance.
+- Verification: 146/146 tests pass, including rendered EN/ES availability, Admin/public age/required-field boundaries and protected manual-creation database-double tests. TypeScript/production build passes with synthetic .invalid settings. Independent review caught and resolved the existing blank-child-name check constraint (store null) and Admin age-bound mismatch. Full lint retains six existing errors in untouched files; changed files introduce no lint errors.
+- Limits: no live TAA database access; original parent-table CREATE definitions are absent from source, so correct-environment nullability/round-trip persistence and browser interaction remain acceptance checks. Local Node 24, deployment Node 22. Existing Vercel preview is sign-in protected; no protections changed.
+
 ## 17 November 2026 — Seven-day family enquiry availability (release candidate)
 
 - Founder requested bookings/enquiries on all days. Added Wednesday, Saturday and Sunday to the shared English/Spanish child-preference fields used by the public form and Admin manual family entry.

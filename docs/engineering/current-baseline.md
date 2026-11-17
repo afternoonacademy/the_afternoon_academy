@@ -28,7 +28,11 @@ Sibling children remain independent learners/payment entitlements even when they
 
 ## Timetable and payment invariants
 
-- Family enquiry and Admin manual-entry day preferences cover Monday–Sunday, including Wednesday and weekends. Shared validation accepts all seven days; confirmed places still require configured sessions, open dates and capacity.
+- Public live timetable is Monday–Friday, 17:00–17:50 / 18:00–18:50. Saturday/Sunday preferences are demand-only with day-scoped hourly tokens in the existing preferred_times array, not confirmed availability.
+- Admin lead create/edit fields are optional, including email and child age. Unknown child names/age/email remain null; unknown parent name remains blank; supplied values are validated. WhatsApp is a source. Shared day/time/frequency controls replace typed keywords.
+- Weekday operational KPIs exclude weekend service dates/templates/placements; genuine cash and customer/pipeline records are retained. Wednesday is included. Enquiry demand never creates operational capacity.
+- Operations time selectors use actual table/session allocations (including custom configured hours), never per-seat teaching-time overrides. Unconfigured weekends show no phantom default slots.
+- Record planned place sends no email; explicit email sending requires a valid parent email. Confirmed places still require configured sessions, open dates and capacity.
 - Standing placements describe the long-term recurring arrangement.
 - Exact selected dated sessions are the source of truth for quoted value, payment entitlement and dated Operations delivery.
 - Session price plans are reusable records identified by ID; display names may repeat at different rates.

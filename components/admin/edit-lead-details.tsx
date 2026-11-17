@@ -7,19 +7,20 @@ import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { LeadChildFields, type LeadChildDraft } from "@/components/forms/lead-child-fields"
+import { leadSources } from "@/lib/leads/enquiry-options.mjs"
 
 type EditableLead = {
   parent_lead_id: string
   child_lead_id: string
   timetable_preference_id: string
   parent_name: string
-  email: string
+  email: string | null
   phone: string | null
   area: string | null
   source: string
   child_first_name: string | null
-  child_age: number
+  child_age: number | null
   school_name: string | null
   school_year: string | null
   curriculum: string | null
@@ -39,6 +40,13 @@ export function EditLeadDetails({
   defaultOpen?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [child, setChild] = useState<LeadChildDraft>({
+    key: 1, firstName: lead.child_first_name || "", age: lead.child_age == null ? "" : String(lead.child_age),
+    schoolName: lead.school_name || "", schoolYear: lead.school_year || "", curriculum: lead.curriculum || "",
+    supportNeeds: lead.support_needs || [], courseOrExamBoard: lead.course_or_exam_board || "", notes: lead.notes || "",
+    preferredDays: lead.preferred_days || [], preferredTimes: (lead.preferred_times || []).map((time) => time === "17:00" ? "17:00-17:50" : time === "18:00" ? "18:00-18:50" : time),
+    preferredFrequency: lead.preferred_frequency || "",
+  })
 
   if (!open) {
     return (
@@ -54,7 +62,7 @@ export function EditLeadDetails({
         <div>
           <p className="font-semibold">Edit lead details</p>
           <p className="text-xs text-muted-foreground">
-            Corrections here do not change the child&apos;s pipeline stage, planned places,
+            All fields are optional. Corrections do not change the child&apos;s pipeline stage, planned places,
             payment state or communication history.
           </p>
         </div>
@@ -79,11 +87,11 @@ export function EditLeadDetails({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="space-y-1.5 text-sm">
             <Label>Parent name</Label>
-            <Input defaultValue={lead.parent_name} name="parentName" required />
+            <Input defaultValue={lead.parent_name} name="parentName" />
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Email</Label>
-            <Input defaultValue={lead.email} name="email" required type="email" />
+            <Input defaultValue={lead.email || ""} name="email" type="email" />
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Phone</Label>
@@ -95,79 +103,16 @@ export function EditLeadDetails({
           </label>
           <label className="space-y-1.5 text-sm">
             <Label>Source</Label>
-            <Input defaultValue={lead.source || ""} name="source" required />
+            <select className="h-10 w-full rounded-md border bg-background px-3" defaultValue={lead.source || ""} name="source">
+              <option value="">Not recorded yet</option>
+              {lead.source && !leadSources.includes(lead.source) && <option value={lead.source}>{lead.source}</option>}
+              {leadSources.map((source) => <option key={source} value={source}>{source === "whatsapp" ? "WhatsApp" : source.replace("_", " ")}</option>)}
+            </select>
           </label>
         </div>
 
-        <div className="my-5 border-t" />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1.5 text-sm">
-            <Label>Child first name</Label>
-            <Input defaultValue={lead.child_first_name || ""} name="childFirstName" required />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>Age</Label>
-            <Input defaultValue={lead.child_age} min="3" max="21" name="childAge" required type="number" />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>School</Label>
-            <Input defaultValue={lead.school_name || ""} name="schoolName" />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>School year</Label>
-            <Input defaultValue={lead.school_year || ""} name="schoolYear" />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>Curriculum</Label>
-            <Input defaultValue={lead.curriculum || ""} name="curriculum" />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>Course / exam board</Label>
-            <Input defaultValue={lead.course_or_exam_board || ""} name="courseOrExamBoard" />
-          </label>
-          <label className="space-y-1.5 text-sm sm:col-span-2">
-            <Label>Support needs</Label>
-            <Input
-              defaultValue={lead.support_needs?.join(", ") || ""}
-              name="supportNeeds"
-              placeholder="Comma-separated"
-            />
-          </label>
-          <label className="space-y-1.5 text-sm sm:col-span-2">
-            <Label>Notes</Label>
-            <Textarea defaultValue={lead.notes || ""} name="notes" />
-          </label>
-        </div>
-
-        <div className="my-5 border-t" />
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className="space-y-1.5 text-sm">
-            <Label>Preferred days</Label>
-            <Input
-              defaultValue={lead.preferred_days?.join(", ") || ""}
-              name="preferredDays"
-              placeholder="monday, tuesday"
-            />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>Preferred times</Label>
-            <Input
-              defaultValue={lead.preferred_times?.join(", ") || ""}
-              name="preferredTimes"
-              placeholder="17:00, 18:00"
-            />
-          </label>
-          <label className="space-y-1.5 text-sm">
-            <Label>Preferred frequency</Label>
-            <Input
-              defaultValue={lead.preferred_frequency || ""}
-              name="preferredFrequency"
-              placeholder="one_day"
-            />
-          </label>
-        </div>
+        <input type="hidden" name="childDetails" value={JSON.stringify(child)} />
+        <LeadChildFields optional child={child} index={0} language="en" canRemove={false} onChange={setChild} onRemove={() => {}} />
       </SaveActionForm>
     </div>
   )

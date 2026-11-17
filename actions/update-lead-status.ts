@@ -6,7 +6,7 @@ import { z } from "zod"
 
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { supabaseService } from "@/lib/supabase/service"
-import { childLeadFormSchema } from "@/lib/validations/lead"
+import { manualLeadSchema } from "@/lib/leads/manual-lead.mjs"
 
 const leadStatusSchema = z.object({
   leadId: z.string().uuid(),
@@ -29,17 +29,6 @@ const deleteLeadSchema = z.object({
 const paidFamilyEnrolmentSchema = z.object({
   parentLeadId: z.string().uuid(),
   childLeadIds: z.array(z.string().uuid()).min(1),
-})
-
-const manualLeadSchema = z.object({
-  parentName: z.string().trim().min(2).max(160),
-  email: z.string().trim().email().max(254),
-  phone: z.string().trim().max(50).optional(),
-  source: z.string().trim().min(2).max(80),
-  children: z
-    .array(childLeadFormSchema)
-    .min(1, "Add at least one child")
-    .max(6, "Please create a second family record for more than six children"),
 })
 
 const manualEnrolmentSchema = z.object({
@@ -125,10 +114,10 @@ export async function createManualLead(
   }
 
   const parsed = manualLeadSchema.safeParse({
-    parentName: formData.get("parentName"),
-    email: formData.get("email"),
+    parentName: formData.get("parentName") || "",
+    email: formData.get("email") || "",
     phone: formData.get("phone") || undefined,
-    source: formData.get("source"),
+    source: formData.get("source") || "",
     children,
   })
 
@@ -145,12 +134,12 @@ export async function createManualLead(
     .from("parent_leads")
     .insert({
       parent_name: data.parentName,
-      email: data.email,
+      email: data.email || null,
       phone: data.phone || null,
       school_name: data.children[0]?.schoolName || null,
       interest_level: "interested_timetable",
       consent_contact: true,
-      source: data.source,
+      source: data.source || "other",
       status: "new",
     })
     .select("id")
@@ -165,11 +154,11 @@ export async function createManualLead(
     .insert(
       data.children.map((child) => ({
         parent_lead_id: lead.id,
-        first_name: child.firstName,
+        first_name: child.firstName || null,
         child_age: child.age,
         school_name: child.schoolName || null,
         school_year: child.schoolYear || null,
-        curriculum: child.curriculum,
+        curriculum: child.curriculum || null,
         support_needs: child.supportNeeds,
         course_or_exam_board: child.supportNeeds.includes("igcse_chemistry")
           ? child.courseOrExamBoard || null
@@ -191,7 +180,7 @@ export async function createManualLead(
         child_lead_id: childLead.id,
         preferred_days: data.children[index].preferredDays,
         preferred_times: data.children[index].preferredTimes,
-        preferred_frequency: data.children[index].preferredFrequency,
+        preferred_frequency: data.children[index].preferredFrequency || null,
       })),
     )
 

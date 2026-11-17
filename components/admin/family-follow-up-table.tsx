@@ -1,5 +1,7 @@
 "use client"
 
+import { formatEnquiryTime } from "@/lib/leads/enquiry-options.mjs"
+
 import { Fragment, useMemo, useState } from "react"
 
 import {
@@ -30,7 +32,7 @@ export type FollowUpLead = {
   timetable_preference_id: string
   child_first_name: string | null
   parent_name: string
-  email: string
+  email: string | null
   phone: string | null
   area: string | null
   school_name: string | null
@@ -38,7 +40,7 @@ export type FollowUpLead = {
   status: string
   source: string
   enquiry_type: string
-  child_age: number
+  child_age: number | null
   school_year: string | null
   curriculum: string | null
   support_needs: string[] | null
@@ -108,7 +110,7 @@ export function FamilyFollowUpTable({
       {
         parentLeadId: string
         parentName: string
-        email: string
+        email: string | null
         phone: string | null
         children: FollowUpLead[]
       }
@@ -117,7 +119,7 @@ export function FamilyFollowUpTable({
     for (const lead of leads) {
       const family = map.get(lead.parent_lead_id) || {
         parentLeadId: lead.parent_lead_id,
-        parentName: lead.parent_name,
+        parentName: lead.parent_name || "Family enquiry",
         email: lead.email,
         phone: lead.phone,
         children: [],
@@ -141,7 +143,7 @@ export function FamilyFollowUpTable({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-bold">
-            {lead.child_first_name || "Child"} · age {lead.child_age}
+            {lead.child_first_name || "Child"} · age {lead.child_age ?? "not recorded"}
           </p>
           <p className="text-sm text-muted-foreground">
             {lead.school_name || "School not recorded"}
@@ -156,7 +158,7 @@ export function FamilyFollowUpTable({
           <p className="font-semibold">Availability</p>
           <p className="text-muted-foreground">
             {lead.preferred_days?.join(", ") || "Flexible"} ·{" "}
-            {lead.preferred_times?.join(", ") || "Time to confirm"}
+            {lead.preferred_times?.map(formatEnquiryTime).join(", ") || "Time to confirm"}
           </p>
         </div>
         <div>
@@ -228,7 +230,7 @@ export function FamilyFollowUpTable({
                   <TableRow>
                     <TableCell className="align-top">
                       <p className="font-semibold">{family.parentName}</p>
-                      <p className="text-xs text-muted-foreground">{family.email}</p>
+                      <p className="text-xs text-muted-foreground">{family.email || "Email not recorded"}</p>
                       <p className="text-xs text-muted-foreground">
                         {family.phone || "No phone"}
                       </p>
@@ -241,7 +243,7 @@ export function FamilyFollowUpTable({
                               {child.child_first_name || "Child"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Age {child.child_age}
+                              Age {child.child_age ?? "not recorded"}
                               {child.school_year ? " · " + child.school_year : ""}
                             </p>
                           </div>
@@ -301,11 +303,11 @@ export function FamilyFollowUpTable({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{family.parentName}</p>
-                  <p className="text-sm text-muted-foreground">{family.email}</p>
+                  <p className="text-sm text-muted-foreground">{family.email || "Email not recorded"}</p>
                   <div className="mt-2 space-y-1">
                     {family.children.map((child) => (
                       <p className="text-sm" key={child.child_lead_id}>
-                        {child.child_first_name || "Child"} · age {child.child_age}
+                        {child.child_first_name || "Child"} · age {child.child_age ?? "not recorded"}
                       </p>
                     ))}
                   </div>

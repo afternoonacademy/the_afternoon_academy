@@ -266,10 +266,25 @@ A child may be offered more than one recurring Academy day in the same initial p
 - Both main landing pages use the same repeatable family enquiry form, allowing one parent submission to include multiple children with independent support needs, school context, days, times and frequency.
 - The Focus Group-specific interest form remains a single-student interest register, but its public copy, validation feedback, acknowledgement email and thank-you destination follow the page language.
 
-## Seven-day enquiry availability — 17 November 2026
+## Seven-day enquiry availability — revised 17 November 2026
 
 - Public English/Spanish family enquiries and Admin manual family entry offer Monday through Sunday, including Wednesday and weekends, for every child independently.
-- Shared server validation accepts each of the seven day values, any combination and all seven together. Empty preferences and unknown values remain invalid.
-- Both homepages describe Monday–Sunday availability. The existing 17:00–17:50 and 18:00–18:50 time preferences remain in place.
-- An enquiry is not a confirmed booking. Staff continue to allocate configured sessions against closures and capacity; this change does not create timetable sessions or reopen calendar closures.
-- Existing family/child/timetable-preference storage and permissions are reused, without a migration or historical-record rewrite.
+- Public enquiries retain required contact, consent and child details. Admin-created and pre-conversion leads may have every user field unknown; unknown child names, age and email remain null; unknown parent name remains blank rather than invented data. Invalid supplied emails/ages remain errors.
+- Public weekday times are 17:00–17:50 and 18:00–18:50. Each selected Saturday/Sunday reveals its own hourly demand preferences across 00:00–24:00, explicitly marked unavailable / gauging demand. Mixed enquiries keep weekday, Saturday and Sunday preferences separate.
+- Existing `timetable_preferences.preferred_times` text arrays retain weekday values; weekend demand uses `saturday@09:00-10:00` / `sunday@14:00-15:00` tokens. These tokens are preferences only and never create sessions, prices, capacity or paid entitlements. Display/email formatting includes the day. Removing a day clears only its related time preferences.
+- Both homepages and the bilingual location guide advertise Monday–Friday only. Weekend demand remains discoverable in the form rather than promoted as live availability.
+- Admin creation/editing share the same day/time/frequency controls. WhatsApp is an explicit source option. Legacy stored curriculum/support/source/time values remain available or readable until staff deliberately changes them.
+- Record planned place remains a save-only action; it may regenerate an internal draft but does not send or log email. The separate explicit send action requires a valid parent email. Payment remains possible without sending an email.
+- Wednesday Operations uses the same dated/template workflow as other weekdays. Weekend Operations shows configured or dated allocation times, including nonstandard hours; unconfigured weekends do not display phantom 17:00/18:00 slots. Per-seat teaching-time overrides never create global time selectors.
+- Session/recurring/capacity KPIs are Monday–Friday only (including Wednesday), excluding both weekend numerator and denominator. Financial cash, customer totals and genuine pipeline states remain factual; a payment received at the weekend is not discarded.
+- Existing family/child/timetable-preference storage and permissions are reused without a schema migration or historical-record rewrite. No weekend schedule is automatically activated. Supabase integration/nullability and preview acceptance must be verified in the correct TAA environment before release.
+
+### Follow-up implementation plan and acceptance
+
+Founder explicitly requested this correction to the existing preview. Scope is enquiry capture, partial Admin leads, clear updating, weekday operational metrics and correct dated session grouping. Non-goals: opening weekend classes, changing confirmed bookings/pricing, public instant booking, changing consent/auth/RLS or sending emails automatically.
+
+Affected files are the shared child/availability forms, Admin manual/edit actions and validators, email preference formatting/send guards, KPI loader/calculator/presentation, and Operations allocation helper/board. No new external provider, dependency or production data update. All Admin mutations retain existing server authorization and family/child relationship checks.
+
+Acceptance: per-day weekend times round-trip independently; admin can save blank details then complete them; malformed supplied email/age is rejected; each child remains independent; existing lifecycle/payments/history are unchanged; Wednesday counts in KPIs while weekend configured capacity does not; custom dated times stay in the correct Operations table/time; plan saving cannot send email.
+
+Testing uses synthetic lead validation, day-scoped preference removal/formatting, weekday/weekend metrics, Wednesday/nonstandard Operations allocation, no-email plan/send boundaries, full regression suite, typecheck, lint and production build. One consolidated update to the existing draft PR, one new preview after checks/review. Rollback is source revert; stored preference tokens remain readable text and no records need rewriting. Production merge waits for founder acceptance.

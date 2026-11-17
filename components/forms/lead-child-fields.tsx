@@ -1,5 +1,6 @@
 "use client"
 
+import { AvailabilityFields } from "@/components/forms/availability-fields"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -33,21 +34,6 @@ const supportNeeds = [
   { value: "one_to_one", en: "1-to-1 support (subject to availability)", es: "Apoyo individual (según disponibilidad)" },
 ]
 
-const days = [
-  { value: "monday", en: "Monday", es: "Lunes" },
-  { value: "tuesday", en: "Tuesday", es: "Martes" },
-  { value: "wednesday", en: "Wednesday", es: "Miércoles" },
-  { value: "thursday", en: "Thursday", es: "Jueves" },
-  { value: "friday", en: "Friday", es: "Viernes" },
-  { value: "saturday", en: "Saturday", es: "Sábado" },
-  { value: "sunday", en: "Sunday", es: "Domingo" },
-]
-
-const times = [
-  { value: "17:00-17:50", label: "17:00–17:50" },
-  { value: "18:00-18:50", label: "18:00–18:50" },
-]
-
 function toggleValue(values: string[], value: string, checked: boolean) {
   return checked
     ? [...new Set([...values, value])]
@@ -61,7 +47,9 @@ export function LeadChildFields({
   canRemove,
   onChange,
   onRemove,
+  optional = false,
 }: {
+  optional?: boolean
   child: LeadChildDraft
   index: number
   language: "en" | "es"
@@ -107,7 +95,7 @@ export function LeadChildFields({
             id={"child-" + child.key + "-name"}
             value={child.firstName}
             onChange={(event) => set("firstName", event.target.value)}
-            required
+            required={!optional}
           />
         </div>
         <div className="space-y-2">
@@ -116,12 +104,12 @@ export function LeadChildFields({
           </Label>
           <Input
             id={"child-" + child.key + "-age"}
-            min="4"
-            max="18"
+            min={optional ? "3" : "4"}
+            max={optional ? "21" : "18"}
             type="number"
             value={child.age}
             onChange={(event) => set("age", event.target.value)}
-            required
+            required={!optional}
           />
         </div>
         <div className="space-y-2">
@@ -157,9 +145,10 @@ export function LeadChildFields({
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={child.curriculum}
             onChange={(event) => set("curriculum", event.target.value)}
-            required
+            required={!optional}
           >
-            <option value="" disabled>{isSpanish ? "Selecciona una opción" : "Select one"}</option>
+            <option value="" disabled={!optional}>{isSpanish ? "Selecciona una opción" : "Select one"}</option>
+            {child.curriculum && !["british", "ib_international", "spanish", "other_not_sure"].includes(child.curriculum) && <option value={child.curriculum}>{child.curriculum}</option>}
             <option value="british">{isSpanish ? "Currículo británico" : "British curriculum"}</option>
             <option value="ib_international">{isSpanish ? "IB / currículo internacional" : "IB / International curriculum"}</option>
             <option value="spanish">{isSpanish ? "Currículo español" : "Spanish curriculum"}</option>
@@ -178,7 +167,7 @@ export function LeadChildFields({
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {supportNeeds.map((item) => (
+          {[...supportNeeds, ...child.supportNeeds.filter((value) => !supportNeeds.some((item) => item.value === value)).map((value) => ({ value, en: value, es: value }))].map((item) => (
             <label key={item.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
               <Checkbox
                 checked={child.supportNeeds.includes(item.value)}
@@ -209,64 +198,8 @@ export function LeadChildFields({
         </div>
       ) : null}
 
-      <div className="space-y-3">
-        <div>
-          <p className="font-semibold">{isSpanish ? "Días que podrían funcionar" : "Days that could work"}</p>
-          <p className="text-sm text-muted-foreground">
-            {isSpanish ? "Estas preferencias son solo para este niño/a." : "These preferences apply to this child only."}
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {days.map((day) => (
-            <label key={day.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-              <Checkbox
-                checked={child.preferredDays.includes(day.value)}
-                onCheckedChange={(checked) =>
-                  set("preferredDays", toggleValue(child.preferredDays, day.value, checked === true))
-                }
-              />
-              <span>{day[language]}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <p className="font-semibold">{isSpanish ? "Horarios que podrían funcionar" : "Times that could work"}</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {times.map((time) => (
-            <label key={time.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-              <Checkbox
-                checked={child.preferredTimes.includes(time.value)}
-                onCheckedChange={(checked) =>
-                  set("preferredTimes", toggleValue(child.preferredTimes, time.value, checked === true))
-                }
-              />
-              <span>{time.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={"child-" + child.key + "-frequency"}>
-          {isSpanish ? "¿Cuántas sesiones por semana?" : "How many sessions would you like each week?"}
-        </Label>
-        <select
-          id={"child-" + child.key + "-frequency"}
-          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-          value={child.preferredFrequency}
-          onChange={(event) => set("preferredFrequency", event.target.value)}
-          required
-        >
-          <option value="" disabled>{isSpanish ? "Selecciona una opción" : "Select one"}</option>
-          <option value="one_day">{isSpanish ? "1 sesión por semana" : "1 session per week"}</option>
-          <option value="two_days">{isSpanish ? "2 sesiones por semana" : "2 sessions per week"}</option>
-          <option value="three_days">{isSpanish ? "3 sesiones por semana" : "3 sessions per week"}</option>
-          <option value="four_plus_days">{isSpanish ? "4+ sesiones por semana" : "4+ sessions per week"}</option>
-          <option value="not_sure">{isSpanish ? "No estoy seguro/a todavía" : "Not sure yet"}</option>
-        </select>
-      </div>
+      <AvailabilityFields days={child.preferredDays} times={child.preferredTimes} frequency={child.preferredFrequency}
+        language={language} optional={optional} onChange={(availability) => onChange({ ...child, ...availability })} />
 
       <div className="space-y-2">
         <Label htmlFor={"child-" + child.key + "-notes"}>

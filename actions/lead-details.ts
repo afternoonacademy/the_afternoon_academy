@@ -10,17 +10,15 @@ import {
 import { loadPlannedPlaceEmailDraft } from "@/lib/email/planned-place-email-server"
 import { supabaseService } from "@/lib/supabase/service"
 
-function csvList(value: FormDataEntryValue | null) {
-  return String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 12)
-}
-
 export async function updatePreconversionLeadDetails(formData: FormData) {
   await assertCapability("edit_preconversion_leads")
 
+  let child: Record<string, unknown>
+  try {
+    const value = JSON.parse(String(formData.get("childDetails") || "{}"))
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error()
+    child = value
+  } catch { throw new Error("Please check the child details") }
   const parsed = preconversionLeadEditSchema.safeParse({
     parentLeadId: formData.get("parentLeadId"),
     childLeadId: formData.get("childLeadId"),
@@ -30,17 +28,17 @@ export async function updatePreconversionLeadDetails(formData: FormData) {
     phone: formData.get("phone") || "",
     area: formData.get("area") || "",
     source: formData.get("source") || "",
-    childFirstName: formData.get("childFirstName"),
-    childAge: formData.get("childAge"),
-    schoolName: formData.get("schoolName") || "",
-    schoolYear: formData.get("schoolYear") || "",
-    curriculum: formData.get("curriculum") || "",
-    supportNeeds: csvList(formData.get("supportNeeds")),
-    notes: formData.get("notes") || "",
-    courseOrExamBoard: formData.get("courseOrExamBoard") || "",
-    preferredDays: csvList(formData.get("preferredDays")),
-    preferredTimes: csvList(formData.get("preferredTimes")),
-    preferredFrequency: formData.get("preferredFrequency") || "",
+    childFirstName: child.firstName,
+    childAge: child.age,
+    schoolName: child.schoolName,
+    schoolYear: child.schoolYear,
+    curriculum: child.curriculum,
+    supportNeeds: child.supportNeeds,
+    notes: child.notes,
+    courseOrExamBoard: child.courseOrExamBoard,
+    preferredDays: child.preferredDays,
+    preferredTimes: child.preferredTimes,
+    preferredFrequency: child.preferredFrequency,
   })
 
   if (!parsed.success) {

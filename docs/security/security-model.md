@@ -162,3 +162,11 @@ Teacher-safe mutations are limited to approved teaching/learner-record actions. 
 ### Lead-edit boundary
 
 Pre-conversion lead correction requires the dedicated lead-edit capability and may update only approved source fields. It must not mutate lifecycle status, payments, planned booking history, or historical sent communications. Converted learner identity is maintained through Learner Records.
+
+
+## Partial Admin leads and weekend demand — 17 November 2026 preview
+
+- Optional Admin lead details do not weaken public contact/consent validation or server-side staff capabilities. Supplied email/age values are validated; unknown child names/age/email remain null (compatible with existing name constraints), never fake contact addresses or zero ages.
+- Pre-conversion editing retains family/child/timetable relationship checks and the atomic existing RPC; it cannot alter lifecycle, payments, plans or historical sent communications.
+- Weekend day/time tokens are non-authoritative preferences stored in existing protected text arrays, not capacity reservations or confirmed delivery. No child data is transferred to an AI provider.
+- Saving plans does not send email. Explicit planned/renewal sending validates the stored recipient before any delivery log/provider submission; missing contact details do not create phantom communications.

@@ -11,6 +11,7 @@ import {
   LeadChildFields,
   type LeadChildDraft,
 } from "@/components/forms/lead-child-fields"
+import { leadSources } from "@/lib/leads/enquiry-options.mjs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -62,19 +63,19 @@ export function ManualFamilyLeadForm() {
         <div>
           <h3 className="font-semibold">Parent / family details</h3>
           <p className="text-sm text-muted-foreground">
-            Record the family contact once, then add each child separately.
+            All fields are optional. Save what you know now and complete the details later. No email is sent.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="parentName">Parent name</Label>
-            <Input id="parentName" name="parentName" required />
+            <Input id="parentName" name="parentName" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input id="email" name="email" type="email" />
           </div>
 
           <div className="space-y-2">
@@ -86,15 +87,12 @@ export function ManualFamilyLeadForm() {
             <Label htmlFor="source">Source</Label>
             <select
               className="h-10 w-full rounded-md border bg-background px-3"
-              defaultValue="phone"
+              defaultValue=""
               id="source"
               name="source"
             >
-              <option value="phone">Phone</option>
-              <option value="email">Email</option>
-              <option value="referral">Referral</option>
-              <option value="walk_in">Walk-in</option>
-              <option value="other">Other</option>
+              <option value="">Not recorded yet</option>
+              {leadSources.map((source) => <option key={source} value={source}>{source === "whatsapp" ? "WhatsApp" : source.replace("_", " ")}</option>)}
             </select>
           </div>
         </div>
@@ -112,6 +110,7 @@ export function ManualFamilyLeadForm() {
         <div className="space-y-5">
           {children.map((child, index) => (
             <LeadChildFields
+              optional
               canRemove={children.length > 1}
               child={child}
               index={index}

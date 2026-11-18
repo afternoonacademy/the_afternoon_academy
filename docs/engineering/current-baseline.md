@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Mobile planner correction candidate — 18 November 2026
+
+Family Pipeline recurring table/time and price-plan fields are constrained to their card width with a single mobile grid column and existing desktop columns. Presentation only. Local 154 tests, typecheck, targeted lint, synthetic-settings build and separate review passed. Mobile Safari/authenticated preview acceptance remains pending because local browser launch was blocked. Candidate until accepted and merged.
+
 _Status: current release contract accepted 17 November 2026 through PR #32. Read this before starting the next feature slice._
 
 This document is the concise engineering handoff for the current TAA application. It does not replace the product roadmap, change log, security model or feature specifications; it links the operational decisions that future work must preserve.

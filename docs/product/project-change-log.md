@@ -1,5 +1,10 @@
 # The Afternoon Academy — Project Change Log
 
+## 18 November 2026 — Family Pipeline mobile dropdown correction
+
+- Constrained recurring table/time and price-plan native selects to their card width using shrinkable grid containers and explicit full/max widths. Preserved desktop two-column layout, booking state/options/validation and permissions. No migration or data changes.
+- Validation: 154 existing tests, TypeScript, changed-file ESLint and synthetic-settings production build passed; separate code review found no blockers. Local browser launch was blocked; iPhone Safari/authenticated preview acceptance remains pending. One coherent branch push; production merge follows founder acceptance.
+
 ## 17 November 2026 — Invitation-only staff signup (release candidate)
 
 - Founder requested a working staff magic-link signup after identifying that the existing public signup did not configure staff access. Added email-only staff signup, Admin approval/withdrawal in Academy Setup, Resend delivery of Supabase invitation/magic links and explicit token confirmation. the approved staff member Admin access is authorised, but no account/invitation/email has been created yet.

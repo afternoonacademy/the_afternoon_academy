@@ -206,7 +206,7 @@ export function ChildPlaceWorkflow({
   )
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-muted-foreground">
@@ -329,7 +329,7 @@ export function ChildPlaceWorkflow({
 
               return (
                 <section
-                  className="rounded-xl border bg-background p-4"
+                  className="min-w-0 rounded-xl border bg-background p-4"
                   key={index}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -355,11 +355,11 @@ export function ChildPlaceWorkflow({
                     ) : null}
                   </div>
 
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <label className="grid gap-1 text-sm font-medium">
+                  <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+                    <label className="grid min-w-0 gap-1 text-sm font-medium">
                       Recurring table and time
                       <select
-                        className="h-10 rounded-md border bg-background px-3 font-normal"
+                        className="h-10 w-full min-w-0 max-w-full rounded-md border bg-background px-3 font-normal"
                         onChange={(event) =>
                           updateSelection(index, {
                             templateId: event.target.value,
@@ -391,10 +391,10 @@ export function ChildPlaceWorkflow({
                       </select>
                     </label>
 
-                    <label className="grid gap-1 text-sm font-medium">
+                    <label className="grid min-w-0 gap-1 text-sm font-medium">
                       Price plan
                       <select
-                        className="h-10 rounded-md border bg-background px-3 font-normal"
+                        className="h-10 w-full min-w-0 max-w-full rounded-md border bg-background px-3 font-normal"
                         onChange={(event) =>
                           updateSelection(index, {
                             pricePlanId: event.target.value,

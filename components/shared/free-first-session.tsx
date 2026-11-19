@@ -4,6 +4,7 @@ import Image from "next/image"
 import { LeadForm } from "@/components/forms/lead-form"
 import { PublicFooter, PublicHeader } from "@/components/shared/public-shell"
 import { Card, CardContent } from "@/components/ui/card"
+import { loadMarketingPartners } from "@/lib/leads/marketing-partners"
 import { freeTrialPaths } from "@/lib/leads/free-trial.mjs"
 
 const copy = {
@@ -44,7 +45,8 @@ export function freeFirstSessionMetadata(locale: Locale): Metadata {
   }
 }
 
-export function FreeFirstSessionPage({ locale }: { locale: Locale }) {
+export async function FreeFirstSessionPage({ locale }: { locale: Locale }) {
+  const { data: partners } = await loadMarketingPartners()
   const t = copy[locale]
   const switchHref = freeTrialPaths[locale === "es" ? "en" : "es"]
 
@@ -71,7 +73,7 @@ export function FreeFirstSessionPage({ locale }: { locale: Locale }) {
                 <p className="brand-muted">{t.explanation}</p>
                 <p className="text-sm brand-muted">{t.terms}</p>
               </div>
-              <LeadForm language={locale} freeTrial />
+              <LeadForm language={locale} freeTrial marketingPartners={(partners ?? []).map(({ id, name }) => ({ id, name }))} />
             </CardContent>
           </Card>
         </section>

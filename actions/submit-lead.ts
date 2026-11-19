@@ -10,7 +10,7 @@ import {
   parentConfirmationEmailHtml,
   parentConfirmationEmailText,
 } from "@/lib/email/templates"
-import { freeTrialLeadSource, isFreeTrialSupport } from "@/lib/leads/free-trial.mjs"
+import { freeTrialLeadSource, isFreeTrialSupport, marketingPartnerReferralId } from "@/lib/leads/free-trial.mjs"
 import { leadFormSchema } from "@/lib/validations/lead"
 
 export type SubmitLeadState = {
@@ -82,9 +82,36 @@ async function saveWebsiteLead(formData: FormData, freeTrial: boolean): Promise<
     }
   }
 
-  const source = freeTrial
-    ? freeTrialLeadSource(formData.get("referral"))
-    : language === "es" ? "landing_page_es" : "landing_page_en"
+  let source = language === "es" ? "landing_page_es" : "landing_page_en"
+  if (freeTrial) {
+    const referral = formData.get("referral")
+    const partnerId = marketingPartnerReferralId(referral)
+    let trialSource = freeTrialLeadSource(referral)
+
+    if (partnerId) {
+      const { data, error } = await supabaseAdmin.from("academy_marketing_partners")
+        .select("name").eq("id", partnerId).eq("active", true).maybeSingle()
+      if (error) {
+        return {
+          success: false,
+          message: language === "es"
+            ? "No hemos podido comprobar la opción seleccionada. Inténtalo de nuevo."
+            : "We couldn’t check that referral choice. Please try again.",
+        }
+      }
+      if (data) trialSource = `Free first session · ${data.name}`
+    }
+
+    if (!trialSource) {
+      return {
+        success: false,
+        message: language === "es"
+          ? "Elige una opción válida para indicarnos cómo nos conociste."
+          : "Choose a valid option to tell us how you heard about us.",
+      }
+    }
+    source = trialSource
+  }
   const { data: parentLead, error: parentError } = await supabaseAdmin
     .from("parent_leads")
     .insert({

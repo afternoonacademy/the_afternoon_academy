@@ -98,7 +98,7 @@ const trialCopy = {
     cardTitle: "Request a free first session",
     cardDescription: "Tell us what your child needs and which times could work. We’ll contact you to confirm a suitable session.",
     referral: "Where did you hear about us?",
-    referralPlaceholder: "Choose an option (optional)",
+    referralPlaceholder: "Choose an option",
     submit: "Request a free session",
     consent: "I agree to be contacted about my free-session enquiry.",
   },
@@ -106,7 +106,7 @@ const trialCopy = {
     cardTitle: "Solicita tu primera sesión gratis",
     cardDescription: "Cuéntanos qué apoyo necesita tu hijo o hija y qué horarios os vienen bien. Te contactaremos para confirmar una sesión adecuada.",
     referral: "¿Cómo nos conociste?",
-    referralPlaceholder: "Selecciona una opción (opcional)",
+    referralPlaceholder: "Selecciona una opción",
     submit: "Solicitar una sesión gratuita",
     consent: "Acepto que me contacten sobre mi solicitud de sesión gratuita.",
   },
@@ -115,9 +115,11 @@ const trialCopy = {
 export function LeadForm({
   language = "en",
   freeTrial = false,
+  marketingPartners = [],
 }: {
   language?: LeadFormLanguage
   freeTrial?: boolean
+  marketingPartners?: { id: string; name: string }[]
 }) {
   const [state, formAction, isPending] = useActionState(freeTrial ? submitFreeTrialLead : submitLead, initialState)
   const [children, setChildren] = useState<LeadChildDraft[]>([emptyChild(1)])
@@ -187,9 +189,13 @@ export function LeadForm({
                   <select
                     id="referral"
                     name="referral"
+                    required
                     className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">{trial.referralPlaceholder}</option>
+                    {marketingPartners.map((partner) => (
+                      <option key={partner.id} value={`partner:${partner.id}`}>{partner.name}</option>
+                    ))}
                     {referralChoices.map((choice) => (
                       <option key={choice.value} value={choice.value}>{choice[language]}</option>
                     ))}

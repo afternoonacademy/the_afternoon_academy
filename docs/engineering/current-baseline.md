@@ -2,7 +2,7 @@
 
 ## Public free first session — 19 November 2026 preview candidate
 
-The English and Spanish offer landing pages reuse the public family enquiry and protected intake boundary. The server resolves the selected referral to a fixed label in the existing lead source column. Visits are measured by page path using existing analytics. Existing staff confirmation and one-off trial operations apply.
+The English and Spanish offer landing pages reuse the public family enquiry and protected intake boundary. The server requires a referral and resolves a standard channel or an active partner to a label in the existing lead source column. The service-only partner configuration is managed in Academy Setup → Marketing. Apply the additive partner-table migration before release. Visits are measured by page path using existing analytics. Existing staff confirmation and one-off trial operations apply.
 
 ## Mobile planner correction candidate — 18 November 2026
 

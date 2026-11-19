@@ -1,6 +1,7 @@
 import { addMarketingPartner, setMarketingPartnerActive } from "@/actions/marketing-partners"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Input } from "@/components/ui/input"
+import { freeTrialPaths } from "@/lib/leads/free-trial.mjs"
 import { loadMarketingPartners } from "@/lib/leads/marketing-partners"
 
 export async function MarketingPartners() {
@@ -13,6 +14,20 @@ export async function MarketingPartners() {
         <p className="text-sm text-muted-foreground">
           Add businesses and groups to the free first session form. Active names appear on the English and Spanish pages.
         </p>
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold">Free first session pages</h4>
+        <ul className="space-y-2 text-sm">
+          {([["English", freeTrialPaths.en], ["Español", freeTrialPaths.es]] as const).map(([label, path]) => (
+            <li key={path}>
+              <a href={path} target="_blank" rel="noopener noreferrer" className="inline-flex flex-wrap gap-x-2 underline underline-offset-4">
+                <span>{label}</span>
+                <span className="break-all text-muted-foreground">{path}</span>
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
       {error ? (
         <p role="alert" className="text-sm text-muted-foreground">Partner choices are currently unavailable.</p>

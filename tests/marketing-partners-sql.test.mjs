@@ -7,7 +7,7 @@ test("marketing configuration is empty by default and writable only by the servi
   const db = new PGlite()
   try {
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls;")
-    const migration = new URL("../supabase/migrations/20261119130000_academy_marketing_partners.sql", import.meta.url)
+    const migration = new URL("../supabase/migrations/20261119125552_academy_marketing_partners.sql", import.meta.url)
     await db.exec(await readFile(migration, "utf8"))
     for (const role of ["anon", "authenticated"]) {
       await db.exec("set role " + role)

@@ -3,7 +3,7 @@
 ## 19 November 2026 — Public first-session offer (preview candidate)
 
 - Opened a first free Homework Club group session to new families with children aged 4–12, subject to suitable availability and staff confirmation. English and Spanish pages are included in the sitemap, linked contextually from the corresponding homepage and omitted from the navigation menu.
-- The enquiry uses the shared family form with offer-specific wording and an required referral dropdown. The default choices are generic. Academy Setup → Marketing lets Admins add, hide or restore named partners. Successful form submissions use the existing Family Pipeline source field. Visits use the site's existing analytics implementation. An additive service-only partner-configuration migration must run before release. Existing leads retain their recorded source. No new analytics payload, automatic booking or payment.
+- The enquiry uses the shared family form with offer-specific wording and a required referral dropdown. The default choices are generic. Academy Setup → Marketing lets Admins add, hide or restore named partners. Successful form submissions use the existing Family Pipeline source field. Visits use the site's existing analytics implementation. Academy Setup → Marketing also links directly to the English and Spanish offer pages. The additive service-only partner table was created on the Academy Supabase project on 19 November, and migration version `20261119125552` matches the database ledger. Existing leads retain their recorded source. No new analytics payload, automatic booking or payment.
 
 ## 19 November 2026 — Move a recurring weekday from the renewal planner (release candidate)
 

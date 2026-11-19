@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { CalendarDays, CircleAlert, RotateCcw, X } from "lucide-react"
 
 import { InfoTip } from "@/components/admin/info-tip"
@@ -71,6 +71,7 @@ export function PaidPeriodBuilder({
   pricePlans = [],
   allowPricePlanChange = false,
   purpose = "payment",
+  renderPlacementAction,
 }: {
   placements: PaidPeriodPlacement[]
   closures: AcademyClosure[]
@@ -81,6 +82,7 @@ export function PaidPeriodBuilder({
   pricePlans?: PricePlan[]
   allowPricePlanChange?: boolean
   purpose?: "plan" | "payment" | "renewal"
+  renderPlacementAction?: (placement: PaidPeriodPlacement) => ReactNode
 }) {
   const initialSelection = () =>
     sortPaidPeriodSessions(
@@ -138,9 +140,10 @@ export function PaidPeriodBuilder({
     suggestionEnd,
   )
 
-  function sessionsForLearner(groupPlacements: PaidPeriodPlacement[]) {
+  function sessionsForLearner(key: string, groupPlacements: PaidPeriodPlacement[]) {
     const ids = new Set(groupPlacements.map((item) => item.placementId))
-    return sessions.filter((session) => ids.has(session.placementId))
+    return sessions.filter((session) => ids.has(session.placementId) ||
+      (purpose === "renewal" && session.learnerId === key))
   }
 
   function sessionsForPlacement(placementId: string) {
@@ -213,7 +216,9 @@ export function PaidPeriodBuilder({
     placement: PaidPeriodPlacement,
   ) {
     const date = replacementDateByLearner[key]
-    if (!date || closureForDate(date, closures)) return
+    if (!date || closureForDate(date, closures) ||
+        (placement.effectiveFrom && date < placement.effectiveFrom) ||
+        (placement.effectiveTo && date > placement.effectiveTo)) return
 
     if (
       sessions.some(
@@ -368,7 +373,7 @@ export function PaidPeriodBuilder({
 
       <div className="space-y-6">
         {learnerGroups.map((group) => {
-          const learnerSessions = sessionsForLearner(group.placements)
+          const learnerSessions = sessionsForLearner(group.key, group.placements)
           const activePlacement = activePlacementFor(
             group.key,
             group.placements,
@@ -466,15 +471,18 @@ export function PaidPeriodBuilder({
                     </p>
                   </div>
 
-                  <Button
-                    onClick={() => resetPlacement(activePlacement)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    <RotateCcw className="size-4" />
-                    Reset {days[activePlacement.weekday]}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {renderPlacementAction?.(activePlacement)}
+                    <Button
+                      onClick={() => resetPlacement(activePlacement)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <RotateCcw className="size-4" />
+                      Reset {days[activePlacement.weekday]}
+                    </Button>
+                  </div>
                 </div>
 
                 {allowPricePlanChange && pricePlans.length ? (
@@ -530,6 +538,8 @@ export function PaidPeriodBuilder({
                         const date = dateKey(day)
                         return (
                           day.getDay() !== activePlacement.weekday ||
+                          Boolean(activePlacement.effectiveFrom && date < activePlacement.effectiveFrom) ||
+                          Boolean(activePlacement.effectiveTo && date > activePlacement.effectiveTo) ||
                           Boolean(closureForDate(date, closures))
                         )
                       }}
@@ -572,8 +582,8 @@ export function PaidPeriodBuilder({
                       <div className="mt-3 flex flex-wrap gap-2">
                         <input
                           className="h-10 rounded-md border bg-background px-3 text-sm"
-                          min={purpose === "renewal" ? undefined : suggestionStart}
-                          max={purpose === "renewal" ? undefined : suggestionEnd}
+                          min={purpose === "renewal" ? activePlacement.effectiveFrom : suggestionStart}
+                          max={purpose === "renewal" ? activePlacement.effectiveTo ?? undefined : suggestionEnd}
                           onChange={(event) =>
                             setReplacementDateByLearner((current) => ({
                               ...current,
@@ -674,6 +684,8 @@ export function PaidPeriodBuilder({
                             (item) =>
                               item.placementId === session.placementId,
                           )
+                          const historicalPlace = purpose === "renewal" && (!placement ||
+                            (placement.effectiveTo && session.date > placement.effectiveTo))
                           return (
                             <tr
                               className="border-t"
@@ -685,7 +697,7 @@ export function PaidPeriodBuilder({
                               <td className="px-3 py-2 text-muted-foreground">
                                 {placement ? `${days[placement.weekday]} · ` : ""}
                                 Table {session.tableNumber} · {session.startsAt}
-                                {purpose !== "payment" ? (
+                                {purpose !== "payment" && !historicalPlace ? (
                                   <div className="mt-2 space-y-1">
                                     <select
                                       aria-label={`Teaching time for ${dateLabel(session.date)}`}
@@ -723,6 +735,7 @@ export function PaidPeriodBuilder({
                                 {money(session.priceCents)}
                               </td>
                               <td className="px-2 py-2 text-right">
+                                {!historicalPlace ? (
                                 <button
                                   aria-label={`Remove ${dateLabel(session.date)}`}
                                   className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -731,6 +744,7 @@ export function PaidPeriodBuilder({
                                 >
                                   <X className="size-4" />
                                 </button>
+                                ) : null}
                               </td>
                             </tr>
                           )

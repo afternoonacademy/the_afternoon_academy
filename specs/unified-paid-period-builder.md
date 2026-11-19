@@ -225,3 +225,13 @@ The reusable initial and renewal email bodies are stored in `academy_email_templ
 - The saved revision is checked on edit and send. Each sent revision has its own delivery record and provider idempotency key. A provider-confirmed send is reconciled from its log if recording the sent revision failed. Ambiguous retries must use the same recipient and content within the provider idempotency window.
 - Closures, capacity, one price plan per placement, Admin-only access and explicit cleared payment remain enforced. Payment or release competes with edit/send for the same case. An interrupted payment must be retried against the same saved terms before further changes. Closed and paid offers cannot be edited.
 - Acceptance check with synthetic data: send an original offer, add/remove dates and change price, save, check standing capacity and original email history, review/send the revision, check duplicate/stale requests, then confirm payment against the final terms. Verify mobile and desktop. Apply the additive migration before activating the application. Application rollback retains the schema and email history.
+
+## Move one weekly slot during an unpaid renewal
+
+From **Edit renewal plan**, select a recurring-place tab and choose **Change recurring slot**. Select a configured weekday, time and table, then the first date from which to move the old recurring dates. This action uses the saved offer, so save any separate calendar edits first. The new standing place starts on the first regenerated date. The original standing place remains effective through the day before the chosen cutoff.
+
+Move each affected saved occurrence forward to the next matching weekday. Skip destination Academy closures. Keep earlier dates, other weekly places, existing one-off dates, and quoted rates. The new weekly slot supplies the default time for moved dates. Advance the offer revision and regenerate the preview. The latest sent revision and email history remain intact. Email delivery is an explicit follow-up action.
+
+The Admin action rejects stale or closed offers, overlapping sessions, a paid period covering the cutoff, recorded attendance or delivery at affected slots, and insufficient capacity. The service-only database function changes the standing place, recurring booking and quote in one transaction. A trigger protects the end-dated seat through its last applicable dates when other bookings or legacy offers are saved.
+
+Verify with synthetic bookings that Thursday moves to Friday while Tuesday and history remain intact, and that a full destination leaves the offer and both holds as they were. Apply the additive migration before activating the application. A rollback of the application can retain the migration and all committed booking history.

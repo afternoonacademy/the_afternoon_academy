@@ -10,6 +10,8 @@ export type PaidPeriodPlacement = {
   learnerName: string
   childLeadId?: string | null
   weekday: number
+  effectiveFrom?: string
+  effectiveTo?: string | null
   academyTableId: string
   tableNumber: number
   seatNumber: number | null
@@ -67,7 +69,9 @@ export function expectedDatesForPlacement(
   closures: AcademyClosure[],
 ) {
   const dates: string[] = []
-  for (let cursor = start; cursor <= end; cursor = addUtcDays(cursor, 1)) {
+  const first = placement.effectiveFrom && placement.effectiveFrom > start ? placement.effectiveFrom : start
+  const last = placement.effectiveTo && placement.effectiveTo < end ? placement.effectiveTo : end
+  for (let cursor = first; cursor <= last; cursor = addUtcDays(cursor, 1)) {
     if (
       new Date(`${cursor}T12:00:00Z`).getUTCDay() === placement.weekday &&
       !closureForDate(cursor, closures)

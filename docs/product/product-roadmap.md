@@ -304,3 +304,7 @@ Post-migration advisor reports intentional deny-all RLS without policies for sta
 ### Corrections to emailed renewal offers
 
 Admin can revise an emailed, unpaid offer in Family Pipeline when a family agrees to different dates or pricing. Reuse the exact-date planner, keep the learner in Awaiting payment, and provide explicit review and send for the revised offer. Recurring capacity and previous correspondence stay with the same renewal.
+
+### Recurring timetable changes during renewal
+
+Let an Admin move one weekly place in the unpaid renewal planner, regenerate the affected dates together and review the revised offer before emailing it. Use the new standing place for future renewals.

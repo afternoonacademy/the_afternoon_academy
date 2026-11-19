@@ -1,5 +1,11 @@
 # The Afternoon Academy — Project Change Log
 
+## 19 November 2026 — Move a recurring weekday from the renewal planner (release candidate)
+
+- Added a recurring slot switch inside the unpaid renewal planner. Moving one weekday regenerates its affected dates while retaining other weekdays, earlier sessions and agreed one-offs.
+- End-date the old placement and reserve the destination as part of the same database transaction as the offer revision. The previously sent offer remains in history, and sending the new version remains explicit.
+- Synthetic database tests exercise successful moves, ownership, stale/concurrent actions, attendance, closure dates, booking/offer capacity, and the former seat’s effective dates. Apply the additive migration before activating the application.
+
 ## 19 November 2026 — Edit and resend unpaid renewal offers (release candidate)
 
 - Added editing after email to the existing Family Pipeline renewal planner. Saving revised dates or pricing keeps the renewal in Awaiting payment and prepares an updated offer for explicit review and send.

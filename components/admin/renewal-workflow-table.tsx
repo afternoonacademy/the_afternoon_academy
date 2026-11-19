@@ -13,6 +13,7 @@ import {
 } from "@/actions/renewals"
 import { InfoTip } from "@/components/admin/info-tip"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
+import { RenewalSlotChange, type RenewalSlotOption } from "@/components/admin/renewal-slot-change"
 import { SaveActionForm } from "@/components/admin/save-action-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,8 +58,10 @@ const statusLabel: Record<FamilyRenewalRow["status"], string> = {
 export function RenewalWorkflowTable({
   rows,
   pricePlans,
+  templates,
 }: {
   rows: FamilyRenewalRow[]
+  templates: RenewalSlotOption[]
   pricePlans: PricePlan[]
 }) {
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -118,6 +121,7 @@ export function RenewalWorkflowTable({
                           key={row.caseId + ":" + row.offerRevision + ":" + row.paymentRecordingStarted}
                           onComplete={() => setExpanded(null)}
                           pricePlans={pricePlans}
+                          templates={templates}
                           row={row}
                         />
                       </td>
@@ -165,6 +169,7 @@ export function RenewalWorkflowTable({
                     key={row.caseId + ":" + row.offerRevision + ":" + row.paymentRecordingStarted}
                     onComplete={() => setExpanded(null)}
                     pricePlans={pricePlans}
+                    templates={templates}
                     row={row}
                   />
                 </div>
@@ -180,9 +185,11 @@ export function RenewalWorkflowTable({
 function RenewalActions({
   row,
   pricePlans,
+  templates,
   onComplete,
 }: {
   row: FamilyRenewalRow
+  templates: RenewalSlotOption[]
   pricePlans: PricePlan[]
   onComplete: () => void
 }) {
@@ -246,6 +253,11 @@ function RenewalActions({
               <p className="mt-1 text-sm text-muted-foreground">
                 {placement.pricePlanName} · {money(placement.priceCents)} / session
               </p>
+              {placement.effectiveTo ? (
+                <p className="mt-1 text-xs text-muted-foreground">Through {date(placement.effectiveTo)}</p>
+              ) : placement.effectiveFrom && placement.effectiveFrom > iso(new Date()) ? (
+                <p className="mt-1 text-xs text-muted-foreground">From {date(placement.effectiveFrom)}</p>
+              ) : null}
               <p className="mt-1 text-xs text-muted-foreground">
                 Capacity seat{" "}
                 {placement.seatNumber
@@ -322,6 +334,18 @@ function RenewalActions({
               placements={row.placements}
               pricePlans={pricePlans}
               purpose="renewal"
+              renderPlacementAction={(placement) => row.caseId ? (
+                <RenewalSlotChange
+                  caseId={row.caseId}
+                  offerRevision={row.offerRevision}
+                  onSaved={() => setEditing(false)}
+                  paidThrough={row.periodEnd}
+                  parentLeadId={row.parentLeadId}
+                  placement={placement}
+                  sessions={row.selectedSessions}
+                  templates={templates}
+                />
+              ) : null}
               suggestionEnd={suggestionEnd}
               suggestionStart={suggestionStart}
             />

@@ -277,3 +277,7 @@ Post-migration advisor reports intentional deny-all RLS without policies for sta
 ## Emailed renewal revisions (release candidate)
 
 The Family Pipeline keeps emailed, unpaid renewals in Awaiting payment while Admin revises exact dates and price plans. Each material change advances the saved offer revision. Explicit send links a new delivery record to the existing case and leaves the previous correspondence intact. Saves, sends, payment and release coordinate on the renewal row to prevent overlapping changes. The additive migration must precede application activation.
+
+## Recurring slot moves on unpaid renewals (release candidate)
+
+Admin can move one weekly slot from its own tab in the renewal planner. The service-only PostgreSQL function end-dates the source, reserves the destination and regenerates the selected dates and quote atomically. The original place can still hold capacity for dates before the switch. Existing payment, attendance, one-off dates, other placements and delivery history remain intact. Revision and operation state prevent stale or concurrent same-case changes. Deploy the additive migration before application activation.

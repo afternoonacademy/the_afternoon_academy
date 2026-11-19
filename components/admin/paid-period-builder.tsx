@@ -80,7 +80,7 @@ export function PaidPeriodBuilder({
   inputName?: string
   pricePlans?: PricePlan[]
   allowPricePlanChange?: boolean
-  purpose?: "plan" | "payment"
+  purpose?: "plan" | "payment" | "renewal"
 }) {
   const initialSelection = () =>
     sortPaidPeriodSessions(
@@ -159,6 +159,21 @@ export function PaidPeriodBuilder({
     )
   }
 
+  function placementWithSelectedPrice(
+    placement: PaidPeriodPlacement,
+    current: PaidPeriodSession[],
+  ) {
+    const selected = current.find((session) => session.placementId === placement.placementId)
+    return selected
+      ? {
+          ...placement,
+          pricePlanId: selected.pricePlanId,
+          pricePlanName: selected.pricePlanName,
+          priceCents: selected.priceCents,
+        }
+      : placement
+  }
+
   function updateRecurringDates(
     placement: PaidPeriodPlacement,
     dates: Date[] | undefined,
@@ -182,10 +197,11 @@ export function PaidPeriodBuilder({
         currentRecurring.map((session) => [session.date, session]),
       )
 
+      const pricedPlacement = placementWithSelectedPrice(placement, current)
       const nextRecurring = [...selectedDates].map(
         (date) =>
           currentByDate.get(date) ||
-          sessionFromPlacement(placement, date, false),
+          sessionFromPlacement(pricedPlacement, date, false),
       )
 
       return sortPaidPeriodSessions([...otherSessions, ...nextRecurring])
@@ -213,7 +229,7 @@ export function PaidPeriodBuilder({
       sortPaidPeriodSessions([
         ...current,
         sessionFromPlacement(
-          placement,
+          placementWithSelectedPrice(placement, current),
           date,
           purpose === "plan" ? false : true,
           purpose === "plan" ? "pre_agreed_exception" : "replacement",
@@ -249,17 +265,7 @@ export function PaidPeriodBuilder({
 
   function resetPlacement(placement: PaidPeriodPlacement) {
     setSessions((current) => {
-      const currentPlan = current.find(
-        (session) => session.placementId === placement.placementId,
-      )
-      const pricedPlacement = currentPlan
-        ? {
-            ...placement,
-            pricePlanId: currentPlan.pricePlanId,
-            pricePlanName: currentPlan.pricePlanName,
-            priceCents: currentPlan.priceCents,
-          }
-        : placement
+      const pricedPlacement = placementWithSelectedPrice(placement, current)
 
       const expected = expectedDatesForPlacement(
         pricedPlacement,
@@ -320,7 +326,7 @@ export function PaidPeriodBuilder({
               <p className="font-semibold">
                 {purpose === "plan"
                   ? "Planned first-period service dates"
-                  : "Exact paid service dates"}
+                  : purpose === "renewal" ? "Planned renewal dates" : "Exact paid service dates"}
               </p>
               <InfoTip label="About the paid-period calendar">
                 Choose one recurring day at a time. The calendar only edits the
@@ -566,8 +572,8 @@ export function PaidPeriodBuilder({
                       <div className="mt-3 flex flex-wrap gap-2">
                         <input
                           className="h-10 rounded-md border bg-background px-3 text-sm"
-                          min={suggestionStart}
-                          max={suggestionEnd}
+                          min={purpose === "renewal" ? undefined : suggestionStart}
+                          max={purpose === "renewal" ? undefined : suggestionEnd}
                           onChange={(event) =>
                             setReplacementDateByLearner((current) => ({
                               ...current,
@@ -679,7 +685,7 @@ export function PaidPeriodBuilder({
                               <td className="px-3 py-2 text-muted-foreground">
                                 {placement ? `${days[placement.weekday]} · ` : ""}
                                 Table {session.tableNumber} · {session.startsAt}
-                                {purpose === "plan" ? (
+                                {purpose !== "payment" ? (
                                   <div className="mt-2 space-y-1">
                                     <select
                                       aria-label={`Teaching time for ${dateLabel(session.date)}`}
@@ -759,7 +765,9 @@ export function PaidPeriodBuilder({
       <p className="text-sm font-medium text-muted-foreground">
         {purpose === "plan"
           ? "Saving this plan holds all selected recurring capacity places and prepares one combined parent quote. It does not create payment or dated Operations attendance."
-          : "After manual payment confirmation, these exact dates are the dates that will create dated Operations sessions and seats."}
+          : purpose === "renewal"
+            ? "Saving updates the dates and price for this renewal. Review the updated offer before emailing it."
+            : "After manual payment confirmation, these exact dates are the dates that will create dated Operations sessions and seats."}
       </p>
     </div>
   )

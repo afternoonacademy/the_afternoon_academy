@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { withRenewalOfferLock } from "@/lib/admin/renewal-offer-lock"
+import { renewalOfferChanged } from "@/lib/admin/renewal-offer-revisions.mjs"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { paymentEligibleBookingStatuses } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
@@ -50,6 +52,10 @@ const renewalSchema = z.object({
   caseId: z.string().uuid(),
   parentLeadId: z.string().uuid(),
   selectedSessions: z.string().min(2),
+})
+
+const renewalDraftSchema = renewalSchema.extend({
+  offerRevision: z.coerce.number().int().nonnegative(),
 })
 
 const renewalPaymentSchema = renewalSchema.extend({
@@ -599,10 +605,11 @@ export async function recordExactManualEnrolment(
 
 export async function prepareExactRenewalDraft(formData: FormData) {
   const { user } = await requireAdmin()
-  const parsed = renewalSchema.safeParse({
+  const parsed = renewalDraftSchema.safeParse({
     caseId: formData.get("caseId"),
     parentLeadId: formData.get("parentLeadId"),
     selectedSessions: formData.get("selectedSessions"),
+    offerRevision: formData.get("offerRevision") ?? undefined,
   })
   if (!parsed.success) throw new Error("Choose the exact sessions for this renewal")
 
@@ -622,7 +629,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
         .single(),
       supabase
         .from("renewal_cases")
-        .select("id,learner_id,standing_placement_id,status")
+        .select("id,learner_id,status,updated_at,offer_revision,offer_payment_started_at,selected_sessions")
         .eq("id", parsed.data.caseId)
         .eq("parent_lead_id", parsed.data.parentLeadId)
         .maybeSingle(),
@@ -649,6 +656,13 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     throw new Error("This renewal is already complete")
   if (!renewalCase.learner_id)
     throw new Error("This historical family renewal must be completed from the legacy renewal screen")
+
+  if (renewalCase.offer_payment_started_at) {
+    throw new Error("Payment recording has started. Finish recording payment against the saved offer.")
+  }
+  if (renewalCase.offer_revision !== parsed.data.offerRevision) {
+    throw new Error("This renewal changed. Refresh before editing it again.")
+  }
 
   const placementById = new Map(
     (placements || [])
@@ -708,6 +722,15 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     }
   })
 
+  const plansByPlacement = new Map<string, string>()
+  for (const session of serverSessions) {
+    const existing = plansByPlacement.get(session.placementId)
+    if (existing && existing !== session.pricePlanId) {
+      throw new Error("Choose one price plan for each recurring place")
+    }
+    plansByPlacement.set(session.placementId, session.pricePlanId)
+  }
+
   await assertDatesOpen(serverSessions, supabase)
   await assertPaidPeriodCapacity(serverSessions, supabase)
 
@@ -723,9 +746,16 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   })
 
   const uniquePlanIds = [...new Set(serverSessions.map((session) => session.pricePlanId))]
-  const { error } = await supabase
+  const previouslySaved = Array.isArray(renewalCase.selected_sessions)
+    ? renewalCase.selected_sessions
+    : []
+  const changed = renewalOfferChanged(previouslySaved, serverSessions)
+  if (!changed) return
+
+  const { data: saved, error } = await supabase
     .from("renewal_cases")
     .update({
+      offer_revision: renewalCase.offer_revision + 1,
       proposed_period_start: summary.periodStart,
       proposed_period_end: summary.periodEnd,
       proposed_session_price_plan_id: uniquePlanIds.length === 1 ? uniquePlanIds[0] : null,
@@ -740,7 +770,13 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     .eq("id", parsed.data.caseId)
     .eq("parent_lead_id", parsed.data.parentLeadId)
     .eq("learner_id", renewalCase.learner_id)
+    .eq("updated_at", renewalCase.updated_at)
+    .is("offer_payment_started_at", null)
+    .or(`offer_operation_until.is.null,offer_operation_until.lt.${new Date().toISOString()}`)
+    .select("id")
+    .maybeSingle()
   if (error) throw new Error("Could not save the exact renewal selection")
+  if (!saved) throw new Error("This renewal changed. Refresh before editing it again.")
 
   revalidatePath("/admin/renewals")
   revalidatePath("/admin/leads")
@@ -762,7 +798,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
   const supabase = supabaseService()
   const { data: renewal, error: renewalError } = await supabase
     .from("renewal_cases")
-    .select("selected_sessions,status,learner_id,standing_placement_id")
+    .select("id,updated_at,selected_sessions,status,learner_id,standing_placement_id")
     .eq("id", parsed.data.caseId)
     .eq("parent_lead_id", parsed.data.parentLeadId)
     .single()
@@ -787,125 +823,6 @@ export async function recordExactRenewalPayment(formData: FormData) {
   if (learnerIds.length !== 1 || learnerIds[0] !== renewal.learner_id) {
     throw new Error("This renewal must contain only the selected learner’s sessions")
   }
-  const ledgerNote = [
-    parsed.data.bankReference ? `Bank reference: ${parsed.data.bankReference}` : null,
-    parsed.data.note || null,
-  ]
-    .filter(Boolean)
-    .join(" · ")
-
-  const { data: existingPayment } = await supabase
-    .from("payment_entitlements")
-    .select("id,selected_sessions")
-    .eq("parent_lead_id", parsed.data.parentLeadId)
-    .eq("period_start", summary.periodStart)
-    .eq("period_end", summary.periodEnd)
-    .maybeSingle()
-
-  const existingFamilySessions = Array.isArray(existingPayment?.selected_sessions)
-    ? parseSessions(JSON.stringify(existingPayment.selected_sessions))
-    : []
-  const otherLearnerSessions = existingFamilySessions.filter(
-    (session) => session.learnerId !== renewal.learner_id,
-  )
-  const familySessionsBeforeAllocation = sortPaidPeriodSessions([
-    ...otherLearnerSessions,
-    ...saved,
-  ])
-  const familySummaryBeforeAllocation = paidPeriodSummary(
-    familySessionsBeforeAllocation,
-  )
-
-  const { data: payment, error: paymentError } = await supabase
-    .from("payment_entitlements")
-    .upsert(
-      {
-        parent_lead_id: parsed.data.parentLeadId,
-        period_start: summary.periodStart,
-        period_end: summary.periodEnd,
-        sessions_per_week: Math.max(
-          1,
-          new Set(
-            familySessionsBeforeAllocation.map(
-              (session) => session.placementId,
-            ),
-          ).size,
-        ),
-        status: "paid",
-        amount_cents: familySummaryBeforeAllocation.amountCents,
-        received_at: `${parsed.data.receivedOn}T12:00:00Z`,
-        recorded_by: user.id,
-        note: ledgerNote || null,
-        selected_sessions: familySessionsBeforeAllocation,
-        selected_session_count: familySessionsBeforeAllocation.length,
-      },
-      { onConflict: "parent_lead_id,period_start,period_end" },
-    )
-    .select("id")
-    .single()
-  if (paymentError || !payment)
-    throw new Error("Could not record the received payment")
-
-  const allocatedSessions: PaidPeriodSession[] = []
-
-  for (const learnerId of learnerIds) {
-    const sessions = saved.filter((session) => session.learnerId === learnerId)
-    const learnerSummary = paidPeriodSummary(sessions)
-    if (!learnerSummary.periodStart || !learnerSummary.periodEnd) continue
-
-    const allocated = await createDatedOperationsSeats(
-      sessions,
-      learnerId,
-      user.id,
-      supabase,
-    )
-    allocatedSessions.push(...allocated)
-
-    const { error } = await supabase.from("child_payment_entitlements").upsert(
-      {
-        payment_entitlement_id: payment.id,
-        learner_id: learnerId,
-        period_start: learnerSummary.periodStart,
-        period_end: learnerSummary.periodEnd,
-        sessions_per_week: Math.max(
-          1,
-          new Set(sessions.map((session) => session.placementId)).size,
-        ),
-        status: "paid",
-        recorded_by: user.id,
-        selected_sessions: allocated,
-        selected_session_count: allocated.length,
-      },
-      { onConflict: "learner_id,period_start,period_end" },
-    )
-    if (error) {
-      throw new Error(
-        "Payment was recorded, but a learner entitlement could not be activated",
-      )
-    }
-  }
-
-  const finalSessions = sortPaidPeriodSessions(allocatedSessions)
-  const familyFinalSessions = sortPaidPeriodSessions([
-    ...otherLearnerSessions,
-    ...finalSessions,
-  ])
-  const familyFinalSummary = paidPeriodSummary(familyFinalSessions)
-  const { error: paymentSessionError } = await supabase
-    .from("payment_entitlements")
-    .update({
-      amount_cents: familyFinalSummary.amountCents,
-      selected_sessions: familyFinalSessions,
-      selected_session_count: familyFinalSessions.length,
-    })
-    .eq("id", payment.id)
-
-  if (paymentSessionError) {
-    throw new Error(
-      "Payment and Operations places were recorded, but the payment session audit could not be updated",
-    )
-  }
-
   const plansByPlacement = new Map<string, string>()
   for (const session of saved) {
     const previous = plansByPlacement.get(session.placementId)
@@ -913,37 +830,167 @@ export async function recordExactRenewalPayment(formData: FormData) {
       throw new Error("A learner place has more than one price plan in the same paid period")
     plansByPlacement.set(session.placementId, session.pricePlanId)
   }
-  for (const [placementId, pricePlanId] of plansByPlacement) {
-    const { error } = await supabase
-      .from("standing_placements")
-      .update({ session_price_plan_id: pricePlanId, updated_by: user.id })
-      .eq("id", placementId)
-      .eq("status", "active")
-    if (error)
-      throw new Error(
-        "Payment was recorded, but a selected price plan could not be applied to the learner’s standing place",
+
+  await withRenewalOfferLock(supabase, renewal, async () => {
+    const ledgerNote = [
+      parsed.data.bankReference ? `Bank reference: ${parsed.data.bankReference}` : null,
+      parsed.data.note || null,
+    ]
+      .filter(Boolean)
+      .join(" · ")
+
+    const { data: existingPayment } = await supabase
+      .from("payment_entitlements")
+      .select("id,selected_sessions")
+      .eq("parent_lead_id", parsed.data.parentLeadId)
+      .eq("period_start", summary.periodStart)
+      .eq("period_end", summary.periodEnd)
+      .maybeSingle()
+
+    const existingFamilySessions = Array.isArray(existingPayment?.selected_sessions)
+      ? parseSessions(JSON.stringify(existingPayment.selected_sessions))
+      : []
+    const otherLearnerSessions = existingFamilySessions.filter(
+      (session) => session.learnerId !== renewal.learner_id,
+    )
+    const familySessionsBeforeAllocation = sortPaidPeriodSessions([
+      ...otherLearnerSessions,
+      ...saved,
+    ])
+    const familySummaryBeforeAllocation = paidPeriodSummary(
+      familySessionsBeforeAllocation,
+    )
+
+    // Keep the terms fixed if an interrupted payment has already created
+    // ledger entries or delivery seats. Retrying payment uses these same dates.
+    const { error: paymentStartError } = await supabase.from("renewal_cases")
+      .update({ offer_payment_started_at: new Date().toISOString() })
+      .eq("id", renewal.id)
+      .is("offer_payment_started_at", null)
+    if (paymentStartError) throw new Error("Could not prepare the renewal for payment")
+
+    const { data: payment, error: paymentError } = await supabase
+      .from("payment_entitlements")
+      .upsert(
+        {
+          parent_lead_id: parsed.data.parentLeadId,
+          period_start: summary.periodStart,
+          period_end: summary.periodEnd,
+          sessions_per_week: Math.max(
+            1,
+            new Set(
+              familySessionsBeforeAllocation.map(
+                (session) => session.placementId,
+              ),
+            ).size,
+          ),
+          status: "paid",
+          amount_cents: familySummaryBeforeAllocation.amountCents,
+          received_at: `${parsed.data.receivedOn}T12:00:00Z`,
+          recorded_by: user.id,
+          note: ledgerNote || null,
+          selected_sessions: familySessionsBeforeAllocation,
+          selected_session_count: familySessionsBeforeAllocation.length,
+        },
+        { onConflict: "parent_lead_id,period_start,period_end" },
       )
-  }
+      .select("id")
+      .single()
+    if (paymentError || !payment)
+      throw new Error("Could not record the received payment")
 
-  await supabase
-    .from("accepted_bookings")
-    .update({ status: "paid_active" })
-    .eq("learner_id", renewal.learner_id)
-    .in("status", ["paid_active", "contacted", "accepted_awaiting_payment"])
+    const allocatedSessions: PaidPeriodSession[] = []
 
-  const { error: completeError } = await supabase
-    .from("renewal_cases")
-    .update({
-      status: "renewed",
-      renewed_at: new Date().toISOString(),
-      selected_sessions: finalSessions,
-      selected_session_count: finalSessions.length,
-      updated_by: user.id,
-    })
-    .eq("id", parsed.data.caseId)
-    .eq("parent_lead_id", parsed.data.parentLeadId)
-  if (completeError)
-    throw new Error("Payment was recorded, but the renewal case could not be completed")
+    for (const learnerId of learnerIds) {
+      const sessions = saved.filter((session) => session.learnerId === learnerId)
+      const learnerSummary = paidPeriodSummary(sessions)
+      if (!learnerSummary.periodStart || !learnerSummary.periodEnd) continue
+
+      const allocated = await createDatedOperationsSeats(
+        sessions,
+        learnerId,
+        user.id,
+        supabase,
+      )
+      allocatedSessions.push(...allocated)
+
+      const { error } = await supabase.from("child_payment_entitlements").upsert(
+        {
+          payment_entitlement_id: payment.id,
+          learner_id: learnerId,
+          period_start: learnerSummary.periodStart,
+          period_end: learnerSummary.periodEnd,
+          sessions_per_week: Math.max(
+            1,
+            new Set(sessions.map((session) => session.placementId)).size,
+          ),
+          status: "paid",
+          recorded_by: user.id,
+          selected_sessions: allocated,
+          selected_session_count: allocated.length,
+        },
+        { onConflict: "learner_id,period_start,period_end" },
+      )
+      if (error) {
+        throw new Error(
+          "Payment was recorded, but a learner entitlement could not be activated",
+        )
+      }
+    }
+
+    const finalSessions = sortPaidPeriodSessions(allocatedSessions)
+    const familyFinalSessions = sortPaidPeriodSessions([
+      ...otherLearnerSessions,
+      ...finalSessions,
+    ])
+    const familyFinalSummary = paidPeriodSummary(familyFinalSessions)
+    const { error: paymentSessionError } = await supabase
+      .from("payment_entitlements")
+      .update({
+        amount_cents: familyFinalSummary.amountCents,
+        selected_sessions: familyFinalSessions,
+        selected_session_count: familyFinalSessions.length,
+      })
+      .eq("id", payment.id)
+
+    if (paymentSessionError) {
+      throw new Error(
+        "Payment and Operations places were recorded, but the payment session audit could not be updated",
+      )
+    }
+
+    for (const [placementId, pricePlanId] of plansByPlacement) {
+      const { error } = await supabase
+        .from("standing_placements")
+        .update({ session_price_plan_id: pricePlanId, updated_by: user.id })
+        .eq("id", placementId)
+        .eq("status", "active")
+      if (error)
+        throw new Error(
+          "Payment was recorded, but a selected price plan could not be applied to the learner’s standing place",
+        )
+    }
+
+    await supabase
+      .from("accepted_bookings")
+      .update({ status: "paid_active" })
+      .eq("learner_id", renewal.learner_id)
+      .in("status", ["paid_active", "contacted", "accepted_awaiting_payment"])
+
+    const { error: completeError } = await supabase
+      .from("renewal_cases")
+      .update({
+        status: "renewed",
+        renewed_at: new Date().toISOString(),
+        selected_sessions: finalSessions,
+        selected_session_count: finalSessions.length,
+        updated_by: user.id,
+      })
+      .eq("id", parsed.data.caseId)
+      .eq("parent_lead_id", parsed.data.parentLeadId)
+    if (completeError)
+      throw new Error("Payment was recorded, but the renewal case could not be completed")
+  })
 
   revalidatePath("/admin")
   revalidatePath("/admin/renewals")

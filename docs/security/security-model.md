@@ -191,3 +191,7 @@ Applied staff_magic_link_signup to the confirmed TAA Supabase project before app
 Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
 
 Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.
+
+## Emailed renewal revisions
+
+The existing Admin-only Server Actions remain the access boundary for renewal planning, email, payment and release. The offer version and operation lease are stored on the existing RLS-protected renewal case. The server validates the family/case, saved version and recipient before using the existing Resend integration. Email audit records remain under the existing service-only access policy.

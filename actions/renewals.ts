@@ -3,6 +3,8 @@
 
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { withRenewalOfferLock } from "@/lib/admin/renewal-offer-lock"
+import { hasSentRenewalOffer, renewalOfferEmailKey } from "@/lib/admin/renewal-offer-revisions.mjs"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { allocateDatedOperationsSeat, assertPaidPeriodCapacity, type DatedCapacityRequest } from "@/lib/delivery-capacity"
 import { getResend, emailFrom } from "@/lib/resend"
@@ -118,11 +120,10 @@ export async function startChildRenewalCase(formData: FormData) {
     updated_by: user.id,
   }
 
-  const result = existing
-    ? await supabase.from("renewal_cases").update(payload).eq("id", existing.id)
-    : await supabase.from("renewal_cases").insert(payload)
-
-  if (result.error) throw new Error("Could not open the renewal")
+  if (!existing) {
+    const { error } = await supabase.from("renewal_cases").insert(payload)
+    if (error) throw new Error("Could not open the renewal")
+  }
 
   revalidatePath("/admin")
   revalidatePath("/admin/leads")
@@ -205,80 +206,97 @@ export async function releaseRenewalPlace(formData: FormData) {
     }
   }
 
-  const releasedAt = new Date().toISOString()
-  const [bookingResult, placementResult, renewalResult] = await Promise.all([
-    supabase
-      .from("accepted_bookings")
-      .update({ status: "cancelled" })
-      .eq("learner_id", value.learnerId)
-      .in("status", [
-        "paid_active",
-        "session_planned",
-        "contacted",
-        "accepted_awaiting_payment",
-      ]),
-    supabase
-      .from("standing_placements")
-      .update({
-        status: "ended",
-        effective_to: iso(new Date()),
-        updated_by: user.id,
-      })
-      .eq("learner_id", value.learnerId)
-      .eq("status", "active"),
-    supabase
-      .from("renewal_cases")
-      .update({
-        status: "not_renewing",
-        outcome_note: value.reason,
-        capacity_released_at: releasedAt,
-        capacity_released_by: user.id,
-        capacity_release_reason: value.reason,
-        closed_at: releasedAt,
-        updated_by: user.id,
-      })
-      .eq("id", renewalId),
-  ])
-
-  if (bookingResult.error || placementResult.error || renewalResult.error) {
-    console.error("Renewal capacity release failed", {
-      bookingError: bookingResult.error,
-      placementError: placementResult.error,
-      renewalError: renewalResult.error,
-    })
-    throw new Error("Could not release the learner’s recurring place")
+  const { data: current, error: currentError } = await supabase
+    .from("renewal_cases")
+    .select("id,updated_at,status,offer_payment_started_at")
+    .eq("id", renewalId)
+    .eq("parent_lead_id", value.parentLeadId)
+    .eq("learner_id", value.learnerId)
+    .single()
+  if (currentError || !current || current.status === "renewed") {
+    throw new Error("This renewal is no longer available to release")
   }
 
-  const { data: futureSessions, error: futureSessionsError } = await supabase
-    .from("delivery_sessions")
-    .select("id")
-    .gte("service_date", iso(new Date()))
-
-  if (futureSessionsError) {
-    throw new Error(
-      "The recurring place was released, but future renewal-due Operations seats could not be checked",
-    )
+  if (current.offer_payment_started_at) {
+    throw new Error("Payment recording has started. Finish recording payment before releasing the place.")
   }
 
-  const futureSessionIds = (futureSessions || []).map((session) => session.id)
-  if (futureSessionIds.length) {
-    const { error: futureSeatError } = await supabase
-      .from("delivery_seats")
-      .update({
-        status: "cancelled",
-        note: "Recurring place released: " + value.reason,
-        updated_by: user.id,
-      })
-      .eq("learner_id", value.learnerId)
-      .eq("status", "payment_pending")
-      .in("delivery_session_id", futureSessionIds)
+  await withRenewalOfferLock(supabase, current, async () => {
+    const releasedAt = new Date().toISOString()
+    const [bookingResult, placementResult, renewalResult] = await Promise.all([
+      supabase
+        .from("accepted_bookings")
+        .update({ status: "cancelled" })
+        .eq("learner_id", value.learnerId)
+        .in("status", [
+          "paid_active",
+          "session_planned",
+          "contacted",
+          "accepted_awaiting_payment",
+        ]),
+      supabase
+        .from("standing_placements")
+        .update({
+          status: "ended",
+          effective_to: iso(new Date()),
+          updated_by: user.id,
+        })
+        .eq("learner_id", value.learnerId)
+        .eq("status", "active"),
+      supabase
+        .from("renewal_cases")
+        .update({
+          status: "not_renewing",
+          outcome_note: value.reason,
+          capacity_released_at: releasedAt,
+          capacity_released_by: user.id,
+          capacity_release_reason: value.reason,
+          closed_at: releasedAt,
+          updated_by: user.id,
+        })
+        .eq("id", renewalId),
+    ])
 
-    if (futureSeatError) {
+    if (bookingResult.error || placementResult.error || renewalResult.error) {
+      console.error("Renewal capacity release failed", {
+        bookingError: bookingResult.error,
+        placementError: placementResult.error,
+        renewalError: renewalResult.error,
+      })
+      throw new Error("Could not release the learner’s recurring place")
+    }
+
+    const { data: futureSessions, error: futureSessionsError } = await supabase
+      .from("delivery_sessions")
+      .select("id")
+      .gte("service_date", iso(new Date()))
+
+    if (futureSessionsError) {
       throw new Error(
-        "The recurring place was released, but future renewal-due Operations seats could not be cleared",
+        "The recurring place was released, but future renewal-due Operations seats could not be checked",
       )
     }
-  }
+
+    const futureSessionIds = (futureSessions || []).map((session) => session.id)
+    if (futureSessionIds.length) {
+      const { error: futureSeatError } = await supabase
+        .from("delivery_seats")
+        .update({
+          status: "cancelled",
+          note: "Recurring place released: " + value.reason,
+          updated_by: user.id,
+        })
+        .eq("learner_id", value.learnerId)
+        .eq("status", "payment_pending")
+        .in("delivery_session_id", futureSessionIds)
+
+      if (futureSeatError) {
+        throw new Error(
+          "The recurring place was released, but future renewal-due Operations seats could not be cleared",
+        )
+      }
+    }
+  })
 
   revalidatePath("/admin")
   revalidatePath("/admin/leads")
@@ -344,15 +362,123 @@ export async function addRenewalReplacement(formData: FormData) {
 }
 
 export async function sendRenewalEmail(formData: FormData) {
-  const { user } = await requireAdmin(); const parsed = caseSchema.extend({ subject: z.string().trim().min(2).max(200), body: z.string().trim().min(2).max(12000) }).safeParse({ caseId: formData.get("caseId"), parentLeadId: formData.get("parentLeadId"), subject: formData.get("subject"), body: formData.get("body") })
+  const { user } = await requireAdmin()
+  const parsed = caseSchema.extend({
+    offerRevision: z.coerce.number().int().nonnegative(),
+    subject: z.string().trim().min(2).max(200),
+    body: z.string().trim().min(2).max(12000),
+  }).safeParse({
+    caseId: formData.get("caseId"),
+    parentLeadId: formData.get("parentLeadId"),
+    offerRevision: formData.get("offerRevision") ?? undefined,
+    subject: formData.get("subject"),
+    body: formData.get("body"),
+  })
   if (!parsed.success) throw new Error("Check the email before sending")
-  const value = parsed.data; const supabase = supabaseService(); const [{ data: parent }, { data: renewal }] = await Promise.all([supabase.from("parent_leads").select("email").eq("id", value.parentLeadId).single(), supabase.from("renewal_cases").select("id,status,learner_id").eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId).single()])
-  if (!parent || !renewal) throw new Error("This renewal is no longer available"); if (renewal.status === "renewed" || renewal.status === "not_renewing") throw new Error("This renewal is already complete")
-  if (!z.string().email().safeParse(parent.email).success) throw new Error("Add a valid parent email in family details before sending a renewal")
-  const key = `renewal-${renewal.id}`; const { data: existing } = await supabase.from("email_delivery_log").select("id,status").eq("idempotency_key", key).maybeSingle(); if (existing && ["sent", "delivered", "delayed"].includes(existing.status)) throw new Error("This renewal email has already been sent")
-  if (existing?.status === "bounced") throw new Error("The previous renewal email bounced. Check the parent email address before retrying.")
-  const { data: log, error: logError } = existing ? { data: existing, error: null } : await supabase.from("email_delivery_log").insert({ parent_lead_id: value.parentLeadId, learner_id: renewal.learner_id, renewal_case_id: renewal.id, email_kind: "renewal_reminder", recipient_email: parent.email, idempotency_key: key, subject: value.subject, body_text: value.body, created_by: user.id }).select("id").single(); if (logError || !log) throw new Error("Could not prepare the renewal email")
-  try { const result = await getResend().emails.send({ from: emailFrom, to: [parent.email], subject: value.subject, html: emailHtml(value.body), text: value.body }, { headers: { "Idempotency-Key": key } }); if (result.error) throw new Error(result.error.message); await Promise.all([supabase.from("email_delivery_log").update({ status: "sent", resend_email_id: result.data?.id || null, sent_at: new Date().toISOString(), subject: value.subject, body_text: value.body }).eq("id", log.id), supabase.from("renewal_cases").update({ status: "awaiting_payment", email_sent_at: new Date().toISOString(), last_contact_at: new Date().toISOString(), draft_subject: value.subject, draft_body: value.body, updated_by: user.id }).eq("id", renewal.id)]) } catch (error) { await supabase.from("email_delivery_log").update({ status: "failed", failed_at: new Date().toISOString(), error_message: error instanceof Error ? error.message.slice(0, 500) : "Send failed" }).eq("id", log.id); throw new Error("The renewal email could not be sent") }
+
+  const value = parsed.data
+  const supabase = supabaseService()
+  const [{ data: parent }, { data: renewal }] = await Promise.all([
+    supabase.from("parent_leads").select("email").eq("id", value.parentLeadId).single(),
+    supabase.from("renewal_cases")
+      .select("id,status,updated_at,learner_id,offer_revision,sent_offer_revision,email_sent_at,offer_payment_started_at,selected_session_count")
+      .eq("id", value.caseId).eq("parent_lead_id", value.parentLeadId).single(),
+  ])
+  if (!parent || !renewal) throw new Error("This renewal is no longer available")
+  if (renewal.status === "renewed" || renewal.status === "not_renewing") {
+    throw new Error("This renewal is already complete")
+  }
+  if (renewal.offer_payment_started_at) {
+    throw new Error("Payment recording has started. Finish recording payment against the saved offer.")
+  }
+  if (!renewal.selected_session_count || renewal.offer_revision !== value.offerRevision) {
+    throw new Error("The renewal plan changed. Refresh and review the saved offer before sending.")
+  }
+  if (hasSentRenewalOffer(renewal)) throw new Error("This version of the renewal has already been sent")
+  const recipient = z.string().email().safeParse(parent.email)
+  if (!recipient.success) throw new Error("Add a valid parent email in family details before sending a renewal")
+
+  async function markOfferSent(sentAt: string) {
+    const { data, error } = await supabase.from("renewal_cases")
+      .update({
+        status: "awaiting_payment",
+        email_sent_at: sentAt,
+        last_contact_at: sentAt,
+        sent_offer_revision: value.offerRevision,
+        updated_by: user.id,
+      })
+      .eq("id", value.caseId).eq("offer_revision", value.offerRevision)
+      .in("status", ["ready_to_send", "overdue", "awaiting_payment"])
+      .select("id").maybeSingle()
+    if (error || !data) throw new Error("The email was sent, but the renewal status could not be updated. Check Family communications.")
+  }
+
+  await withRenewalOfferLock(supabase, renewal, async () => {
+    const key = renewalOfferEmailKey(renewal.id, value.offerRevision)
+    const { data: existing, error: lookupError } = await supabase
+      .from("email_delivery_log")
+      .select("id,status,recipient_email,subject,body_text,created_at,sent_at")
+      .eq("idempotency_key", key)
+      .maybeSingle()
+    if (lookupError) throw new Error("Could not check the renewal email history")
+
+    if (existing?.sent_at) {
+      await markOfferSent(existing.sent_at)
+      return
+    }
+    if (existing && existing.status !== "pending" && existing.status !== "failed") {
+      throw new Error("This version of the renewal already has an email record. Check the family email history.")
+    }
+    if (existing && (
+      existing.recipient_email !== recipient.data ||
+      existing.subject !== value.subject ||
+      existing.body_text !== value.body ||
+      Date.now() - Date.parse(existing.created_at) >= 23 * 60 * 60 * 1000
+    )) {
+      throw new Error("Check the previous send in Family communications before retrying this offer.")
+    }
+
+    const { data: log, error: logError } = existing
+      ? { data: existing, error: null }
+      : await supabase.from("email_delivery_log").insert({
+          parent_lead_id: value.parentLeadId,
+          learner_id: renewal.learner_id,
+          renewal_case_id: renewal.id,
+          email_kind: "renewal_reminder",
+          recipient_email: recipient.data,
+          idempotency_key: key,
+          subject: value.subject,
+          body_text: value.body,
+          created_by: user.id,
+        }).select("id").single()
+    if (logError || !log) throw new Error("Could not prepare the renewal email. Refresh to check whether it was already sent.")
+
+    let resendEmailId: string
+    try {
+      const result = await getResend().emails.send({
+        from: emailFrom,
+        to: [recipient.data],
+        subject: value.subject,
+        html: emailHtml(value.body),
+        text: value.body,
+      }, { idempotencyKey: key })
+      if (result.error || !result.data?.id) throw new Error("Resend did not confirm the email")
+      resendEmailId = result.data.id
+    } catch {
+      await supabase.from("email_delivery_log")
+        .update({ status: "failed", failed_at: new Date().toISOString(), error_message: "Email submission could not be confirmed" })
+        .eq("id", log.id).in("status", ["pending", "failed"])
+      throw new Error("The renewal email could not be confirmed. Check Family communications before retrying.")
+    }
+
+    const sentAt = new Date().toISOString()
+    const { error: deliveryError } = await supabase.from("email_delivery_log")
+      .update({ status: "sent", resend_email_id: resendEmailId, sent_at: sentAt, failed_at: null, error_message: null })
+      .eq("id", log.id).in("status", ["pending", "failed"])
+    if (deliveryError) throw new Error("The email was submitted, but its delivery record could not be updated. Check Family communications.")
+
+    await markOfferSent(sentAt)
+  })
   revalidatePath("/admin/renewals")
   revalidatePath("/admin/leads")
 }

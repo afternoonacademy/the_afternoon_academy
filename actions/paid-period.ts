@@ -636,7 +636,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       supabase
         .from("standing_placements")
         .select(
-          "id,learner_id,academy_table_id,table_number,weekday,starts_at,duration_minutes,teacher_name,focus,learners!inner(first_name,parent_lead_id)",
+          "id,learner_id,academy_table_id,table_number,weekday,starts_at,duration_minutes,teacher_name,focus,effective_from,effective_to,learners!inner(first_name,parent_lead_id)",
         )
         .eq("status", "active"),
       supabase
@@ -679,9 +679,23 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   )
   const planById = new Map((plans || []).map((plan) => [plan.id, plan]))
 
+  const previouslySaved = Array.isArray(renewalCase.selected_sessions)
+    ? renewalCase.selected_sessions
+    : []
+  const savedByDateAndPlace = new Map(previouslySaved.map((item) =>
+    [`${item.placementId}:${item.date}`, item],
+  ))
+
   const serverSessions: PaidPeriodSession[] = submitted.map((item) => {
     const placement = placementById.get(item.placementId)
-    if (!placement) throw new Error("A selected learner place is no longer active")
+    if (!placement || item.date < placement.effective_from ||
+        (placement.effective_to && item.date > placement.effective_to)) {
+      const saved = savedByDateAndPlace.get(`${item.placementId}:${item.date}`)
+      if (saved?.learnerId === renewalCase.learner_id && !renewalOfferChanged([saved], [item])) {
+        return saved
+      }
+      throw new Error("A selected date is outside the learner’s recurring place")
+    }
     const learner = Array.isArray(placement.learners)
       ? placement.learners[0]
       : placement.learners
@@ -746,9 +760,6 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   })
 
   const uniquePlanIds = [...new Set(serverSessions.map((session) => session.pricePlanId))]
-  const previouslySaved = Array.isArray(renewalCase.selected_sessions)
-    ? renewalCase.selected_sessions
-    : []
   const changed = renewalOfferChanged(previouslySaved, serverSessions)
   if (!changed) return
 

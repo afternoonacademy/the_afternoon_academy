@@ -89,7 +89,7 @@ export default async function AdminLeadsPage() {
     supabaseAdmin
       .from("weekly_table_templates")
       .select(
-        "id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus",
+        "id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,effective_from,effective_to",
       )
       .eq("status", "active")
       .order("weekday")
@@ -451,6 +451,7 @@ export default async function AdminLeadsPage() {
             <RenewalWorkflowTable
               pricePlans={pricePlans || []}
               rows={renewalRows}
+              templates={bookableSlots || []}
             />
           ) : (
             <p className="border-y py-5 text-sm text-muted-foreground">

@@ -223,7 +223,8 @@ export async function releaseRenewalPlace(formData: FormData) {
 
   await withRenewalOfferLock(supabase, current, async () => {
     const releasedAt = new Date().toISOString()
-    const [bookingResult, placementResult, renewalResult] = await Promise.all([
+    const releaseDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date(releasedAt))
+    const [bookingResult, placementResult, datedPlacementResult, renewalResult] = await Promise.all([
       supabase
         .from("accepted_bookings")
         .update({ status: "cancelled" })
@@ -238,11 +239,19 @@ export async function releaseRenewalPlace(formData: FormData) {
         .from("standing_placements")
         .update({
           status: "ended",
-          effective_to: iso(new Date()),
+          effective_to: releaseDate,
           updated_by: user.id,
         })
         .eq("learner_id", value.learnerId)
-        .eq("status", "active"),
+        .eq("status", "active")
+        .lte("effective_from", releaseDate)
+        .or(`effective_to.is.null,effective_to.gt.${releaseDate}`),
+      supabase
+        .from("standing_placements")
+        .update({ status: "ended", updated_by: user.id })
+        .eq("learner_id", value.learnerId)
+        .eq("status", "active")
+        .or(`effective_from.gt.${releaseDate},effective_to.lte.${releaseDate}`),
       supabase
         .from("renewal_cases")
         .update({
@@ -257,10 +266,10 @@ export async function releaseRenewalPlace(formData: FormData) {
         .eq("id", renewalId),
     ])
 
-    if (bookingResult.error || placementResult.error || renewalResult.error) {
+    if (bookingResult.error || placementResult.error || datedPlacementResult.error || renewalResult.error) {
       console.error("Renewal capacity release failed", {
         bookingError: bookingResult.error,
-        placementError: placementResult.error,
+        placementError: placementResult.error ?? datedPlacementResult.error,
         renewalError: renewalResult.error,
       })
       throw new Error("Could not release the learner’s recurring place")
@@ -269,7 +278,7 @@ export async function releaseRenewalPlace(formData: FormData) {
     const { data: futureSessions, error: futureSessionsError } = await supabase
       .from("delivery_sessions")
       .select("id")
-      .gte("service_date", iso(new Date()))
+      .gte("service_date", releaseDate)
 
     if (futureSessionsError) {
       throw new Error(

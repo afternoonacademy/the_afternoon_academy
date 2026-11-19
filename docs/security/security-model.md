@@ -195,3 +195,7 @@ Post-migration advisor reports intentional deny-all RLS without policies for sta
 ## Emailed renewal revisions
 
 The existing Admin-only Server Actions remain the access boundary for renewal planning, email, payment and release. The offer version and operation lease are stored on the existing RLS-protected renewal case. The server validates the family/case, saved version and recipient before using the existing Resend integration. Email audit records remain under the existing service-only access policy.
+
+## Unpaid renewal slot moves
+
+The Admin server action calls an invoker-rights database function executable by the service role. It validates family and learner ownership, quote revision, unpaid status, attendance and slot capacity before writing. The additive migration keeps the existing RLS policies and parent access intact. A database trigger enforces the existing capacity hold when a new accepted booking or legacy place offer overlaps an end-dated standing place.

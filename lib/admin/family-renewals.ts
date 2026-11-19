@@ -144,7 +144,6 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
   const placementsByLearner = new Map<string, PaidPeriodPlacement[]>()
   for (const placement of placements || []) {
     if (
-      placement.effective_from > todayIso ||
       (placement.effective_to && placement.effective_to < todayIso)
     ) {
       continue
@@ -159,6 +158,8 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       learnerId: placement.learner_id,
       learnerName: learner.first_name || "Learner",
       weekday: placement.weekday,
+      effectiveFrom: placement.effective_from,
+      effectiveTo: placement.effective_to,
       academyTableId: placement.academy_table_id,
       tableNumber: placement.table_number,
       seatNumber: placement.seat_number,

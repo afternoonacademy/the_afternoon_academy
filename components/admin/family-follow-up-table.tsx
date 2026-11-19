@@ -153,6 +153,10 @@ export function FamilyFollowUpTable({
         <Badge variant="secondary">{statusLabel(lead.status)}</Badge>
       </div>
 
+      {lead.source?.startsWith("Free first session") ? (
+        <p className="text-sm text-muted-foreground"><strong className="text-foreground">Enquiry source</strong> {lead.source}</p>
+      ) : null}
+
       <div className="grid gap-4 text-sm sm:grid-cols-3">
         <div>
           <p className="font-semibold">Availability</p>

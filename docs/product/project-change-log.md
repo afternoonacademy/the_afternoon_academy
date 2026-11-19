@@ -1,5 +1,10 @@
 # The Afternoon Academy — Project Change Log
 
+## 19 November 2026 — Public first-session offer (preview candidate)
+
+- Opened a first free Homework Club group session to new families with children aged 4–12, subject to suitable availability and staff confirmation. English and Spanish pages are included in the sitemap, linked contextually from the corresponding homepage and omitted from the navigation menu.
+- The enquiry uses the shared family form with offer-specific wording and an optional referral dropdown. Scout Proel 334 is a referral choice. Successful form submissions use the existing Family Pipeline source field. Visits use the site's existing analytics implementation. There is no new analytics payload, automatic booking, payment or migration.
+
 ## 19 November 2026 — Move a recurring weekday from the renewal planner (release candidate)
 
 - Added a recurring slot switch inside the unpaid renewal planner. Moving one weekday regenerates its affected dates while retaining other weekdays, earlier sessions and agreed one-offs.

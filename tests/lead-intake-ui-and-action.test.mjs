@@ -23,6 +23,7 @@ const ui = {
   "@/components/ui/input": { Input: "input" },
   "@/components/ui/label": { Label: "label" },
   "@/components/ui/textarea": { Textarea: "textarea" },
+  "@/lib/leads/free-trial.mjs": createRequire(import.meta.url)("../lib/leads/free-trial.mjs"),
   "@/lib/leads/enquiry-options.mjs": createRequire(import.meta.url)("../lib/leads/enquiry-options.mjs"),
 }
 const { AvailabilityFields } = loadSource("components/forms/availability-fields.tsx", ui)
@@ -82,4 +83,40 @@ test("protected manual lead action writes partial details with null unknown chil
   assert.equal(inserted.get("child_leads")[0].first_name, null)
   assert.equal(inserted.get("child_leads")[0].child_age, null)
   assert.deepEqual(inserted.get("timetable_preferences")[0].preferred_times, [])
+})
+
+test("free first-session enquiries use the shared intake and persist only an approved referral", async () => {
+  const saved = new Map()
+  const submission = {
+    parentName: "Parent Example", email: "example@example.test", phone: "000000000",
+    children: [{ age: 8, firstName: "Example", supportNeeds: ["homework_help"], preferredDays: ["monday"] }],
+  }
+  const actions = loadSource("actions/submit-lead.ts", {
+    "next/navigation": { redirect() {} },
+    "@/lib/leads/free-trial.mjs": ui["@/lib/leads/free-trial.mjs"],
+    "@/lib/validations/lead": { leadFormSchema: { safeParse: () => ({ success: true, data: submission }) } },
+    "@/lib/email/resend": { resend: null },
+    "@/lib/email/templates": {},
+    "@/lib/supabase/admin": { supabaseAdmin: { from(table) { return { insert(value) {
+      saved.set(table, value)
+      return { error: null, select() {
+        return { data: [{ id: "child-test" }], error: null, async single() { return { data: { id: "parent-test" }, error: null } } }
+      } }
+    } } } } },
+  })
+  const form = new FormData()
+  form.set("language", "es")
+  form.set("referral", "scout-proel-334")
+  await actions.submitFreeTrialLead({}, form)
+  assert.equal(saved.get("parent_leads").source, "Free first session · Scout Proel 334")
+  assert.equal(saved.get("parent_leads").status, "new")
+  assert.equal(saved.get("timetable_preferences")[0].child_lead_id, "child-test")
+  await actions.submitLead({}, form)
+  assert.equal(saved.get("parent_leads").source, "landing_page_es")
+
+  saved.clear()
+  submission.children[0].age = 13
+  const result = await actions.submitFreeTrialLead({}, form)
+  assert.equal(result.success, false)
+  assert.equal(saved.size, 0)
 })

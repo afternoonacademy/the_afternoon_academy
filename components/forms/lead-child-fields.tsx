@@ -1,5 +1,7 @@
 "use client"
 
+import { isFreeTrialSupport } from "@/lib/leads/free-trial.mjs"
+
 import { AvailabilityFields } from "@/components/forms/availability-fields"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -48,8 +50,10 @@ export function LeadChildFields({
   onChange,
   onRemove,
   optional = false,
+  freeTrial = false,
 }: {
   optional?: boolean
+  freeTrial?: boolean
   child: LeadChildDraft
   index: number
   language: "en" | "es"
@@ -105,7 +109,7 @@ export function LeadChildFields({
           <Input
             id={"child-" + child.key + "-age"}
             min={optional ? "3" : "4"}
-            max={optional ? "21" : "18"}
+            max={freeTrial ? "12" : optional ? "21" : "18"}
             type="number"
             value={child.age}
             onChange={(event) => set("age", event.target.value)}
@@ -167,7 +171,7 @@ export function LeadChildFields({
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {[...supportNeeds, ...child.supportNeeds.filter((value) => !supportNeeds.some((item) => item.value === value)).map((value) => ({ value, en: value, es: value }))].map((item) => (
+          {[...supportNeeds, ...child.supportNeeds.filter((value) => !supportNeeds.some((item) => item.value === value)).map((value) => ({ value, en: value, es: value }))].filter((item) => !freeTrial || isFreeTrialSupport(item.value)).map((item) => (
             <label key={item.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
               <Checkbox
                 checked={child.supportNeeds.includes(item.value)}

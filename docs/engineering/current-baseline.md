@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Public free first session — 19 November 2026 preview candidate
+
+The English and Spanish offer landing pages reuse the public family enquiry and protected intake boundary. The server resolves the selected referral to a fixed label in the existing lead source column. Visits are measured by page path using existing analytics. Existing staff confirmation and one-off trial operations apply.
+
 ## Mobile planner correction candidate — 18 November 2026
 
 Family Pipeline recurring table/time and price-plan fields are constrained to their card width with a single mobile grid column and existing desktop columns. Presentation only. Local 154 tests, typecheck, targeted lint, synthetic-settings build and separate review passed. Mobile Safari/authenticated preview acceptance remains pending because local browser launch was blocked. Candidate until accepted and merged.

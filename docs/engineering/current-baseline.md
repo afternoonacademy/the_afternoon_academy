@@ -273,3 +273,7 @@ Applied staff_magic_link_signup to the confirmed TAA Supabase project before app
 Production application deployment and live-page smoke checks follow this documentation/merge. Hosted email receipt, cross-device session and recipient sign-in remain unverified until the recipient completes them; never claim those completed. No learner/payment/attendance data changed. Retain additive schema and invitation history on application rollback. Wednesday correction documentation from PR #33 is incorporated.
 
 Post-migration advisor reports intentional deny-all RLS without policies for staff_invitations (service-only table), alongside existing mutable-search-path/extension/password-protection warnings; do not add public policies to silence the service-only information notice. Existing remediation references remain in docs/security/security-model.md.
+
+## Emailed renewal revisions (release candidate)
+
+The Family Pipeline keeps emailed, unpaid renewals in Awaiting payment while Admin revises exact dates and price plans. Each material change advances the saved offer revision. Explicit send links a new delivery record to the existing case and leaves the previous correspondence intact. Saves, sends, payment and release coordinate on the renewal row to prevent overlapping changes. The additive migration must precede application activation.

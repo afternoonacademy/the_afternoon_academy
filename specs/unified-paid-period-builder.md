@@ -217,3 +217,11 @@ The reusable initial and renewal email bodies are stored in `academy_email_templ
 `{{service_dates}}` is a compact grouped summary containing session/price-plan heading plus each date and start time. Initial pre-agreed exceptions are shown normally; genuine renewal replacements may include `· replacement`.
 
 `{{payment_details}}` contains only configured business/account/IBAN details. `{{payment_reference}}` is a separate value derived from learner/child name plus the covered month/year so admins may position or remove it in the stored template.
+
+## Revising an emailed, unpaid renewal — November 2026
+
+- In Family Pipeline → Renewals, **Edit renewal plan** reopens the saved exact dates and price plans after an offer has been emailed. Admin can add/remove recurring or one-off dates, retain dated teaching-time options, and save a recalculated quote. Replacement dates can extend beyond the previously selected dates. Added dates use the price plan selected for that place.
+- Saving changed offer terms keeps **Contacted — awaiting payment** and the standing capacity hold. The current quote is marked for review and explicit **Email revised offer**. Existing email history stays attached to the same renewal case.
+- The saved revision is checked on edit and send. Each sent revision has its own delivery record and provider idempotency key. A provider-confirmed send is reconciled from its log if recording the sent revision failed. Ambiguous retries must use the same recipient and content within the provider idempotency window.
+- Closures, capacity, one price plan per placement, Admin-only access and explicit cleared payment remain enforced. Payment or release competes with edit/send for the same case. An interrupted payment must be retried against the same saved terms before further changes. Closed and paid offers cannot be edited.
+- Acceptance check with synthetic data: send an original offer, add/remove dates and change price, save, check standing capacity and original email history, review/send the revision, check duplicate/stale requests, then confirm payment against the final terms. Verify mobile and desktop. Apply the additive migration before activating the application. Application rollback retains the schema and email history.

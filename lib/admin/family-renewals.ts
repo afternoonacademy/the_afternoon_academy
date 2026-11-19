@@ -4,6 +4,7 @@ import type {
   PaidPeriodSession,
 } from "@/lib/paid-period"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
+import { hasSentRenewalOffer, renewalOfferEmailKey } from "@/lib/admin/renewal-offer-revisions.mjs"
 import { shouldShowRenewal } from "@/lib/admin/renewal-eligibility.mjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
@@ -50,9 +51,13 @@ export type FamilyRenewalRow = {
   proposedAmountCents: number | null
   proposedPeriodStart: string | null
   proposedPeriodEnd: string | null
+  offerRevision: number
+  revisedOfferNeedsEmail: boolean
+  paymentRecordingStarted: boolean
   emailSentAt: string | null
   draftSubject: string | null
   draftBody: string | null
+  emailDeliveryForCurrentOffer: boolean
   emailDeliveryStatus: string | null
   emailDeliveryDetail: string | null
   emailDeliveryAt: string | null
@@ -84,7 +89,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     supabaseAdmin
       .from("renewal_cases")
       .select(
-        "id,learner_id,parent_lead_id,source_payment_entitlement_id,status,email_sent_at,proposed_period_start,proposed_period_end,proposed_amount_cents,selected_sessions,draft_subject,draft_body",
+        "id,learner_id,parent_lead_id,source_payment_entitlement_id,status,offer_revision,sent_offer_revision,offer_payment_started_at,email_sent_at,proposed_period_start,proposed_period_end,proposed_amount_cents,selected_sessions,draft_subject,draft_body",
       )
       .not("learner_id", "is", null)
       .in("status", ["ready_to_send", "awaiting_payment", "overdue"]),
@@ -114,7 +119,7 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     supabaseAdmin
       .from("email_delivery_log")
       .select(
-        "renewal_case_id,status,delivery_detail,error_message,sent_at,delivered_at,bounced_at,failed_at,created_at",
+        "renewal_case_id,idempotency_key,status,delivery_detail,error_message,sent_at,delivered_at,bounced_at,failed_at,created_at",
       )
       .eq("email_kind", "renewal_reminder")
       .order("created_at", { ascending: false }),
@@ -199,6 +204,17 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
     }
   }
 
+  // A partial payment may have written its new entitlement already. Keep
+  // the original case visible until the same saved payment is fully recorded.
+  for (const renewal of cases || []) {
+    if (!renewal.offer_payment_started_at) continue
+    const source = entitlements?.find((entitlement) =>
+      entitlement.learner_id === renewal.learner_id &&
+      entitlement.payment_entitlement_id === renewal.source_payment_entitlement_id,
+    )
+    if (source) latestByLearner.set(source.learner_id, source)
+  }
+
   const rows: FamilyRenewalRow[] = []
   for (const entitlement of latestByLearner.values()) {
     const renewal = casesByLearnerSource.get(
@@ -269,9 +285,17 @@ export async function loadFamilyRenewals(): Promise<FamilyRenewalRow[]> {
       proposedAmountCents: renewal?.proposed_amount_cents || null,
       proposedPeriodStart: renewal?.proposed_period_start || null,
       proposedPeriodEnd: renewal?.proposed_period_end || null,
+      offerRevision: renewal?.offer_revision ?? 0,
+      revisedOfferNeedsEmail:
+        status === "renewal_contacted" && Boolean(renewal && !hasSentRenewalOffer(renewal)),
+      paymentRecordingStarted: Boolean(renewal?.offer_payment_started_at),
       emailSentAt: renewal?.email_sent_at || null,
       draftSubject: currentEmailDraft?.subject || renewal?.draft_subject || null,
       draftBody: currentEmailDraft?.body || renewal?.draft_body || null,
+      emailDeliveryForCurrentOffer: Boolean(
+        renewal && latestDeliveryByRenewal.get(renewal.id)?.idempotency_key ===
+          renewalOfferEmailKey(renewal.id, renewal.offer_revision),
+      ),
       emailDeliveryStatus: renewal?.id
         ? latestDeliveryByRenewal.get(renewal.id)?.status || null
         : null,

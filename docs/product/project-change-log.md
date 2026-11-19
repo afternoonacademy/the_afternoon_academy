@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 19 November 2026 — Edit and resend unpaid renewal offers (release candidate)
+
+- Added editing after email to the existing Family Pipeline renewal planner. Saving revised dates or pricing keeps the renewal in Awaiting payment and prepares an updated offer for explicit review and send.
+- Added case-level offer revision tracking, per-revision email deduplication and a bounded operation lease against concurrent edits, sends, releases and payments. Existing send keys and historical correspondence are preserved. A payment interrupted after recording starts can be retried against the same terms.
+- Corrected a production renewal accidentally closed while preparing changed dates. Checked the original seats were available and restored the unpaid renewal plus two original recurring holds in one guarded transaction. Verified the same six-session, €150 offer and its original send record. No payment or email was created.
+- 158 automated tests, TypeScript, changed-file ESLint and the synthetic-settings production build passed. Independent review found no remaining blockers in the sent-renewal workflow. Full lint reports five errors in untouched files.
+- The additive renewal migration must run before application activation. Preview with synthetic records and founder acceptance are required before release.
+
 ## 18 November 2026 — Family Pipeline mobile dropdown correction
 
 - Constrained recurring table/time and price-plan native selects to their card width using shrinkable grid containers and explicit full/max widths. Preserved desktop two-column layout, booking state/options/validation and permissions. No migration or data changes.

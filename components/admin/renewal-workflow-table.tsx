@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import {
   prepareExactRenewalDraft,
@@ -115,6 +115,7 @@ export function RenewalWorkflowTable({
                     <tr key={row.learnerId + "-details"}>
                       <td className="bg-muted/20 px-4 py-5" colSpan={5}>
                         <RenewalActions
+                          key={row.caseId + ":" + row.offerRevision + ":" + row.paymentRecordingStarted}
                           onComplete={() => setExpanded(null)}
                           pricePlans={pricePlans}
                           row={row}
@@ -161,6 +162,7 @@ export function RenewalWorkflowTable({
               {open ? (
                 <div className="mt-4 border-t pt-4">
                   <RenewalActions
+                    key={row.caseId + ":" + row.offerRevision + ":" + row.paymentRecordingStarted}
                     onComplete={() => setExpanded(null)}
                     pricePlans={pricePlans}
                     row={row}
@@ -185,16 +187,9 @@ function RenewalActions({
   onComplete: () => void
 }) {
   const [editing, setEditing] = useState(row.status === "needs_renewal")
-  const [emailEditing, setEmailEditing] = useState(false)
-  const [emailSubject, setEmailSubject] = useState(row.draftSubject || "")
-  const [emailBody, setEmailBody] = useState(row.draftBody || "")
-
-  useEffect(() => {
-    if (!emailEditing) {
-      setEmailSubject(row.draftSubject || "")
-      setEmailBody(row.draftBody || "")
-    }
-  }, [emailEditing, row.draftBody, row.draftSubject])
+  const [emailDraft, setEmailDraft] = useState<{ subject: string; body: string } | null>(null)
+  const emailSubject = emailDraft?.subject ?? row.draftSubject ?? ""
+  const emailBody = emailDraft?.body ?? row.draftBody ?? ""
 
   const nextStart = new Date(row.lastPaidServiceDate + "T12:00:00Z")
   nextStart.setUTCDate(nextStart.getUTCDate() + 1)
@@ -207,6 +202,7 @@ function RenewalActions({
     row.proposedAmountCents ??
     row.selectedSessions.reduce((sum, session) => sum + session.priceCents, 0)
 
+  const showEmail = !row.paymentRecordingStarted && (row.status === "renewal_planned" || row.revisedOfferNeedsEmail)
   const firstPlacement = row.placements[0]
   const recurringDays = [
     ...new Set(
@@ -295,7 +291,7 @@ function RenewalActions({
         </section>
       ) : null}
 
-      {row.caseId && (editing || !row.selectedSessions.length) ? (
+      {row.caseId && !row.paymentRecordingStarted && (editing || !row.selectedSessions.length) ? (
         <section className="rounded-xl border bg-background p-4">
           <div className="mb-4">
             <div className="flex items-center gap-1.5">
@@ -309,22 +305,31 @@ function RenewalActions({
           </div>
           <SaveActionForm
             action={prepareExactRenewalDraft}
-            onSuccess={() => setEditing(false)}
+            onSuccess={() => {
+              setEmailDraft(null)
+              setEditing(false)
+            }}
             submitLabel="Record renewal plan"
             successMessage="Renewal plan saved"
           >
             <input name="caseId" type="hidden" value={row.caseId} />
             <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+            <input name="offerRevision" type="hidden" value={row.offerRevision} />
             <PaidPeriodBuilder
               allowPricePlanChange
               closures={row.closures}
               initialSessions={row.selectedSessions}
               placements={row.placements}
               pricePlans={pricePlans}
-              purpose="plan"
+              purpose="renewal"
               suggestionEnd={suggestionEnd}
               suggestionStart={suggestionStart}
             />
+            {editing ? (
+              <Button onClick={() => setEditing(false)} type="button" variant="outline">
+                Cancel editing
+              </Button>
+            ) : null}
           </SaveActionForm>
         </section>
       ) : null}
@@ -356,7 +361,7 @@ function RenewalActions({
                 ))}
               </div>
             </div>
-            {row.status !== "renewal_contacted" ? (
+            {!row.paymentRecordingStarted ? (
               <Button
                 onClick={() => setEditing(true)}
                 size="sm"
@@ -372,17 +377,24 @@ function RenewalActions({
 
       {row.caseId &&
       row.selectedSessions.length &&
-      row.status === "renewal_planned" &&
+      showEmail &&
       !editing ? (
         <section className="rounded-xl border bg-background p-4">
           <div className="flex items-center gap-1.5">
-            <p className="font-semibold">2 · Contact parent</p>
+            <p className="font-semibold">
+              {row.revisedOfferNeedsEmail ? "2 · Send revised offer" : "2 · Contact parent"}
+            </p>
             <InfoTip label="About contacting the parent">
               Send the Academy renewal email generated from the saved renewal
               template and these exact dates. A successful send changes this
               learner to Contacted — awaiting payment.
             </InfoTip>
           </div>
+          {row.revisedOfferNeedsEmail ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              The saved dates or price have changed since the last email. Review the updated offer before sending it.
+            </p>
+          ) : null}
           <div className="mt-4 max-w-3xl space-y-4">
             <div className="rounded-xl border bg-muted/10">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3">
@@ -395,22 +407,22 @@ function RenewalActions({
                   </p>
                 </div>
                 <Button
-                  onClick={() => setEmailEditing((value) => !value)}
+                  onClick={() => setEmailDraft(emailDraft ? null : { subject: emailSubject, body: emailBody })}
                   size="sm"
                   type="button"
                   variant="outline"
                 >
-                  {emailEditing ? "Cancel edit" : "Edit email"}
+                  {emailDraft ? "Cancel edit" : "Edit email"}
                 </Button>
               </div>
 
-              {emailEditing ? (
+              {emailDraft ? (
                 <div className="space-y-4 p-4">
                   <label className="grid gap-1.5 text-sm font-medium">
                     Subject
                     <Input
                       maxLength={200}
-                      onChange={(event) => setEmailSubject(event.target.value)}
+                      onChange={(event) => setEmailDraft({ subject: event.target.value, body: emailBody })}
                       value={emailSubject}
                     />
                   </label>
@@ -419,7 +431,7 @@ function RenewalActions({
                     <Textarea
                       className="min-h-72 whitespace-pre-wrap"
                       maxLength={12000}
-                      onChange={(event) => setEmailBody(event.target.value)}
+                      onChange={(event) => setEmailDraft({ subject: emailSubject, body: event.target.value })}
                       value={emailBody}
                     />
                   </label>
@@ -453,78 +465,81 @@ function RenewalActions({
             <SaveActionForm
               action={sendRenewalEmail}
               onSuccess={onComplete}
-              submitLabel="Email renewal to parent"
+              submitLabel={row.revisedOfferNeedsEmail ? "Email revised offer" : "Email renewal to parent"}
               successMessage="Renewal sent — awaiting payment"
             >
               <input name="caseId" type="hidden" value={row.caseId} />
               <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
+              <input name="offerRevision" type="hidden" value={row.offerRevision} />
               <input name="subject" type="hidden" value={emailSubject} />
               <input name="body" type="hidden" value={emailBody} />
             </SaveActionForm>
 
-            <div className="rounded-xl border bg-muted/10 p-4">
-              <div className="flex items-center gap-1.5">
-                <p className="font-semibold">Payment already received?</p>
-                <InfoTip label="About skipping the renewal email">
-                  Use this when the parent has already paid before a renewal
-                  reminder was needed. No renewal email is sent or logged.
-                </InfoTip>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Confirm the cleared transfer and activate the saved paid dates
-                directly.
-              </p>
-              <div className="mt-4">
-                <SaveActionForm
-                  action={recordExactRenewalPayment}
-                  onSuccess={onComplete}
-                  submitLabel="Payment already received"
-                  successMessage="Renewal payment confirmed"
-                >
-                  <input name="caseId" type="hidden" value={row.caseId} />
-                  <input
-                    name="parentLeadId"
-                    type="hidden"
-                    value={row.parentLeadId}
-                  />
-                  <input
-                    name="selectedSessions"
-                    type="hidden"
-                    value={JSON.stringify(row.selectedSessions)}
-                  />
-                  <input
-                    name="note"
-                    type="hidden"
-                    value="Payment received before renewal email was required"
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor={"renewal-received-" + row.caseId}>Actual payment received date</Label>
-                    <Input
-                      id={"renewal-received-" + row.caseId}
-                      defaultValue={iso(new Date())}
-                      name="receivedOn"
-                      required
-                      type="date"
+            {row.status === "renewal_planned" ? (
+              <div className="rounded-xl border bg-muted/10 p-4">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold">Payment already received?</p>
+                  <InfoTip label="About skipping the renewal email">
+                    Use this when the parent has already paid before a renewal
+                    reminder was needed. No renewal email is sent or logged.
+                  </InfoTip>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Confirm the cleared transfer and activate the saved paid dates
+                  directly.
+                </p>
+                <div className="mt-4">
+                  <SaveActionForm
+                    action={recordExactRenewalPayment}
+                    onSuccess={onComplete}
+                    submitLabel="Payment already received"
+                    successMessage="Renewal payment confirmed"
+                  >
+                    <input name="caseId" type="hidden" value={row.caseId} />
+                    <input
+                      name="parentLeadId"
+                      type="hidden"
+                      value={row.parentLeadId}
                     />
-                    <p className="text-xs text-muted-foreground">Change this to the date the bank transfer cleared. Today is only the default.</p>
-                  </div>
-                  <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
-                    <input className="mt-0.5" required type="checkbox" />
-                    <span>
-                      I confirm the payment has cleared for the planned amount
-                      and dates shown above.
-                    </span>
-                  </label>
-                </SaveActionForm>
+                    <input
+                      name="selectedSessions"
+                      type="hidden"
+                      value={JSON.stringify(row.selectedSessions)}
+                    />
+                    <input
+                      name="note"
+                      type="hidden"
+                      value="Payment received before renewal email was required"
+                    />
+                    <div className="space-y-2">
+                      <Label htmlFor={"renewal-received-" + row.caseId}>Actual payment received date</Label>
+                      <Input
+                        id={"renewal-received-" + row.caseId}
+                        defaultValue={iso(new Date())}
+                        name="receivedOn"
+                        required
+                        type="date"
+                      />
+                      <p className="text-xs text-muted-foreground">Change this to the date the bank transfer cleared. Today is only the default.</p>
+                    </div>
+                    <label className="flex items-start gap-3 rounded-md border bg-background p-3 text-sm">
+                      <input className="mt-0.5" required type="checkbox" />
+                      <span>
+                        I confirm the payment has cleared for the planned amount
+                        and dates shown above.
+                      </span>
+                    </label>
+                  </SaveActionForm>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </section>
       ) : null}
 
       {row.caseId &&
       row.selectedSessions.length &&
-      row.status === "renewal_contacted" ? (
+      (row.status === "renewal_contacted" || row.paymentRecordingStarted) && !editing ? (
         <section className="rounded-xl border bg-background p-4">
           {row.emailDeliveryStatus ? (
             <div
@@ -541,7 +556,7 @@ function RenewalActions({
             >
               <div>
                 <p className="font-semibold">
-                  Parent email ·{" "}
+                  {row.emailDeliveryForCurrentOffer ? "Parent email" : "Previous offer email"} ·{" "}
                   {row.emailDeliveryStatus === "delivered"
                     ? "Delivered"
                     : row.emailDeliveryStatus === "bounced"
@@ -552,7 +567,7 @@ function RenewalActions({
                           ? "Suppressed"
                         : row.emailDeliveryStatus === "delayed"
                           ? "Delivery delayed"
-                          : "Sent"}
+                          : row.emailDeliveryStatus === "pending" ? "Submission pending" : "Sent"}
                 </p>
                 {row.emailDeliveryDetail ? (
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -579,6 +594,12 @@ function RenewalActions({
               after the planned amount has cleared.
             </InfoTip>
           </div>
+
+          {row.paymentRecordingStarted ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Payment recording started. Retry against these saved dates and amount.
+            </p>
+          ) : null}
 
           <div className="mt-4 rounded-lg border bg-muted/20 p-4">
             <p className="font-semibold">{row.learnerName}</p>
@@ -635,7 +656,8 @@ function RenewalActions({
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-destructive/20 bg-background p-4">
+      {!row.paymentRecordingStarted ? (
+        <section className="rounded-xl border border-destructive/20 bg-background p-4">
           <div className="flex items-center gap-1.5">
             <p className="font-semibold">Release recurring place</p>
             <InfoTip label="About releasing recurring capacity">
@@ -665,7 +687,8 @@ function RenewalActions({
               />
             </SaveActionForm>
           </div>
-        </section>
+          </section>
+      ) : null}
     </div>
   )
 }

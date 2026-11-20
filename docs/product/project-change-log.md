@@ -1,5 +1,11 @@
 # The Afternoon Academy — Project Change Log
 
+## 20 November 2026 — Public footer social links (preview candidate)
+
+- Added Facebook and Instagram icon links beneath the brand in the shared English/Spanish public footer, using the founder-supplied profile URLs.
+- Links open a new tab with opener/referrer protection, localised accessible labels, keyboard focus indicators and 44px tap targets. Icons are inline SVG; no social SDK, embed, new dependency or backend/data change.
+- Shared footer coverage includes home, contact, location, discovery guides and free-session pages. Local verification: 167 existing tests, standalone TypeScript, changed-file ESLint, synthetic-settings production build and rendered-footer checks for both locales pass. Independent review found no issues. One coherent code/documentation push is planned; founder preview acceptance remains the release gate.
+
 ## 20 November 2026 — Broaden the free first session enquiry
 
 - Reworded both trial landing pages for families across school systems and introduced the Year 10–11 IGCSE Chemistry Focus Group. The same group-session enquiry now accepts older students and IGCSE Chemistry requests, subject to staff confirming a suitable place. A-level provision remains a future possibility.

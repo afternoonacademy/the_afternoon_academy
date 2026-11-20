@@ -18,6 +18,8 @@ const copy = {
     timetable: "Apply for a place",
     cta: "Apply for a place",
     staffLogin: "Staff login",
+    socials: "Follow us",
+    newTab: "opens in a new tab",
     switchLabel: "Español",
     defaultSwitchHref: "/es",
     contactHref: "/contact",
@@ -36,6 +38,8 @@ const copy = {
     timetable: "Solicita una plaza",
     cta: "Solicita una plaza",
     staffLogin: "Acceso equipo",
+    socials: "Síguenos",
+    newTab: "se abre en una pestaña nueva",
     switchLabel: "English",
     defaultSwitchHref: "/",
     contactHref: "/es/contact",
@@ -132,6 +136,34 @@ export function PublicFooter({
           </Link>
 
           <p>{t.tagline}</p>
+          <nav aria-label={t.socials} className="flex items-center gap-2 pt-1">
+            <a
+              href="https://www.facebook.com/profile.php?id=61595604354227"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Facebook (${t.newTab})`}
+              title="Facebook"
+              className="inline-flex size-11 items-center justify-center rounded-full border transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+              </svg>
+            </a>
+            <a
+              href="https://www.instagram.com/theafternoonacademy/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Instagram (${t.newTab})`}
+              title="Instagram"
+              className="inline-flex size-11 items-center justify-center rounded-full border transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+              </svg>
+            </a>
+          </nav>
         </div>
 
         <nav className="flex flex-wrap gap-4">

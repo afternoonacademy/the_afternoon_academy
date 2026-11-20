@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { CalendarDays, CircleAlert, RotateCcw, X } from "lucide-react"
 
+import { matchesCurrentRenewalPlace, renewalDateKey } from "@/lib/admin/renewal-dated-sessions.mjs"
 import { parseSessionPrice } from "@/lib/dated-session-pricing.mjs"
 import { InfoTip } from "@/components/admin/info-tip"
 
@@ -116,6 +117,7 @@ export function PaidPeriodBuilder({
   const [pendingPlans, setPendingPlans] = useState<Record<string, string>>({})
   const summary = paidPeriodSummary(sessions)
   const hasInvalidPrice = sessions.some((session) => !Number.isInteger(session.priceCents))
+  const savedRenewalDateKeys = new Set(initialSessions.map(renewalDateKey))
   const hasPendingPlan = sessions.some((session) => pendingPlans[sessionKey(session)])
 
   const learnerGroups = useMemo(() => {
@@ -667,8 +669,9 @@ export function PaidPeriodBuilder({
                             (item) =>
                               item.placementId === session.placementId,
                           )
-                          const historicalPlace = purpose === "renewal" && (!placement ||
-                            (placement.effectiveTo && session.date > placement.effectiveTo))
+                          const historicalPlace = purpose === "renewal" && !matchesCurrentRenewalPlace(session, placement)
+                          const canEditPrice = purpose !== "payment" &&
+                            (!historicalPlace || savedRenewalDateKeys.has(renewalDateKey(session)))
                           const key = sessionKey(session)
                           const plan = pricePlans.find((item) => item.id === session.pricePlanId)
                           const pendingPlan = pricePlans.find((item) => item.id === pendingPlans[key])
@@ -688,6 +691,7 @@ export function PaidPeriodBuilder({
                               <td className="px-3 py-2 text-muted-foreground">
                                 {placement ? `${days[placement.weekday]} · ` : ""}
                                 Table {session.tableNumber} · {session.startsAt}
+                                {historicalPlace ? <p className="mt-1 text-xs">Saved slot</p> : null}
                                 {purpose !== "payment" && !historicalPlace ? (
                                   <div className="mt-2 space-y-1">
                                     <select
@@ -723,7 +727,7 @@ export function PaidPeriodBuilder({
                                 )}
                               </td>
                               <td className="min-w-48 space-y-2 px-3 py-2">
-                                {purpose !== "payment" && !historicalPlace && pricePlans.length ? (
+                                {canEditPrice && pricePlans.length ? (
                                   <>
                                     <select
                                       aria-label={`Service for ${dateLabel(session.date)}`}

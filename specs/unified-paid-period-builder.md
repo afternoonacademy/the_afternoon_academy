@@ -242,3 +242,5 @@ Verify with synthetic bookings that Thursday moves to Friday while Tuesday and h
 Each date has its own catalogue service and copied integer-cent rate. Newly added dates use the standing place rate. Admin can edit a date, switch service, keep an agreed rate or use the selected service default. A blank, negative or invalid rate is rejected. An explicit zero represents a free session.
 
 Planning, email review and cleared payment use the saved exact terms. Catalogue changes do not reprice saved dates or change historical email. Operations projects only the service name onto the learner's seat. A dated exception never changes the standing rate or recurs in the next offer. The future paid-session editor uses the existing balance audit and keeps the original received amount.
+
+An unpaid renewal can keep saved dated slots that differ from the current standing placement. Admin can revise the saved date’s service or rate while its original slot and time override remain intact. New dates must match a current placement. Rejected saves keep the planner open and explain what to change.

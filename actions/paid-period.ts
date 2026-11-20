@@ -5,8 +5,9 @@ import { z } from "zod"
 
 import { writeFamilyPaidSessions } from "@/lib/admin/write-family-paid-sessions"
 import { withRenewalOfferLock } from "@/lib/admin/renewal-offer-lock"
+import { RenewalDateError, renewalDateKey, resolveRenewalDate } from "@/lib/admin/renewal-dated-sessions.mjs"
 import { renewalOfferChanged } from "@/lib/admin/renewal-offer-revisions.mjs"
-import { datedSessionPrice, MAX_SESSION_PRICE_CENTS } from "@/lib/dated-session-pricing.mjs"
+import { MAX_SESSION_PRICE_CENTS } from "@/lib/dated-session-pricing.mjs"
 import { withFamilyBookingLock } from "@/lib/admin/family-booking-lock"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { paymentEligibleBookingStatuses } from "@/lib/admin/lead-planning-lifecycle.mjs"
@@ -581,15 +582,35 @@ export async function recordExactManualEnrolment(
 
 export async function prepareExactRenewalDraft(formData: FormData) {
   const { user } = await requireAdmin()
+  try {
+    await saveExactRenewalDraft(formData, user.id)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof RenewalDateError) return { error: error.message }
+    if (error instanceof Error &&
+        /^(Table \d+ at \d{2}:\d{2} is full|\w+,? \d+ \w+ is closed:)/.test(error.message)) {
+      return { error: error.message }
+    }
+    console.error("Renewal plan save failed", { errorType: error instanceof Error ? error.name : "unknown" })
+    return { error: "The renewal plan could not be saved. Your edits are still open. Try again." }
+  }
+}
+
+async function saveExactRenewalDraft(formData: FormData, userId: string) {
   const parsed = renewalDraftSchema.safeParse({
     caseId: formData.get("caseId"),
     parentLeadId: formData.get("parentLeadId"),
     selectedSessions: formData.get("selectedSessions"),
     offerRevision: formData.get("offerRevision") ?? undefined,
   })
-  if (!parsed.success) throw new Error("Choose the exact sessions for this renewal")
+  if (!parsed.success) throw new RenewalDateError("Choose the exact sessions for this renewal")
 
-  const submitted = parseSessions(parsed.data.selectedSessions)
+  let submitted: PaidPeriodSession[]
+  try {
+    submitted = parseSessions(parsed.data.selectedSessions)
+  } catch {
+    throw new RenewalDateError("Check the selected dates and enter a valid price on each date.")
+  }
   const supabase = supabaseService()
   const [
     { data: parent },
@@ -627,17 +648,17 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     ])
 
   if (!parent || !renewalCase)
-    throw new Error("This renewal is no longer available")
+    throw new RenewalDateError("This renewal is no longer available")
   if (renewalCase.status === "renewed" || renewalCase.status === "not_renewing")
-    throw new Error("This renewal is already complete")
+    throw new RenewalDateError("This renewal is already complete")
   if (!renewalCase.learner_id)
-    throw new Error("This historical family renewal must be completed from the legacy renewal screen")
+    throw new RenewalDateError("This historical family renewal must be completed from the legacy renewal screen")
 
   if (renewalCase.offer_payment_started_at) {
-    throw new Error("Payment recording has started. Finish recording payment against the saved offer.")
+    throw new RenewalDateError("Payment recording has started. Finish recording payment against the saved offer.")
   }
   if (renewalCase.offer_revision !== parsed.data.offerRevision) {
-    throw new Error("This renewal changed. Refresh before editing it again.")
+    throw new RenewalDateError("This renewal changed. Refresh before editing it again.")
   }
 
   const placementById = new Map(
@@ -658,56 +679,32 @@ export async function prepareExactRenewalDraft(formData: FormData) {
   const previouslySaved = Array.isArray(renewalCase.selected_sessions)
     ? renewalCase.selected_sessions
     : []
-  const savedByDateAndPlace = new Map(previouslySaved.map((item) =>
-    [`${item.placementId}:${item.date}`, item],
-  ))
-
+  const savedByDateAndPlace = new Map(previouslySaved.map((item) => [
+    renewalDateKey(item), item,
+  ]))
   const serverSessions: PaidPeriodSession[] = submitted.map((item) => {
     const placement = placementById.get(item.placementId)
-    if (!placement || item.date < placement.effective_from ||
-        (placement.effective_to && item.date > placement.effective_to)) {
-      const saved = savedByDateAndPlace.get(`${item.placementId}:${item.date}`)
-      if (saved?.learnerId === renewalCase.learner_id && !renewalOfferChanged([saved], [item])) {
-        return saved
-      }
-      throw new Error("A selected date is outside the learner’s recurring place")
-    }
-    const learner = Array.isArray(placement.learners)
-      ? placement.learners[0]
-      : placement.learners
-    if (
-      item.learnerId !== placement.learner_id ||
-      item.academyTableId !== placement.academy_table_id ||
-      item.tableNumber !== placement.table_number ||
-      item.startsAt !== placement.starts_at.slice(0, 5)
-    ) {
-      throw new Error("A selected session no longer matches the learner’s standing place")
-    }
-    return {
-      learnerId: placement.learner_id,
-      learnerName: learner?.first_name || "Learner",
-      childLeadId: null,
-      placementId: placement.id,
-      date: item.date,
-      academyTableId: placement.academy_table_id,
-      tableNumber: placement.table_number,
-      seatNumber: null,
-      startsAt: placement.starts_at.slice(0, 5),
-      actualStartsAt: item.timeTbc ? undefined : item.actualStartsAt,
-      timeTbc: Boolean(item.timeTbc),
-      durationMinutes: placement.duration_minutes,
-      teacherName: placement.teacher_name,
-      focus: placement.focus,
-      ...datedSessionPrice(
-        item,
-        savedByDateAndPlace.get(`${item.placementId}:${item.date}`),
-        planById.get(item.pricePlanId),
-      ),
-      replacement: item.replacement || new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday,
-      sessionOrigin: item.replacement || new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday
-        ? "replacement"
-        : "recurring",
-    }
+    const learner = Array.isArray(placement?.learners) ? placement.learners[0] : placement?.learners
+    return resolveRenewalDate({
+      submitted: item,
+      saved: savedByDateAndPlace.get(renewalDateKey(item)),
+      learnerId: renewalCase.learner_id,
+      plan: planById.get(item.pricePlanId),
+      placement: placement && {
+        placementId: placement.id,
+        learnerId: placement.learner_id,
+        learnerName: learner?.first_name || "Learner",
+        effectiveFrom: placement.effective_from,
+        effectiveTo: placement.effective_to,
+        academyTableId: placement.academy_table_id,
+        tableNumber: placement.table_number,
+        startsAt: placement.starts_at,
+        durationMinutes: placement.duration_minutes,
+        teacherName: placement.teacher_name,
+        weekday: placement.weekday,
+        focus: placement.focus,
+      },
+    })
   })
 
   await assertDatesOpen(serverSessions, supabase)
@@ -715,7 +712,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
 
   const summary = paidPeriodSummary(serverSessions)
   if (!summary.periodStart || !summary.periodEnd)
-    throw new Error("Choose at least one service date")
+    throw new RenewalDateError("Choose at least one service date")
 
   const emailDraft = renderRenewalEmail({
     parentName: parent.parent_name,
@@ -741,7 +738,7 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       selected_session_count: serverSessions.length,
       draft_subject: emailDraft.subject,
       draft_body: emailDraft.body,
-      updated_by: user.id,
+      updated_by: userId,
     })
     .eq("id", parsed.data.caseId)
     .eq("parent_lead_id", parsed.data.parentLeadId)
@@ -751,8 +748,8 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     .or(`offer_operation_until.is.null,offer_operation_until.lt.${new Date().toISOString()}`)
     .select("id")
     .maybeSingle()
-  if (error) throw new Error("Could not save the exact renewal selection")
-  if (!saved) throw new Error("This renewal changed. Refresh before editing it again.")
+  if (error) throw new RenewalDateError("Could not save the exact renewal selection")
+  if (!saved) throw new RenewalDateError("This renewal changed. Refresh before editing it again.")
 
   revalidatePath("/admin/renewals")
   revalidatePath("/admin/leads")

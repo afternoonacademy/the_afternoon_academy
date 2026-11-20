@@ -8,6 +8,12 @@
 - Before release, apply the additive family payment revision and booking lease migration and obtain founder acceptance. Roll back the application first and retain the migration and all financial/communication history.
 
 
+### Renewal preview save correction
+
+- Preview logs showed the planner rejected a saved dated slot when its standing placement had a different time. Saving an unpaid renewal now checks the saved slot before applying commercial changes. New slots must still match the standing timetable. The editor preserves the original dated time and returns a visible validation message when a save is rejected.
+- Verify the correction using synthetic saved dates and the automated suite before a single replacement preview. No further schema change is needed. Rolling back the correction restores the previous strict save behaviour. No production records were updated for this investigation.
+
+
 ## 20 November 2026 — Public footer social links (preview candidate)
 
 - Added Facebook and Instagram icon links beneath the brand in the shared English/Spanish public footer, using the founder-supplied profile URLs.

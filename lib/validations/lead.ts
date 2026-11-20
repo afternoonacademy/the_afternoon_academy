@@ -18,7 +18,7 @@ export const childLeadFormSchema = z.object({
   age: z.coerce
     .number()
     .int()
-    .min(4, "The Afternoon Academy currently welcomes children aged 4–12")
+    .min(4, "Please check your child’s age")
     .max(18, "Please check your child’s age"),
   schoolName: z.string().trim().max(160).optional(),
   schoolYear: z.string().trim().max(80).optional(),

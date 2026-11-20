@@ -79,13 +79,13 @@ async function saveWebsiteLead(formData: FormData, freeTrial: boolean): Promise<
 
   const data = parsed.data
   if (freeTrial && data.children.some((child) =>
-    child.age < 4 || child.age > 12 || !child.supportNeeds.every(isFreeTrialSupport)
+    !child.supportNeeds.every(isFreeTrialSupport)
   )) {
     return {
       success: false,
       message: language === "es"
-        ? "La sesión gratuita es de apoyo escolar en grupo para niños de 4 a 12 años."
-        : "The free session is for small-group homework support for children aged 4 to 12.",
+        ? "La primera sesión gratuita es en grupo. Selecciona una opción de apoyo en grupo."
+        : "The free first session is a group session. Please choose a group support option.",
     }
   }
 

@@ -3,6 +3,22 @@ import "server-only"
 import { sortPaidPeriodSessions, type PaidPeriodSession } from "@/lib/paid-period"
 import type { supabaseService } from "@/lib/supabase/service"
 
+export async function checkFamilyPaymentSchema(
+  supabase: ReturnType<typeof supabaseService>,
+): Promise<"ready" | "migration-required" | "unavailable"> {
+  // Check only the schema, without reading or creating family payment rows.
+  const { error } = await supabase.from("payment_entitlements")
+    .select("session_revision")
+    .limit(0)
+  if (!error) return "ready"
+  if ((error.code === "42703" || error.code === "PGRST204") &&
+      error.message.includes("session_revision")) {
+    return "migration-required"
+  }
+  console.error("Family payment readiness check failed", { code: error.code })
+  return "unavailable"
+}
+
 export async function writeFamilyPaidSessions({
   supabase, parentLeadId, periodStart, periodEnd, learnerId, childLeadId,
   sessions, receivedOn, userId, note, recordPayment = true,

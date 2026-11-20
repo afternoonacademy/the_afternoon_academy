@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
-import { writeFamilyPaidSessions } from "@/lib/admin/write-family-paid-sessions"
+import { checkFamilyPaymentSchema, writeFamilyPaidSessions } from "@/lib/admin/write-family-paid-sessions"
 import { withRenewalOfferLock } from "@/lib/admin/renewal-offer-lock"
 import { RenewalDateError, renewalDateKey, resolveRenewalDate } from "@/lib/admin/renewal-dated-sessions.mjs"
 import { renewalOfferChanged } from "@/lib/admin/renewal-offer-revisions.mjs"
@@ -757,6 +757,25 @@ async function saveExactRenewalDraft(formData: FormData, userId: string) {
 
 export async function recordExactRenewalPayment(formData: FormData) {
   const { user } = await requireAdmin()
+  try {
+    await confirmExactRenewalPayment(formData, user.id)
+    return { success: true }
+  } catch (error) {
+    if (error instanceof RenewalPaymentInputError) return { error: error.message }
+    if (error instanceof Error &&
+        /^(Table \d+ at \d{2}:\d{2} is full|\w+,? \d+ \w+ is closed:)/.test(error.message)) {
+      return { error: error.message }
+    }
+    console.error("Renewal payment confirmation failed", {
+      errorType: error instanceof Error ? error.name : "unknown",
+    })
+    return { error: "Payment confirmation did not complete. Check payment history before retrying these saved dates." }
+  }
+}
+
+class RenewalPaymentInputError extends Error {}
+
+async function confirmExactRenewalPayment(formData: FormData, userId: string) {
   const parsed = renewalPaymentSchema.safeParse({
     caseId: formData.get("caseId"),
     parentLeadId: formData.get("parentLeadId"),
@@ -765,9 +784,14 @@ export async function recordExactRenewalPayment(formData: FormData) {
     bankReference: formData.get("bankReference") || undefined,
     note: formData.get("note") || undefined,
   })
-  if (!parsed.success) throw new Error("Check the renewal payment details")
+  if (!parsed.success) throw new RenewalPaymentInputError("Check the renewal payment details")
 
-  const submitted = parseSessions(parsed.data.selectedSessions)
+  let submitted: PaidPeriodSession[]
+  try {
+    submitted = parseSessions(parsed.data.selectedSessions)
+  } catch {
+    throw new RenewalPaymentInputError("The submitted dates are invalid. Refresh the renewal and check the saved plan.")
+  }
   const supabase = supabaseService()
   const { data: renewal, error: renewalError } = await supabase
     .from("renewal_cases")
@@ -776,26 +800,34 @@ export async function recordExactRenewalPayment(formData: FormData) {
     .eq("parent_lead_id", parsed.data.parentLeadId)
     .single()
   if (renewalError || !renewal)
-    throw new Error("This renewal is no longer available")
+    throw new RenewalPaymentInputError("This renewal is no longer available")
   if (renewal.status === "renewed" || renewal.status === "not_renewing")
-    throw new Error("This renewal is already complete")
+    throw new RenewalPaymentInputError("This renewal is already complete")
   if (!renewal.learner_id)
-    throw new Error("This historical family renewal must be completed from the legacy renewal screen")
+    throw new RenewalPaymentInputError("This historical family renewal must be completed from the legacy renewal screen")
 
   const saved = parseSessions(JSON.stringify(renewal.selected_sessions || []))
   if (renewalOfferChanged(saved, submitted))
-    throw new Error("The renewal selection changed. Save the exact sessions again before recording payment.")
+    throw new RenewalPaymentInputError("The renewal selection changed. Save the exact sessions again before recording payment.")
 
   await assertDatesOpen(saved, supabase)
   await assertPaidPeriodCapacity(saved, supabase)
   const summary = paidPeriodSummary(saved)
   if (!summary.periodStart || !summary.periodEnd)
-    throw new Error("This renewal has no selected service dates")
+    throw new RenewalPaymentInputError("This renewal has no selected service dates")
 
   const learnerIds = [...new Set(saved.map((session) => session.learnerId).filter(Boolean))] as string[]
   if (learnerIds.length !== 1 || learnerIds[0] !== renewal.learner_id) {
-    throw new Error("This renewal must contain only the selected learner’s sessions")
+    throw new RenewalPaymentInputError("This renewal must contain only the selected learner’s sessions")
   }
+  const paymentSchema = await checkFamilyPaymentSchema(supabase)
+  if (paymentSchema === "migration-required") {
+    throw new RenewalPaymentInputError("Payment recording is unavailable until the Academy database migration is applied. This attempt did not record a payment.")
+  }
+  if (paymentSchema === "unavailable") {
+    throw new RenewalPaymentInputError("Payment recording could not be checked. This attempt did not record a payment. Try again later.")
+  }
+
   await withRenewalOfferLock(supabase, renewal, async () => {
     const ledgerNote = [
       parsed.data.bankReference ? `Bank reference: ${parsed.data.bankReference}` : null,
@@ -820,7 +852,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
       learnerId: renewal.learner_id!,
       sessions: saved,
       receivedOn: parsed.data.receivedOn,
-      userId: user.id,
+      userId,
       note: ledgerNote || null,
     })
 
@@ -834,7 +866,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
       const allocated = await createDatedOperationsSeats(
         sessions,
         learnerId,
-        user.id,
+        userId,
         supabase,
       )
       allocatedSessions.push(...allocated)
@@ -850,7 +882,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
             new Set(sessions.map((session) => session.placementId)).size,
           ),
           status: "paid",
-          recorded_by: user.id,
+          recorded_by: userId,
           selected_sessions: allocated,
           selected_session_count: allocated.length,
         },
@@ -887,7 +919,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
         renewed_at: new Date().toISOString(),
         selected_sessions: finalSessions,
         selected_session_count: finalSessions.length,
-        updated_by: user.id,
+        updated_by: userId,
       })
       .eq("id", parsed.data.caseId)
       .eq("parent_lead_id", parsed.data.parentLeadId)

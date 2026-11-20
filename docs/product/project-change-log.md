@@ -14,6 +14,12 @@
 - Verify the correction using synthetic saved dates and the automated suite before a single replacement preview. No further schema change is needed. Rolling back the correction restores the previous strict save behaviour. No production records were updated for this investigation.
 
 
+### Renewal payment preview readiness
+
+- Preview payment confirmation failed while checking the family payment row. Schema metadata confirmed the existing database lacks the additive family payment revision migration. The failed action reached the payment-start marker before the payment write.
+- Renewal confirmation checks schema readiness before taking the case lease or setting the payment-start marker. It returns inline guidance when the database needs the migration and preserves the normal retry route for an already-started case. The fix does not add a migration or change the payment terms.
+
+
 ## 20 November 2026 — Public footer social links (preview candidate)
 
 - Added Facebook and Instagram icon links beneath the brand in the shared English/Spanish public footer, using the founder-supplied profile URLs.

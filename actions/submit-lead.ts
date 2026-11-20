@@ -39,6 +39,13 @@ async function saveWebsiteLead(formData: FormData, freeTrial: boolean): Promise<
   let children: unknown
   try {
     children = JSON.parse(String(formData.get("children") || "[]"))
+    if (freeTrial && Array.isArray(children)) {
+      children = children.map((child: unknown) =>
+        child && typeof child === "object" && !Array.isArray(child)
+          ? { ...child, preferredFrequency: "not_sure" }
+          : child,
+      )
+    }
   } catch {
     return {
       success: false,

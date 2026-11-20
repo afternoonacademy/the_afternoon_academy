@@ -58,6 +58,15 @@ test("Admin child fields are optional with 3–21 age bounds; public fields stay
   }
 })
 
+test("the free-trial form omits weekly frequency in both languages", () => {
+  for (const language of ["en", "es"]) {
+    const props = { days: [], times: [], frequency: "", language, onChange() {} }
+    const question = language === "en" ? /How many sessions per week/ : /Cuántas sesiones por semana/
+    assert.match(renderToStaticMarkup(createElement(AvailabilityFields, props)), question)
+    assert.doesNotMatch(renderToStaticMarkup(createElement(AvailabilityFields, { ...props, showFrequency: false })), question)
+  }
+})
+
 test("protected manual lead action writes partial details with null unknown child identity/email", async () => {
   let authorized = false
   const inserted = new Map()
@@ -96,7 +105,7 @@ test("free first-session enquiries use the shared intake and persist only an app
   const actions = loadSource("actions/submit-lead.ts", {
     "next/navigation": { redirect() {} },
     "@/lib/leads/free-trial.mjs": ui["@/lib/leads/free-trial.mjs"],
-    "@/lib/validations/lead": { leadFormSchema: { safeParse: () => ({ success: true, data: submission }) } },
+    "@/lib/validations/lead": { leadFormSchema: { safeParse: ({ children }) => ({ success: true, data: { ...submission, children } }) } },
     "@/lib/email/resend": { resend: null },
     "@/lib/email/templates": {},
     "@/lib/supabase/admin": { supabaseAdmin: { from(table) {
@@ -124,12 +133,15 @@ test("free first-session enquiries use the shared intake and persist only an app
   })
   const form = new FormData()
   form.set("language", "es")
+  form.set("children", JSON.stringify([{ ...submission.children[0], preferredFrequency: "two_days" }]))
   form.set("referral", "partner:" + partnerId)
   await actions.submitFreeTrialLead({}, form)
   assert.equal(saved.get("parent_leads").source, "Free first session · Test partner")
   assert.equal(saved.get("parent_leads").status, "new")
   assert.equal(saved.get("timetable_preferences")[0].child_lead_id, "child-test")
+  assert.equal(saved.get("timetable_preferences")[0].preferred_frequency, "not_sure")
   await actions.submitLead({}, form)
+  assert.equal(saved.get("timetable_preferences")[0].preferred_frequency, "two_days")
   assert.equal(saved.get("parent_leads").source, "landing_page_es")
 
   for (const invalid of ["", "scout-proel-334", "partner:" + partnerId]) {
@@ -141,7 +153,7 @@ test("free first-session enquiries use the shared intake and persist only an app
   }
 
   form.set("referral", "google")
-  submission.children[0].age = 13
+  form.set("children", JSON.stringify([{ ...submission.children[0], age: 13 }]))
   const result = await actions.submitFreeTrialLead({}, form)
   assert.equal(result.success, false)
   assert.equal(saved.size, 0)

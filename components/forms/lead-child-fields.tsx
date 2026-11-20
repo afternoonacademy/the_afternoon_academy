@@ -203,7 +203,7 @@ export function LeadChildFields({
       ) : null}
 
       <AvailabilityFields days={child.preferredDays} times={child.preferredTimes} frequency={child.preferredFrequency}
-        language={language} optional={optional} onChange={(availability) => onChange({ ...child, ...availability })} />
+        language={language} optional={optional} showFrequency={!freeTrial} onChange={(availability) => onChange({ ...child, ...availability })} />
 
       <div className="space-y-2">
         <Label htmlFor={"child-" + child.key + "-notes"}>

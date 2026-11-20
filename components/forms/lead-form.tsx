@@ -96,6 +96,7 @@ const copy = {
 const trialCopy = {
   en: {
     cardTitle: "Request a free first session",
+    childrenDescription: "Tell us what each child needs and when they could come for a trial.",
     cardDescription: "Tell us what your child needs and which times could work. We’ll contact you to confirm a suitable session.",
     referral: "Where did you hear about us?",
     referralPlaceholder: "Choose an option",
@@ -104,6 +105,7 @@ const trialCopy = {
   },
   es: {
     cardTitle: "Solicita tu primera sesión gratis",
+    childrenDescription: "Indícanos qué apoyo necesita cada niño/a y cuándo podría venir a la sesión de prueba.",
     cardDescription: "Cuéntanos qué apoyo necesita tu hijo o hija y qué horarios os vienen bien. Te contactaremos para confirmar una sesión adecuada.",
     referral: "¿Cómo nos conociste?",
     referralPlaceholder: "Selecciona una opción",

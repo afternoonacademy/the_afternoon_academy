@@ -3,8 +3,9 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { dayOptions, weekdayTimes, weekendDays, hourlySlots, frequencyOptions, weekendTimeValue, retainTimesForDays } from "@/lib/leads/enquiry-options.mjs"
 
-export function AvailabilityFields({ days, times, frequency, onChange, language = "en", optional = false }: {
+export function AvailabilityFields({ days, times, frequency, onChange, language = "en", optional = false, showFrequency = true }: {
   days: string[]; times: string[]; frequency: string
+  showFrequency?: boolean
   onChange: (value: { preferredDays: string[]; preferredTimes: string[]; preferredFrequency: string }) => void
   language?: "en" | "es"; optional?: boolean
 }) {
@@ -44,13 +45,13 @@ export function AvailabilityFields({ days, times, frequency, onChange, language 
       </label>
       <div className="flex flex-wrap gap-2">{hourlySlots.filter((slot) => times.includes(weekendTimeValue(day, slot))).map((slot) => <button key={slot} type="button" className="rounded-md border bg-muted px-3 py-2 text-sm" aria-label={`${es ? "Eliminar" : "Remove"} ${day} ${slot}`} onClick={() => toggleTime(weekendTimeValue(day, slot), false)}>{slot.replace("-", "–")} ×</button>)}</div>
     </fieldset>)}
-    <label className="grid gap-2 text-sm font-medium">
+    {showFrequency && <label className="grid gap-2 text-sm font-medium">
       {es ? "¿Cuántas sesiones por semana?" : "How many sessions per week?"}
       <select className="h-10 w-full rounded-md border bg-background px-3" value={frequency} required={!optional} onChange={(event) => set(days, times, event.target.value)}>
         <option value="">{optional ? (es ? "Aún no se sabe" : "Not recorded yet") : (es ? "Selecciona una opción" : "Select one")}</option>
         {frequency && !frequencyOptions.some((item) => item.value === frequency) && <option value={frequency}>{frequency}</option>}
         {frequencyOptions.map((item) => <option key={item.value} value={item.value}>{item[language]}</option>)}
       </select>
-    </label>
+    </label>}
   </div>
 }

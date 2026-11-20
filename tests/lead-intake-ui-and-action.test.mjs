@@ -23,6 +23,7 @@ const ui = {
   "@/components/ui/input": { Input: "input" },
   "@/components/ui/label": { Label: "label" },
   "@/components/ui/textarea": { Textarea: "textarea" },
+  "@/lib/leads/free-trial.mjs": createRequire(import.meta.url)("../lib/leads/free-trial.mjs"),
   "@/lib/leads/enquiry-options.mjs": createRequire(import.meta.url)("../lib/leads/enquiry-options.mjs"),
 }
 const { AvailabilityFields } = loadSource("components/forms/availability-fields.tsx", ui)
@@ -57,6 +58,15 @@ test("Admin child fields are optional with 3–21 age bounds; public fields stay
   }
 })
 
+test("the free-trial form omits weekly frequency in both languages", () => {
+  for (const language of ["en", "es"]) {
+    const props = { days: [], times: [], frequency: "", language, onChange() {} }
+    const question = language === "en" ? /How many sessions per week/ : /Cuántas sesiones por semana/
+    assert.match(renderToStaticMarkup(createElement(AvailabilityFields, props)), question)
+    assert.doesNotMatch(renderToStaticMarkup(createElement(AvailabilityFields, { ...props, showFrequency: false })), question)
+  }
+})
+
 test("protected manual lead action writes partial details with null unknown child identity/email", async () => {
   let authorized = false
   const inserted = new Map()
@@ -82,4 +92,69 @@ test("protected manual lead action writes partial details with null unknown chil
   assert.equal(inserted.get("child_leads")[0].first_name, null)
   assert.equal(inserted.get("child_leads")[0].child_age, null)
   assert.deepEqual(inserted.get("timetable_preferences")[0].preferred_times, [])
+})
+
+test("free first-session enquiries use the shared intake and persist only an approved referral", async () => {
+  const saved = new Map()
+  const partnerId = "165778da-2c4e-423f-90a7-546efcb38761"
+  let partnerActive = true
+  const submission = {
+    parentName: "Parent Example", email: "example@example.test", phone: "000000000",
+    children: [{ age: 8, firstName: "Example", supportNeeds: ["homework_help"], preferredDays: ["monday"] }],
+  }
+  const actions = loadSource("actions/submit-lead.ts", {
+    "next/navigation": { redirect() {} },
+    "@/lib/leads/free-trial.mjs": ui["@/lib/leads/free-trial.mjs"],
+    "@/lib/validations/lead": { leadFormSchema: { safeParse: ({ children }) => ({ success: true, data: { ...submission, children } }) } },
+    "@/lib/email/resend": { resend: null },
+    "@/lib/email/templates": {},
+    "@/lib/supabase/admin": { supabaseAdmin: { from(table) {
+      if (table === "academy_marketing_partners") return { select(column) {
+        assert.equal(column, "name")
+        return { eq(key, value) {
+          assert.equal(key, "id")
+          assert.equal(value, partnerId)
+          return { eq(activeKey, activeValue) {
+            assert.equal(activeKey, "active")
+            assert.equal(activeValue, true)
+            return { async maybeSingle() {
+              return { data: partnerActive ? { name: "Test partner" } : null, error: null }
+            } }
+          } }
+        } }
+      } }
+      return { insert(value) {
+        saved.set(table, value)
+        return { error: null, select() {
+          return { data: [{ id: "child-test" }], error: null, async single() { return { data: { id: "parent-test" }, error: null } } }
+        } }
+      } }
+    } } },
+  })
+  const form = new FormData()
+  form.set("language", "es")
+  form.set("children", JSON.stringify([{ ...submission.children[0], preferredFrequency: "two_days" }]))
+  form.set("referral", "partner:" + partnerId)
+  await actions.submitFreeTrialLead({}, form)
+  assert.equal(saved.get("parent_leads").source, "Free first session · Test partner")
+  assert.equal(saved.get("parent_leads").status, "new")
+  assert.equal(saved.get("timetable_preferences")[0].child_lead_id, "child-test")
+  assert.equal(saved.get("timetable_preferences")[0].preferred_frequency, "not_sure")
+  await actions.submitLead({}, form)
+  assert.equal(saved.get("timetable_preferences")[0].preferred_frequency, "two_days")
+  assert.equal(saved.get("parent_leads").source, "landing_page_es")
+
+  for (const invalid of ["", "scout-proel-334", "partner:" + partnerId]) {
+    form.set("referral", invalid)
+    partnerActive = false
+    saved.clear()
+    assert.equal((await actions.submitFreeTrialLead({}, form)).success, false)
+    assert.equal(saved.size, 0)
+  }
+
+  form.set("referral", "google")
+  form.set("children", JSON.stringify([{ ...submission.children[0], age: 13 }]))
+  const result = await actions.submitFreeTrialLead({}, form)
+  assert.equal(result.success, false)
+  assert.equal(saved.size, 0)
 })

@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Public free first session — 19 November 2026 preview candidate
+
+The English and Spanish offer landing pages reuse the public family enquiry and protected intake boundary. The server requires a referral and resolves a standard channel or an active partner to a label in the existing lead source column. The service-only partner configuration is managed in Academy Setup → Marketing. The Academy Supabase project has applied the additive partner-table migration `20261119125552`. Apply it before activating the feature on any other target. Academy Setup → Marketing links to both offer pages on the current deployment. Visits are measured by page path using existing analytics. Existing staff confirmation and one-off trial operations apply.
+
 ## Mobile planner correction candidate — 18 November 2026
 
 Family Pipeline recurring table/time and price-plan fields are constrained to their card width with a single mobile grid column and existing desktop columns. Presentation only. Local 154 tests, typecheck, targeted lint, synthetic-settings build and separate review passed. Mobile Safari/authenticated preview acceptance remains pending because local browser launch was blocked. Candidate until accepted and merged.

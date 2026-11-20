@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { sections } from "@/lib/discovery/content"
+import { freeTrialPaths } from "@/lib/leads/free-trial.mjs"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://www.theafternoonacademy.com"
@@ -8,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/es",
     "/guide",
     "/es/guia",
+    ...Object.values(freeTrialPaths),
     ...Object.entries(sections).flatMap(([section, items]) =>
       items.map(item => ["/guide/" + section + "/" + item.slug, "/es/guia/" + section + "/" + item.slug]).flat()
     ),

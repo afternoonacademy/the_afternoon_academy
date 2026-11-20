@@ -199,3 +199,7 @@ The existing Admin-only Server Actions remain the access boundary for renewal pl
 ## Unpaid renewal slot moves
 
 The Admin server action calls an invoker-rights database function executable by the service role. It validates family and learner ownership, quote revision, unpaid status, attendance and slot capacity before writing. The additive migration keeps the existing RLS policies and parent access intact. A database trigger enforces the existing capacity hold when a new accepted booking or legacy place offer overlaps an end-dated standing place.
+
+## Marketing partner choices — 19 November 2026 preview candidate
+
+The partner table stores public organisation names and an active flag. RLS and table grants keep it service-only. The setup capability is checked on every management action. The public pages pass only active IDs and names to the shared form. The public enquiry action rechecks the selected partner and saves the displayed name as attribution on the existing restricted family record. No partner contact or family information is sent to analytics.

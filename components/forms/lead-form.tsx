@@ -1,12 +1,13 @@
-﻿"use client"
+"use client"
 
 import { useActionState, useState } from "react"
 
-import { submitLead, type SubmitLeadState } from "@/actions/submit-lead"
+import { submitFreeTrialLead, submitLead, type SubmitLeadState } from "@/actions/submit-lead"
 import {
   LeadChildFields,
   type LeadChildDraft,
 } from "@/components/forms/lead-child-fields"
+import { referralChoices } from "@/lib/leads/free-trial.mjs"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -92,15 +93,41 @@ const copy = {
   },
 }
 
+const trialCopy = {
+  en: {
+    cardTitle: "Request a free first session",
+    childrenDescription: "Tell us what each child needs and when they could come for a trial.",
+    cardDescription: "Tell us what your child needs and which times could work. We’ll contact you to confirm a suitable session.",
+    referral: "Where did you hear about us?",
+    referralPlaceholder: "Choose an option",
+    submit: "Request a free session",
+    consent: "I agree to be contacted about my free-session enquiry.",
+  },
+  es: {
+    cardTitle: "Solicita tu primera sesión gratis",
+    childrenDescription: "Indícanos qué apoyo necesita cada niño/a y cuándo podría venir a la sesión de prueba.",
+    cardDescription: "Cuéntanos qué apoyo necesita tu hijo o hija y qué horarios os vienen bien. Te contactaremos para confirmar una sesión adecuada.",
+    referral: "¿Cómo nos conociste?",
+    referralPlaceholder: "Selecciona una opción",
+    submit: "Solicitar una sesión gratuita",
+    consent: "Acepto que me contacten sobre mi solicitud de sesión gratuita.",
+  },
+}
+
 export function LeadForm({
   language = "en",
+  freeTrial = false,
+  marketingPartners = [],
 }: {
   language?: LeadFormLanguage
+  freeTrial?: boolean
+  marketingPartners?: { id: string; name: string }[]
 }) {
-  const [state, formAction, isPending] = useActionState(submitLead, initialState)
+  const [state, formAction, isPending] = useActionState(freeTrial ? submitFreeTrialLead : submitLead, initialState)
   const [children, setChildren] = useState<LeadChildDraft[]>([emptyChild(1)])
   const [nextKey, setNextKey] = useState(2)
-  const t = copy[language]
+  const t = freeTrial ? { ...copy[language], ...trialCopy[language] } : copy[language]
+  const trial = trialCopy[language]
 
   const serialisedChildren = children.map(({ key: _key, ...child }) => child)
 
@@ -158,6 +185,25 @@ export function LeadForm({
                 <Label htmlFor="area">{t.area}</Label>
                 <Input id="area" name="area" placeholder={t.areaPlaceholder} />
               </div>
+              {freeTrial ? (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="referral">{trial.referral}</Label>
+                  <select
+                    id="referral"
+                    name="referral"
+                    required
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">{trial.referralPlaceholder}</option>
+                    {marketingPartners.map((partner) => (
+                      <option key={partner.id} value={`partner:${partner.id}`}>{partner.name}</option>
+                    ))}
+                    {referralChoices.map((choice) => (
+                      <option key={choice.value} value={choice.value}>{choice[language]}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
           </section>
 
@@ -176,6 +222,7 @@ export function LeadForm({
                   child={child}
                   index={index}
                   language={language}
+                  freeTrial={freeTrial}
                   canRemove={children.length > 1}
                   onChange={(next) =>
                     setChildren((current) =>

@@ -10,6 +10,7 @@ import {
   parentConfirmationEmailHtml,
   parentConfirmationEmailText,
 } from "@/lib/email/templates"
+import { freeTrialLeadSource, isFreeTrialSupport, marketingPartnerReferralId } from "@/lib/leads/free-trial.mjs"
 import { leadFormSchema } from "@/lib/validations/lead"
 
 export type SubmitLeadState = {
@@ -21,12 +22,30 @@ export async function submitLead(
   _previousState: SubmitLeadState,
   formData: FormData,
 ): Promise<SubmitLeadState> {
+  return saveWebsiteLead(formData, false)
+}
+
+export async function submitFreeTrialLead(
+  _previousState: SubmitLeadState,
+  formData: FormData,
+): Promise<SubmitLeadState> {
+  return saveWebsiteLead(formData, true)
+}
+
+async function saveWebsiteLead(formData: FormData, freeTrial: boolean): Promise<SubmitLeadState> {
   const language: "en" | "es" =
     formData.get("language") === "es" ? "es" : "en"
 
   let children: unknown
   try {
     children = JSON.parse(String(formData.get("children") || "[]"))
+    if (freeTrial && Array.isArray(children)) {
+      children = children.map((child: unknown) =>
+        child && typeof child === "object" && !Array.isArray(child)
+          ? { ...child, preferredFrequency: "not_sure" }
+          : child,
+      )
+    }
   } catch {
     return {
       success: false,
@@ -59,6 +78,47 @@ export async function submitLead(
   }
 
   const data = parsed.data
+  if (freeTrial && data.children.some((child) =>
+    child.age < 4 || child.age > 12 || !child.supportNeeds.every(isFreeTrialSupport)
+  )) {
+    return {
+      success: false,
+      message: language === "es"
+        ? "La sesión gratuita es de apoyo escolar en grupo para niños de 4 a 12 años."
+        : "The free session is for small-group homework support for children aged 4 to 12.",
+    }
+  }
+
+  let source = language === "es" ? "landing_page_es" : "landing_page_en"
+  if (freeTrial) {
+    const referral = formData.get("referral")
+    const partnerId = marketingPartnerReferralId(referral)
+    let trialSource = freeTrialLeadSource(referral)
+
+    if (partnerId) {
+      const { data, error } = await supabaseAdmin.from("academy_marketing_partners")
+        .select("name").eq("id", partnerId).eq("active", true).maybeSingle()
+      if (error) {
+        return {
+          success: false,
+          message: language === "es"
+            ? "No hemos podido comprobar la opción seleccionada. Inténtalo de nuevo."
+            : "We couldn’t check that referral choice. Please try again.",
+        }
+      }
+      if (data) trialSource = `Free first session · ${data.name}`
+    }
+
+    if (!trialSource) {
+      return {
+        success: false,
+        message: language === "es"
+          ? "Elige una opción válida para indicarnos cómo nos conociste."
+          : "Choose a valid option to tell us how you heard about us.",
+      }
+    }
+    source = trialSource
+  }
   const { data: parentLead, error: parentError } = await supabaseAdmin
     .from("parent_leads")
     .insert({
@@ -69,7 +129,7 @@ export async function submitLead(
       school_name: data.children[0]?.schoolName || null,
       interest_level: data.interestLevel,
       consent_contact: data.consentContact,
-      source: language === "es" ? "landing_page_es" : "landing_page_en",
+      source,
       status: "new",
     })
     .select("id")

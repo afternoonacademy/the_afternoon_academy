@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Public footer social links — 20 November 2026 preview candidate
+
+The shared PublicFooter in components/shared/public-shell.tsx contains the founder-supplied Facebook profile and Instagram account links on both locales. These are plain external links with inline decorative SVG icons, 44px targets, keyboard focus styles and localised accessible new-tab labels. No provider scripts or embeds load. Update destinations in the shared footer; no environment or database configuration is required. Preview acceptance precedes production merge.
+
 ## Public free first session — 19 November 2026 preview candidate
 
 The English and Spanish offer landing pages reuse the public family enquiry and protected intake boundary. The server requires a referral and resolves a standard channel or an active partner to a label in the existing lead source column. The service-only partner configuration is managed in Academy Setup → Marketing. The Academy Supabase project has applied the additive partner-table migration `20261119125552`. Apply it before activating the feature on any other target. Academy Setup → Marketing links to both offer pages on the current deployment. Visits are measured by page path using existing analytics. Existing staff confirmation and one-off trial operations apply.

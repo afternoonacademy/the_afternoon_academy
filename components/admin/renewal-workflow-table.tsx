@@ -328,7 +328,6 @@ function RenewalActions({
             <input name="parentLeadId" type="hidden" value={row.parentLeadId} />
             <input name="offerRevision" type="hidden" value={row.offerRevision} />
             <PaidPeriodBuilder
-              allowPricePlanChange
               closures={row.closures}
               initialSessions={row.selectedSessions}
               placements={row.placements}
@@ -380,7 +379,7 @@ function RenewalActions({
                     }
                   >
                     {weekdayNames[new Date(session.date + "T12:00:00Z").getUTCDay()]} ·{" "}
-                    {date(session.date)} · Table {session.tableNumber} · {session.timeTbc ? "Time TBC" : session.actualStartsAt || session.startsAt}
+                    {date(session.date)} · Table {session.tableNumber} · {session.timeTbc ? "Time TBC" : session.actualStartsAt || session.startsAt} · {session.pricePlanName} · {money(session.priceCents)}
                   </span>
                 ))}
               </div>
@@ -637,7 +636,7 @@ function RenewalActions({
                   className="rounded-md border bg-background px-2.5 py-1 text-xs"
                   key={session.placementId + ":" + session.date}
                 >
-                  {date(session.date)}
+                  {date(session.date)} · {session.pricePlanName} · {money(session.priceCents)}
                 </span>
               ))}
             </div>

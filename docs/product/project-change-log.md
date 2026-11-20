@@ -1,5 +1,25 @@
 # The Afternoon Academy — Project Change Log
 
+## Dated service and agreed price release candidate
+
+- Founder approved per-date services and prices across leads, renewals, payments and future paid-session changes. Dated terms are stored in the existing session snapshots. Parent emails and Operations now use the agreed dated terms.
+- Initial offers and payment use saved terms, keep standing defaults separate, and protect sibling records through guarded family writes. A future paid change uses the existing family balance audit.
+- Local checks: 170 tests, TypeScript, changed-file ESLint and a synthetic-settings production build. Independent review covered authorization, receipt merges, stale offers and paid-date allocation. Tests include a €125 mixed offer and a stale sibling write against local Postgres. Hosted authenticated preview and live verification remain outstanding. Existing renewal balance offsets still require separate verification when comparing the email and the payment record. No production emails, payments or family changes were used for verification.
+- Before release, apply the additive family payment revision and booking lease migration and obtain founder acceptance. Roll back the application first and retain the migration and all financial/communication history.
+
+
+### Renewal preview save correction
+
+- Preview logs showed the planner rejected a saved dated slot when its standing placement had a different time. Saving an unpaid renewal now checks the saved slot before applying commercial changes. New slots must still match the standing timetable. The editor preserves the original dated time and returns a visible validation message when a save is rejected.
+- Verify the correction using synthetic saved dates and the automated suite before a single replacement preview. No further schema change is needed. Rolling back the correction restores the previous strict save behaviour. No production records were updated for this investigation.
+
+
+### Renewal payment preview readiness
+
+- Preview payment confirmation failed while checking the family payment row. Schema metadata confirmed the existing database lacks the additive family payment revision migration. The failed action reached the payment-start marker before the payment write.
+- Renewal confirmation checks schema readiness before taking the case lease or setting the payment-start marker. It returns inline guidance when the database needs the migration and preserves the normal retry route for an already-started case. The fix does not add a migration or change the payment terms.
+
+
 ## 20 November 2026 — Public footer social links (preview candidate)
 
 - Added Facebook and Instagram icon links beneath the brand in the shared English/Spanish public footer, using the founder-supplied profile URLs.

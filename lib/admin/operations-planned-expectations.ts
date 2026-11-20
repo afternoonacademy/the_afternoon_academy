@@ -12,6 +12,7 @@ export type PlannedExpectedSeat = {
   startsAt: string
   durationMinutes: number
   focus: string | null
+  serviceName?: string
   status: "planned"
 }
 

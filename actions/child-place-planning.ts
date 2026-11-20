@@ -1,9 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { randomBytes } from "crypto"
+import { createHash, randomBytes } from "crypto"
 import { z } from "zod"
 
+import { datedSessionPrice, MAX_SESSION_PRICE_CENTS, plannedBookingRevision } from "@/lib/dated-session-pricing.mjs"
+import { assertPaidPeriodCapacity } from "@/lib/delivery-capacity"
+import { withFamilyBookingLock } from "@/lib/admin/family-booking-lock"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { lifecycleAfterPlanEdit } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import { resend, resendFromEmail } from "@/lib/email/resend"
@@ -35,7 +38,9 @@ const plannedSessionSchema = z.object({
   focus: z.string().trim().max(500).nullable(),
   pricePlanId: z.string().uuid(),
   pricePlanName: z.string().trim().min(1).max(160),
-  priceCents: z.coerce.number().int().min(0),
+  priceCents: z.number().int().min(0).max(MAX_SESSION_PRICE_CENTS),
+  actualStartsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+  timeTbc: z.boolean().optional(),
   replacement: z.boolean(),
   sessionOrigin: z
     .enum(["recurring", "pre_agreed_exception", "replacement"])
@@ -52,6 +57,7 @@ const planSchema = z.object({
   parentLeadId: z.string().uuid(),
   childLeadId: z.string().uuid(),
   plannedPlaces: z.string().min(2),
+  planRevision: z.string().min(2).max(3000),
   selectedSessions: z.string().min(2),
 })
 
@@ -91,8 +97,10 @@ function parseSessions(raw: string): PaidPeriodSession[] {
   } catch {
     throw new Error("The planned service dates could not be read")
   }
-  const parsed = z.array(plannedSessionSchema).min(1).safeParse(value)
+  const parsed = z.array(plannedSessionSchema).min(1).max(366).safeParse(value)
   if (!parsed.success) throw new Error("Choose at least one planned service date")
+  const allocations = new Set(parsed.data.map((item) => [item.date, item.academyTableId, item.startsAt].join(":")))
+  if (allocations.size !== parsed.data.length) throw new Error("A dated place was selected more than once")
   return sortPaidPeriodSessions(parsed.data)
 }
 
@@ -118,6 +126,7 @@ export async function recordPlannedChildPlace(formData: FormData) {
     parentLeadId: formData.get("parentLeadId"),
     childLeadId: formData.get("childLeadId"),
     plannedPlaces: formData.get("plannedPlaces"),
+    planRevision: formData.get("planRevision"),
     selectedSessions: formData.get("selectedSessions"),
   })
   if (!parsed.success) {
@@ -139,209 +148,223 @@ export async function recordPlannedChildPlace(formData: FormData) {
   const submitted = parseSessions(parsed.data.selectedSessions)
   const supabase = supabaseService()
 
-  const [
-    { data: child, error: childError },
-    { data: templates, error: templateError },
-    { data: pricePlans, error: pricePlanError },
-    { data: tables, error: tableError },
-    { data: closures, error: closureError },
-    { data: currentBookings, error: currentBookingError },
-  ] = await Promise.all([
-    supabase.from("child_leads").select("parent_lead_id,first_name,pipeline_status,planned_email_draft_subject,planned_email_draft_body").eq("id", parsed.data.childLeadId).single(),
-    supabase.from("weekly_table_templates").select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,status").in("id", templateIds).eq("status", "active"),
-    supabase.from("session_price_plans").select("id,name,price_cents,status").in("id", [...new Set(places.map((place) => place.pricePlanId))]).eq("status", "active"),
-    supabase.from("academy_tables").select("id,seat_capacity,status").eq("status", "active"),
-    supabase.from("academy_closures").select("starts_on,ends_on,reason"),
-    supabase.from("accepted_bookings").select("id,weekly_table_template_id,status,contacted_at,contacted_by").eq("parent_lead_id", parsed.data.parentLeadId).eq("child_lead_id", parsed.data.childLeadId).in("status", ["session_planned", "contacted", "accepted_awaiting_payment"]),
-  ])
+  return await withFamilyBookingLock(supabase, parsed.data.parentLeadId, async () => {
+    const [
+      { data: child, error: childError },
+      { data: templates, error: templateError },
+      { data: pricePlans, error: pricePlanError },
+      { data: tables, error: tableError },
+      { data: closures, error: closureError },
+      { data: currentBookings, error: currentBookingError },
+    ] = await Promise.all([
+      supabase.from("child_leads").select("parent_lead_id,first_name,pipeline_status,planned_email_draft_subject,planned_email_draft_body").eq("id", parsed.data.childLeadId).single(),
+      supabase.from("weekly_table_templates").select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,status").in("id", templateIds).eq("status", "active"),
+      supabase.from("session_price_plans").select("id,name,price_cents,status").in("id", [...new Set([...places.map((place) => place.pricePlanId), ...submitted.map((session) => session.pricePlanId)])]).eq("status", "active"),
+      supabase.from("academy_tables").select("id,seat_capacity,status").eq("status", "active"),
+      supabase.from("academy_closures").select("starts_on,ends_on,reason"),
+      supabase.from("accepted_bookings").select("id,weekly_table_template_id,status,contacted_at,contacted_by,planned_sessions,updated_at").eq("parent_lead_id", parsed.data.parentLeadId).eq("child_lead_id", parsed.data.childLeadId).in("status", ["session_planned", "contacted", "accepted_awaiting_payment"]),
+    ])
 
-  if (childError || !child || child.parent_lead_id !== parsed.data.parentLeadId) {
-    throw new Error("That child does not belong to this family")
-  }
-  if (!child.first_name) throw new Error("Add the child’s first name before planning a place")
-  if (templateError || pricePlanError || tableError || closureError || currentBookingError) {
-    throw new Error("One or more selected recurring places could not be verified")
-  }
-  if ((templates || []).length !== templateIds.length) {
-    throw new Error("One or more selected recurring places is no longer active")
-  }
-
-  const templateById = new Map((templates || []).map((item) => [item.id, item]))
-  const planById = new Map((pricePlans || []).map((item) => [item.id, item]))
-  const tableById = new Map((tables || []).map((item) => [item.id, item]))
-  const currentByTemplate = new Map(
-    (currentBookings || [])
-      .filter((item) => Boolean(item.weekly_table_template_id))
-      .map((item) => [item.weekly_table_template_id as string, item]),
-  )
-
-  const serverSessions: PaidPeriodSession[] = []
-
-  for (const place of places) {
-    const template = templateById.get(place.templateId)
-    const pricePlan = planById.get(place.pricePlanId)
-    const table = template ? tableById.get(template.academy_table_id) : null
-    if (!template || !pricePlan || !table || place.seatNumber > table.seat_capacity) {
-      throw new Error("Check the selected recurring place, seat and price plan")
+    if (childError || !child || child.parent_lead_id !== parsed.data.parentLeadId) {
+      throw new Error("That child does not belong to this family")
+    }
+    if (!child.first_name) throw new Error("Add the child’s first name before planning a place")
+    if (templateError || pricePlanError || tableError || closureError || currentBookingError) {
+      throw new Error("One or more selected recurring places could not be verified")
+    }
+    if (child.pipeline_status === "paid" || plannedBookingRevision(currentBookings || []) !== parsed.data.planRevision) {
+      throw new Error("The planned places changed. Refresh before editing this offer.")
+    }
+    if ((templates || []).length !== templateIds.length) {
+      throw new Error("One or more selected recurring places is no longer active")
     }
 
-    const { data: occupied } = await supabase
-      .from("accepted_bookings")
-      .select("id")
-      .eq("weekday", template.weekday)
-      .eq("academy_table_id", template.academy_table_id)
-      .eq("starts_at", template.starts_at)
-      .eq("seat_number", place.seatNumber)
-      .in("status", ["session_planned", "contacted", "accepted_awaiting_payment", "paid_active"])
-      .neq("id", currentByTemplate.get(place.templateId)?.id || "00000000-0000-0000-0000-000000000000")
-      .maybeSingle()
+    const templateById = new Map((templates || []).map((item) => [item.id, item]))
+    const planById = new Map((pricePlans || []).map((item) => [item.id, item]))
+    const tableById = new Map((tables || []).map((item) => [item.id, item]))
+    const currentByTemplate = new Map(
+      (currentBookings || [])
+        .filter((item) => Boolean(item.weekly_table_template_id))
+        .map((item) => [item.weekly_table_template_id as string, item]),
+    )
 
-    if (occupied) {
-      throw new Error(`Seat ${place.seatNumber} is already allocated for ${weekdayNames[template.weekday]} at ${template.starts_at.slice(0, 5)}`)
+    if (submitted.some((session) => !templateById.has(session.placementId))) {
+      throw new Error("A dated session is outside the selected recurring places")
     }
+    const serverSessions: PaidPeriodSession[] = []
 
-    const { data: legacyOffer } = await supabase
-      .from("place_offers")
-      .select("id")
-      .eq("weekday", template.weekday)
-      .eq("academy_table_id", template.academy_table_id)
-      .eq("starts_at", template.starts_at)
-      .eq("seat_number", place.seatNumber)
-      .in("status", ["draft", "sent", "viewed", "accepted"])
-      .maybeSingle()
-    if (legacyOffer) throw new Error(`Seat ${place.seatNumber} is held by an existing place offer`)
-
-    const placeSessions = submitted.filter((session) => session.placementId === template.id)
-    if (!placeSessions.length) {
-      throw new Error(`Choose at least one planned date for ${weekdayNames[template.weekday]} at ${template.starts_at.slice(0, 5)}`)
-    }
-
-    for (const item of placeSessions) {
-      if (
-        item.academyTableId !== template.academy_table_id ||
-        item.tableNumber !== template.table_number ||
-        item.startsAt !== template.starts_at.slice(0, 5) ||
-        item.seatNumber !== place.seatNumber ||
-        item.pricePlanId !== pricePlan.id
-      ) {
-        throw new Error("The planned dates no longer match the recurring places")
+    for (const place of places) {
+      const template = templateById.get(place.templateId)
+      const pricePlan = planById.get(place.pricePlanId)
+      const table = template ? tableById.get(template.academy_table_id) : null
+      if (!template || !pricePlan || !table || place.seatNumber > table.seat_capacity) {
+        throw new Error("Check the selected recurring place, seat and price plan")
       }
-      const closure = (closures || []).find((row) => row.starts_on <= item.date && row.ends_on >= item.date)
-      if (closure) throw new Error(formatDate(item.date) + " is closed: " + closure.reason)
 
-      serverSessions.push({
-        learnerId: null,
-        learnerName: child.first_name,
-        childLeadId: parsed.data.childLeadId,
-        placementId: template.id,
-        date: item.date,
-        academyTableId: template.academy_table_id,
-        tableNumber: template.table_number,
-        seatNumber: place.seatNumber,
-        startsAt: template.starts_at.slice(0, 5),
-        durationMinutes: template.duration_minutes,
-        teacherName: template.teacher_name,
-        focus: template.focus,
-        pricePlanId: pricePlan.id,
-        pricePlanName: pricePlan.name,
-        priceCents: pricePlan.price_cents,
-        replacement: false,
-        sessionOrigin: initialPlanSessionOrigin(
-          new Date(item.date + "T12:00:00Z").getUTCDay() !== template.weekday,
-        ),
-      })
+      const { data: occupied } = await supabase
+        .from("accepted_bookings")
+        .select("id")
+        .eq("weekday", template.weekday)
+        .eq("academy_table_id", template.academy_table_id)
+        .eq("starts_at", template.starts_at)
+        .eq("seat_number", place.seatNumber)
+        .in("status", ["session_planned", "contacted", "accepted_awaiting_payment", "paid_active"])
+        .neq("id", currentByTemplate.get(place.templateId)?.id || "00000000-0000-0000-0000-000000000000")
+        .maybeSingle()
+
+      if (occupied) {
+        throw new Error(`Seat ${place.seatNumber} is already allocated for ${weekdayNames[template.weekday]} at ${template.starts_at.slice(0, 5)}`)
+      }
+
+      const { data: legacyOffer } = await supabase
+        .from("place_offers")
+        .select("id")
+        .eq("weekday", template.weekday)
+        .eq("academy_table_id", template.academy_table_id)
+        .eq("starts_at", template.starts_at)
+        .eq("seat_number", place.seatNumber)
+        .in("status", ["draft", "sent", "viewed", "accepted"])
+        .maybeSingle()
+      if (legacyOffer) throw new Error(`Seat ${place.seatNumber} is held by an existing place offer`)
+
+      const placeSessions = submitted.filter((session) => session.placementId === template.id)
+      if (!placeSessions.length) {
+        throw new Error(`Choose at least one planned date for ${weekdayNames[template.weekday]} at ${template.starts_at.slice(0, 5)}`)
+      }
+
+      for (const item of placeSessions) {
+        if (
+          item.academyTableId !== template.academy_table_id ||
+          item.tableNumber !== template.table_number ||
+          item.startsAt !== template.starts_at.slice(0, 5) ||
+          item.seatNumber !== place.seatNumber
+        ) {
+          throw new Error("The planned dates no longer match the recurring places")
+        }
+        const closure = (closures || []).find((row) => row.starts_on <= item.date && row.ends_on >= item.date)
+        if (closure) throw new Error(formatDate(item.date) + " is closed: " + closure.reason)
+
+        serverSessions.push({
+          learnerId: null,
+          learnerName: child.first_name,
+          childLeadId: parsed.data.childLeadId,
+          placementId: template.id,
+          date: item.date,
+          academyTableId: template.academy_table_id,
+          tableNumber: template.table_number,
+          seatNumber: place.seatNumber,
+          startsAt: template.starts_at.slice(0, 5),
+          durationMinutes: template.duration_minutes,
+          teacherName: template.teacher_name,
+          focus: template.focus,
+          ...datedSessionPrice(
+            item,
+            (currentByTemplate.get(template.id)?.planned_sessions as PaidPeriodSession[] | null)?.find((saved) => saved.date === item.date),
+            planById.get(item.pricePlanId),
+          ),
+          actualStartsAt: item.timeTbc ? undefined : item.actualStartsAt,
+          timeTbc: item.timeTbc,
+          replacement: false,
+          sessionOrigin: initialPlanSessionOrigin(
+            item.sessionOrigin === "pre_agreed_exception" || new Date(item.date + "T12:00:00Z").getUTCDay() !== template.weekday,
+          ),
+        })
+      }
     }
-  }
 
-  for (const place of places) {
-    const template = templateById.get(place.templateId)!
-    const pricePlan = planById.get(place.pricePlanId)!
-    const placeSessions = serverSessions.filter((session) => session.placementId === place.templateId)
-    const summary = paidPeriodSummary(placeSessions)
-    const existing = currentByTemplate.get(place.templateId)
-    const lifecycle = lifecycleAfterPlanEdit({
+    await assertPaidPeriodCapacity(serverSessions, supabase)
+
+    for (const place of places) {
+      const template = templateById.get(place.templateId)!
+      const pricePlan = planById.get(place.pricePlanId)!
+      const placeSessions = serverSessions.filter((session) => session.placementId === place.templateId)
+      const summary = paidPeriodSummary(placeSessions)
+      const existing = currentByTemplate.get(place.templateId)
+      const lifecycle = lifecycleAfterPlanEdit({
+        childPipelineStatus: child.pipeline_status,
+        existingBookingStatus: existing?.status || null,
+      })
+      const payload = {
+        parent_lead_id: parsed.data.parentLeadId,
+        child_lead_id: parsed.data.childLeadId,
+        weekly_table_template_id: template.id,
+        session_price_plan_id: pricePlan.id,
+        weekday: template.weekday,
+        table_number: template.table_number,
+        academy_table_id: template.academy_table_id,
+        seat_number: place.seatNumber,
+        starts_at: template.starts_at,
+        duration_minutes: template.duration_minutes,
+        status: lifecycle.bookingStatus,
+        accepted_by: user.id,
+        planned_sessions: placeSessions,
+        planned_amount_cents: summary.amountCents,
+        planned_period_start: summary.periodStart,
+        planned_period_end: summary.periodEnd,
+        updated_at: new Date().toISOString(),
+        contacted_at: lifecycle.clearContactMetadata
+          ? null
+          : existing?.contacted_at || null,
+        contacted_by: lifecycle.clearContactMetadata
+          ? null
+          : existing?.contacted_by || null,
+      }
+      const result = existing
+        ? await supabase.from("accepted_bookings").update(payload).eq("id", existing.id)
+        : await supabase.from("accepted_bookings").insert(payload)
+      if (result.error) {
+        if (result.error.code === "23505") throw new Error("One of those recurring seats was taken. Review the seat map and try again.")
+        console.error("Multi-place plan save failed", result.error)
+        throw new Error("Could not record all planned places")
+      }
+    }
+
+    const selectedTemplateIds = new Set(templateIds)
+    const removedIds = (currentBookings || [])
+      .filter((booking) => !booking.weekly_table_template_id || !selectedTemplateIds.has(booking.weekly_table_template_id))
+      .map((booking) => booking.id)
+    if (removedIds.length) {
+      const { error } = await supabase.from("accepted_bookings").update({ status: "cancelled" }).in("id", removedIds)
+      if (error) throw new Error("Could not release a removed recurring place")
+    }
+
+    const childLifecycle = lifecycleAfterPlanEdit({
       childPipelineStatus: child.pipeline_status,
-      existingBookingStatus: existing?.status || null,
+      existingBookingStatus: null,
     })
-    const payload = {
-      parent_lead_id: parsed.data.parentLeadId,
-      child_lead_id: parsed.data.childLeadId,
-      weekly_table_template_id: template.id,
-      session_price_plan_id: pricePlan.id,
-      weekday: template.weekday,
-      table_number: template.table_number,
-      academy_table_id: template.academy_table_id,
-      seat_number: place.seatNumber,
-      starts_at: template.starts_at,
-      duration_minutes: template.duration_minutes,
-      status: lifecycle.bookingStatus,
-      accepted_by: user.id,
-      planned_sessions: placeSessions,
-      planned_amount_cents: summary.amountCents,
-      planned_period_start: summary.periodStart,
-      planned_period_end: summary.periodEnd,
-      contacted_at: lifecycle.clearContactMetadata
-        ? null
-        : existing?.contacted_at || null,
-      contacted_by: lifecycle.clearContactMetadata
-        ? null
-        : existing?.contacted_by || null,
-    }
-    const result = existing
-      ? await supabase.from("accepted_bookings").update(payload).eq("id", existing.id)
-      : await supabase.from("accepted_bookings").insert(payload)
-    if (result.error) {
-      if (result.error.code === "23505") throw new Error("One of those recurring seats was taken. Review the seat map and try again.")
-      console.error("Multi-place plan save failed", result.error)
-      throw new Error("Could not record all planned places")
-    }
-  }
-
-  const selectedTemplateIds = new Set(templateIds)
-  const removedIds = (currentBookings || [])
-    .filter((booking) => !booking.weekly_table_template_id || !selectedTemplateIds.has(booking.weekly_table_template_id))
-    .map((booking) => booking.id)
-  if (removedIds.length) {
-    const { error } = await supabase.from("accepted_bookings").update({ status: "cancelled" }).in("id", removedIds)
-    if (error) throw new Error("Could not release a removed recurring place")
-  }
-
-  const childLifecycle = lifecycleAfterPlanEdit({
-    childPipelineStatus: child.pipeline_status,
-    existingBookingStatus: null,
-  })
-  const { error: statusError } = await supabase
-    .from("child_leads")
-    .update({ pipeline_status: childLifecycle.childPipelineStatus })
-    .eq("id", parsed.data.childLeadId)
-  if (statusError) throw new Error("The places were planned, but the child status could not be updated")
-
-  if (child.planned_email_draft_subject && child.planned_email_draft_body) {
-    const regenerated = await loadPlannedPlaceEmailDraft({
-      parentLeadId: parsed.data.parentLeadId,
-      childLeadId: parsed.data.childLeadId,
-      useSavedDraft: false,
-    })
-    const regeneratedAt = new Date().toISOString()
-    const { error: draftError } = await supabase
+    const { error: statusError } = await supabase
       .from("child_leads")
-      .update({
-        planned_email_draft_subject: regenerated.subject,
-        planned_email_draft_body: regenerated.body,
-        planned_email_draft_booking_version: regenerated.bookingVersion,
-        planned_email_draft_saved_at: regeneratedAt,
-        planned_email_draft_regeneration_notice: true,
-        planned_email_draft_regenerated_at: regeneratedAt,
-      })
+      .update({ pipeline_status: childLifecycle.childPipelineStatus })
       .eq("id", parsed.data.childLeadId)
-      .eq("parent_lead_id", parsed.data.parentLeadId)
-    if (draftError) {
-      throw new Error("The booking was updated, but the parent email draft could not be regenerated")
-    }
-  }
+    if (statusError) throw new Error("The places were planned, but the child status could not be updated")
 
-  revalidatePath("/admin")
-  revalidatePath("/admin/leads")
+    if (child.planned_email_draft_subject && child.planned_email_draft_body) {
+      const regenerated = await loadPlannedPlaceEmailDraft({
+        parentLeadId: parsed.data.parentLeadId,
+        childLeadId: parsed.data.childLeadId,
+        useSavedDraft: false,
+      })
+      const regeneratedAt = new Date().toISOString()
+      const { error: draftError } = await supabase
+        .from("child_leads")
+        .update({
+          planned_email_draft_subject: regenerated.subject,
+          planned_email_draft_body: regenerated.body,
+          planned_email_draft_booking_version: regenerated.bookingVersion,
+          planned_email_draft_saved_at: regeneratedAt,
+          planned_email_draft_regeneration_notice: true,
+          planned_email_draft_regenerated_at: regeneratedAt,
+        })
+        .eq("id", parsed.data.childLeadId)
+        .eq("parent_lead_id", parsed.data.parentLeadId)
+      if (draftError) {
+        throw new Error("The booking was updated, but the parent email draft could not be regenerated")
+      }
+    }
+
+    revalidatePath("/admin")
+    revalidatePath("/admin/leads")
+  })
 }
 
 export async function releasePlannedChildPlace(formData: FormData) {
@@ -353,24 +376,32 @@ export async function releasePlannedChildPlace(formData: FormData) {
   if (!parsed.success) throw new Error("Could not identify this child")
 
   const supabase = supabaseService()
-  const { error } = await supabase
-    .from("accepted_bookings")
-    .update({ status: "cancelled" })
-    .eq("parent_lead_id", parsed.data.parentLeadId)
-    .eq("child_lead_id", parsed.data.childLeadId)
-    .in("status", ["session_planned", "contacted", "accepted_awaiting_payment"])
+  return await withFamilyBookingLock(supabase, parsed.data.parentLeadId, async () => {
+    const { data: released, error } = await supabase
+      .from("accepted_bookings")
+      .update({ status: "cancelled" })
+      .eq("parent_lead_id", parsed.data.parentLeadId)
+      .eq("child_lead_id", parsed.data.childLeadId)
+      .in("status", ["session_planned", "contacted", "accepted_awaiting_payment"])
+      .select("id")
 
-  if (error) throw new Error("Could not release the planned place")
+    if (error || !released?.length) throw new Error("This planned place is no longer available to release")
 
-  await supabase
-    .from("child_leads")
-    .update({ pipeline_status: "new" })
-    .eq("id", parsed.data.childLeadId)
+    await supabase
+      .from("child_leads")
+      .update({ pipeline_status: "new" })
+      .eq("id", parsed.data.childLeadId)
+      .eq("parent_lead_id", parsed.data.parentLeadId)
 
-  revalidatePath("/admin")
-  revalidatePath("/admin/leads")
+    revalidatePath("/admin")
+    revalidatePath("/admin/leads")
+  })
 }
 
+
+function emailVersion(draft: { bookingVersion: string; to: string }) {
+  return createHash("sha256").update(JSON.stringify([draft.bookingVersion, draft.to])).digest("hex")
+}
 
 export async function previewPlannedPlaceEmail(
   parentLeadId: string,
@@ -410,6 +441,7 @@ export async function previewPlannedPlaceEmail(
     body: draft.body,
     regenerationNotice: draft.regenerationNotice,
     persisted: draft.persisted,
+    version: emailVersion(draft),
   }
 }
 
@@ -418,11 +450,13 @@ export async function savePlannedPlaceEmailDraft({
   childLeadId,
   subject,
   body,
+  version,
 }: {
   parentLeadId: string
   childLeadId: string
   subject: string
   body: string
+  version: string
 }) {
   await requireAdmin()
   const parsed = childActionSchema
@@ -438,6 +472,9 @@ export async function savePlannedPlaceEmailDraft({
     childLeadId: parsed.data.childLeadId,
     useSavedDraft: false,
   })
+  if (emailVersion(current) !== version) {
+    throw new Error("This offer changed. Review the current parent email again.")
+  }
   const content = normalizePlannedPlaceSendContent({
     subject: parsed.data.subject,
     body: parsed.data.body,
@@ -465,121 +502,129 @@ export async function sendPlannedPlaceEmail(formData: FormData) {
     .extend({
       subject: z.string().trim().min(2).max(200),
       body: z.string().trim().min(2).max(12000),
+      version: z.string().regex(/^[a-f0-9]{64}$/),
     })
     .safeParse({
       parentLeadId: formData.get("parentLeadId"),
       childLeadId: formData.get("childLeadId"),
       subject: formData.get("subject"),
       body: formData.get("body"),
+      version: formData.get("version"),
     })
   if (!parsed.success) throw new Error("Check the email before sending")
-  if (!resend) throw new Error("Email sending is not configured")
-
-  const freshDraft = await loadPlannedPlaceEmailDraft({
-    parentLeadId: parsed.data.parentLeadId,
-    childLeadId: parsed.data.childLeadId,
-  })
-  if (!z.string().email().safeParse(freshDraft.to).success) {
-    throw new Error("Add a valid parent email in lead details before sending. The planned place is still saved.")
-  }
-  const sendContent = normalizePlannedPlaceSendContent({
-    subject: parsed.data.subject,
-    body: parsed.data.body,
-  })
+  const emailProvider = resend
+  if (!emailProvider) throw new Error("Email sending is not configured")
   const supabase = supabaseService()
-  const safeHtml = sendContent.body
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
+  return await withFamilyBookingLock(supabase, parsed.data.parentLeadId, async () => {
 
-  const bookingIds = [...freshDraft.bookingIds].sort()
-  const idempotencyKey =
-    "planned-place-" +
-    bookingIds.join("-") +
-    "-" +
-    randomBytes(4).toString("hex")
-
-  const { data: deliveryLog } = await supabase
-    .from("email_delivery_log")
-    .insert({
-      parent_lead_id: parsed.data.parentLeadId,
-      child_lead_id: parsed.data.childLeadId,
-      email_kind: "planned_place",
-      recipient_email: freshDraft.to,
-      idempotency_key: idempotencyKey,
-      subject: sendContent.subject,
-      body_text: sendContent.body,
-      created_by: user.id,
+    const freshDraft = await loadPlannedPlaceEmailDraft({
+      parentLeadId: parsed.data.parentLeadId,
+      childLeadId: parsed.data.childLeadId,
     })
-    .select("id")
-    .single()
-
-  const { data: sendData, error: sendError } = await resend.emails.send(
-    {
-      from: resendFromEmail,
-      to: [freshDraft.to],
-      subject: sendContent.subject,
-      text: sendContent.body,
-      html:
-        '<main style="font-family:Arial,sans-serif;line-height:1.6;max-width:640px;margin:auto;white-space:pre-line">' +
-        safeHtml +
-        "</main>",
-    },
-    { headers: { "Idempotency-Key": idempotencyKey } },
-  )
-
-  if (sendError) {
-    if (deliveryLog) {
-      await supabase
-        .from("email_delivery_log")
-        .update({
-          status: "failed",
-          failed_at: new Date().toISOString(),
-          error_message: sendError.message.slice(0, 500),
-        })
-        .eq("id", deliveryLog.id)
+    if (emailVersion(freshDraft) !== parsed.data.version) {
+      throw new Error("This offer changed. Review the current parent email again.")
     }
-    throw new Error(
-      "The planned places are still saved, but the parent email could not be sent",
-    )
-  }
+    if (!z.string().email().safeParse(freshDraft.to).success) {
+      throw new Error("Add a valid parent email in lead details before sending. The planned place is still saved.")
+    }
+    const sendContent = normalizePlannedPlaceSendContent({
+      subject: parsed.data.subject,
+      body: parsed.data.body,
+    })
+    const safeHtml = sendContent.body
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
 
-  const now = new Date().toISOString()
-  await Promise.all([
-    supabase
-      .from("accepted_bookings")
-      .update({
-        status: "contacted",
-        contacted_at: now,
-        contacted_by: user.id,
+    const bookingIds = [...freshDraft.bookingIds].sort()
+    const idempotencyKey =
+      "planned-place-" +
+      bookingIds.join("-") +
+      "-" +
+      randomBytes(4).toString("hex")
+
+    const { data: deliveryLog } = await supabase
+      .from("email_delivery_log")
+      .insert({
+        parent_lead_id: parsed.data.parentLeadId,
+        child_lead_id: parsed.data.childLeadId,
+        email_kind: "planned_place",
+        recipient_email: freshDraft.to,
+        idempotency_key: idempotencyKey,
+        subject: sendContent.subject,
+        body_text: sendContent.body,
+        created_by: user.id,
       })
-      .in("id", bookingIds),
-    supabase
-      .from("child_leads")
-      .update({ pipeline_status: "contacted" })
-      .eq("id", parsed.data.childLeadId),
-    supabase
-      .from("parent_leads")
-      .update({ status: "contacted" })
-      .eq("id", parsed.data.parentLeadId),
-    supabase
-      .from("child_leads")
-      .update({ planned_email_draft_regeneration_notice: false })
-      .eq("id", parsed.data.childLeadId),
-    deliveryLog
-      ? supabase
+      .select("id")
+      .single()
+
+    const { data: sendData, error: sendError } = await emailProvider.emails.send(
+      {
+        from: resendFromEmail,
+        to: [freshDraft.to],
+        subject: sendContent.subject,
+        text: sendContent.body,
+        html:
+          '<main style="font-family:Arial,sans-serif;line-height:1.6;max-width:640px;margin:auto;white-space:pre-line">' +
+          safeHtml +
+          "</main>",
+      },
+      { headers: { "Idempotency-Key": idempotencyKey } },
+    )
+
+    if (sendError) {
+      if (deliveryLog) {
+        await supabase
           .from("email_delivery_log")
           .update({
-            status: "sent",
-            resend_email_id: sendData?.id || null,
-            sent_at: now,
-            subject: sendContent.subject,
-            body_text: sendContent.body,
+            status: "failed",
+            failed_at: new Date().toISOString(),
+            error_message: sendError.message.slice(0, 500),
           })
           .eq("id", deliveryLog.id)
-      : Promise.resolve(),
-  ])
+      }
+      throw new Error(
+        "The planned places are still saved, but the parent email could not be sent",
+      )
+    }
 
-  revalidatePath("/admin")
-  revalidatePath("/admin/leads")
+    const now = new Date().toISOString()
+    await Promise.all([
+      supabase
+        .from("accepted_bookings")
+        .update({
+          status: "contacted",
+          contacted_at: now,
+          contacted_by: user.id,
+        })
+        .in("id", bookingIds),
+      supabase
+        .from("child_leads")
+        .update({ pipeline_status: "contacted" })
+        .eq("id", parsed.data.childLeadId),
+      supabase
+        .from("parent_leads")
+        .update({ status: "contacted" })
+        .eq("id", parsed.data.parentLeadId),
+      supabase
+        .from("child_leads")
+        .update({ planned_email_draft_regeneration_notice: false })
+        .eq("id", parsed.data.childLeadId),
+      deliveryLog
+        ? supabase
+            .from("email_delivery_log")
+            .update({
+              status: "sent",
+              resend_email_id: sendData?.id || null,
+              sent_at: now,
+              subject: sendContent.subject,
+              body_text: sendContent.body,
+            })
+            .eq("id", deliveryLog.id)
+        : Promise.resolve(),
+    ])
+
+    revalidatePath("/admin")
+    revalidatePath("/admin/leads")
+  })
 }

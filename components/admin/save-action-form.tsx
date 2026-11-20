@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useTransition } from "react"
+import { type ReactNode, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { LoaderCircle } from "lucide-react"
 import { toast } from "sonner"
@@ -22,11 +22,18 @@ export function SaveActionForm({
 }) {
   const [pending, startTransition] = useTransition()
   const router = useRouter()
+  const [feedback, setFeedback] = useState<string | null>(null)
 
   function submit(formData: FormData) {
+    setFeedback(null)
     startTransition(async () => {
       try {
-        await action(formData)
+        const result = await action(formData)
+        if (result && typeof result === "object" && "error" in result &&
+            typeof result.error === "string") {
+          setFeedback(result.error)
+          return
+        }
         toast.success(successMessage)
         onSuccess?.()
         router.refresh()
@@ -41,6 +48,7 @@ export function SaveActionForm({
   return (
     <form action={submit} className="space-y-4">
       {children}
+      {feedback ? <p role="alert" className="text-sm font-medium text-destructive">{feedback}</p> : null}
       <Button disabled={pending} type="submit">
         {pending ? (
           <>

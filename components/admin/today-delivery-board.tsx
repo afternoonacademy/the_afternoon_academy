@@ -39,6 +39,7 @@ type TimeOverride = { delivery_seat_id: string; actual_starts_at: string | null;
 type Seat = {
   id: string;
   delivery_session_id: string;
+  serviceName?: string;
   learner_id: string;
   seat_number: number;
   status: string;
@@ -293,6 +294,7 @@ function TableCard({
                         ? String(plannedSeat.yearGroup)
                         : "Year group not recorded"}
                     </p>
+                    {plannedSeat.serviceName ? <p className="mt-1 text-xs text-sky-100">{plannedSeat.serviceName}</p> : null}
                     <p className="mt-1 text-[10px] font-bold text-sky-100">
                       Planned · awaiting payment
                     </p>
@@ -313,6 +315,7 @@ function TableCard({
                         ? `Year ${String(learner.year_group).replace(/^Year\s*/i, "")}`
                         : "Year group not recorded"}
                     </p>
+                    {seat?.serviceName ? <p className="mt-1 text-xs text-indigo-100">{seat.serviceName}</p> : null}
                     {renewalDue ? (
                       <p className="mt-1 text-[10px] font-bold text-amber-100">
                         Renewal due · place held

@@ -109,7 +109,7 @@ export function LeadChildFields({
           <Input
             id={"child-" + child.key + "-age"}
             min={optional ? "3" : "4"}
-            max={freeTrial ? "12" : optional ? "21" : "18"}
+            max={optional ? "21" : "18"}
             type="number"
             value={child.age}
             onChange={(event) => set("age", event.target.value)}

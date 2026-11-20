@@ -98,14 +98,15 @@ test("free first-session enquiries use the shared intake and persist only an app
   const saved = new Map()
   const partnerId = "165778da-2c4e-423f-90a7-546efcb38761"
   let partnerActive = true
-  const submission = {
-    parentName: "Parent Example", email: "example@example.test", phone: "000000000",
-    children: [{ age: 8, firstName: "Example", supportNeeds: ["homework_help"], preferredDays: ["monday"] }],
+  const trialStudent = {
+    age: 16, firstName: "Example", schoolYear: "Year 11", curriculum: "spanish",
+    supportNeeds: ["igcse_chemistry"], courseOrExamBoard: "Cambridge",
+    preferredDays: ["monday"], preferredTimes: ["17:00-17:50"], preferredFrequency: "two_days",
   }
   const actions = loadSource("actions/submit-lead.ts", {
     "next/navigation": { redirect() {} },
     "@/lib/leads/free-trial.mjs": ui["@/lib/leads/free-trial.mjs"],
-    "@/lib/validations/lead": { leadFormSchema: { safeParse: ({ children }) => ({ success: true, data: { ...submission, children } }) } },
+    "@/lib/validations/lead": loadSource("lib/validations/lead.ts", {}),
     "@/lib/email/resend": { resend: null },
     "@/lib/email/templates": {},
     "@/lib/supabase/admin": { supabaseAdmin: { from(table) {
@@ -133,11 +134,19 @@ test("free first-session enquiries use the shared intake and persist only an app
   })
   const form = new FormData()
   form.set("language", "es")
-  form.set("children", JSON.stringify([{ ...submission.children[0], preferredFrequency: "two_days" }]))
+  form.set("parentName", "Parent Example")
+  form.set("email", "example@example.test")
+  form.set("phone", "000000000")
+  form.set("consentContact", "on")
+  form.set("interestLevel", "very_interested")
+  form.set("children", JSON.stringify([trialStudent]))
   form.set("referral", "partner:" + partnerId)
   await actions.submitFreeTrialLead({}, form)
   assert.equal(saved.get("parent_leads").source, "Free first session · Test partner")
   assert.equal(saved.get("parent_leads").status, "new")
+  assert.equal(saved.get("child_leads")[0].child_age, 16)
+  assert.deepEqual(saved.get("child_leads")[0].support_needs, ["igcse_chemistry"])
+  assert.equal(saved.get("child_leads")[0].course_or_exam_board, "Cambridge")
   assert.equal(saved.get("timetable_preferences")[0].child_lead_id, "child-test")
   assert.equal(saved.get("timetable_preferences")[0].preferred_frequency, "not_sure")
   await actions.submitLead({}, form)
@@ -153,7 +162,7 @@ test("free first-session enquiries use the shared intake and persist only an app
   }
 
   form.set("referral", "google")
-  form.set("children", JSON.stringify([{ ...submission.children[0], age: 13 }]))
+  form.set("children", JSON.stringify([{ ...trialStudent, supportNeeds: ["one_to_one"] }]))
   const result = await actions.submitFreeTrialLead({}, form)
   assert.equal(result.success, false)
   assert.equal(saved.size, 0)

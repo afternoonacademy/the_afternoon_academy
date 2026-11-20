@@ -7,7 +7,7 @@ test("the default referral choices contain generic channels and no named partner
   assert.equal(freeTrialLeadSource("google"), "Free first session · Google Search or Maps")
   assert.equal(new Set(referralChoices.map(({ value }) => value)).size, referralChoices.length)
   assert.equal(isFreeTrialSupport("homework_help"), true)
-  assert.equal(isFreeTrialSupport("igcse_chemistry"), false)
+  assert.equal(isFreeTrialSupport("igcse_chemistry"), true)
   assert.equal(isFreeTrialSupport("one_to_one"), false)
 })
 

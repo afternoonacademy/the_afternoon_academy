@@ -1,5 +1,9 @@
 # The Afternoon Academy — Project Change Log
 
+## 20 November 2026 — Broaden the free first session enquiry
+
+- Reworded both trial landing pages for families across school systems and introduced the Year 10–11 IGCSE Chemistry Focus Group. The same group-session enquiry now accepts older students and IGCSE Chemistry requests, subject to staff confirming a suitable place. A-level provision remains a future possibility.
+
 ## 19 November 2026 — Public first-session offer (preview candidate)
 
 - Opened a first free Homework Club group session to new families with children aged 4–12, subject to suitable availability and staff confirmation. English and Spanish pages are included in the sitemap, linked contextually from the corresponding homepage and omitted from the navigation menu.

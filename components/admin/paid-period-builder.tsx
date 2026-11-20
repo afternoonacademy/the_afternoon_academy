@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { CalendarDays, CircleAlert, RotateCcw, X } from "lucide-react"
 
+import { parseSessionPrice } from "@/lib/dated-session-pricing.mjs"
 import { InfoTip } from "@/components/admin/info-tip"
 
 import { Calendar } from "@/components/ui/calendar"
@@ -57,6 +58,10 @@ function dateKey(value: Date) {
   return `${year}-${month}-${day}`
 }
 
+function sessionKey(session: PaidPeriodSession) {
+  return `${session.placementId}:${session.date}:${session.startsAt}`
+}
+
 function learnerKey(placement: PaidPeriodPlacement) {
   return placement.learnerId || placement.childLeadId || placement.learnerName
 }
@@ -69,7 +74,6 @@ export function PaidPeriodBuilder({
   initialSessions = [],
   inputName = "selectedSessions",
   pricePlans = [],
-  allowPricePlanChange = false,
   purpose = "payment",
   renderPlacementAction,
 }: {
@@ -80,22 +84,26 @@ export function PaidPeriodBuilder({
   initialSessions?: PaidPeriodSession[]
   inputName?: string
   pricePlans?: PricePlan[]
-  allowPricePlanChange?: boolean
   purpose?: "plan" | "payment" | "renewal"
   renderPlacementAction?: (placement: PaidPeriodPlacement) => ReactNode
 }) {
   const initialSelection = () =>
     sortPaidPeriodSessions(
-      initialSessions.length
-        ? initialSessions
-        : placements.flatMap((placement) =>
-            expectedDatesForPlacement(
-              placement,
-              suggestionStart,
-              suggestionEnd,
-              closures,
-            ).map((date) => sessionFromPlacement(placement, date, false)),
-          ),
+      [
+        ...initialSessions.filter((session) => purpose !== "plan" ||
+          placements.some((placement) => placement.placementId === session.placementId))
+          .map((session) => {
+            const placement = placements.find((item) => item.placementId === session.placementId)
+            return purpose === "plan" && placement ? { ...session, seatNumber: placement.seatNumber } : session
+          }),
+        ...placements.filter((placement) =>
+          (!initialSessions.length || purpose === "plan") &&
+          !initialSessions.some((session) => session.placementId === placement.placementId),
+        ).flatMap((placement) =>
+          expectedDatesForPlacement(placement, suggestionStart, suggestionEnd, closures)
+            .map((date) => sessionFromPlacement(placement, date, false)),
+        ),
+      ],
     )
 
   const [sessions, setSessions] = useState<PaidPeriodSession[]>(initialSelection)
@@ -104,7 +112,11 @@ export function PaidPeriodBuilder({
   const [replacementDateByLearner, setReplacementDateByLearner] =
     useState<Record<string, string>>({})
 
+  const [priceInputs, setPriceInputs] = useState<Record<string, string>>({})
+  const [pendingPlans, setPendingPlans] = useState<Record<string, string>>({})
   const summary = paidPeriodSummary(sessions)
+  const hasInvalidPrice = sessions.some((session) => !Number.isInteger(session.priceCents))
+  const hasPendingPlan = sessions.some((session) => pendingPlans[sessionKey(session)])
 
   const learnerGroups = useMemo(() => {
     const groups = new Map<
@@ -162,26 +174,16 @@ export function PaidPeriodBuilder({
     )
   }
 
-  function placementWithSelectedPrice(
-    placement: PaidPeriodPlacement,
-    current: PaidPeriodSession[],
-  ) {
-    const selected = current.find((session) => session.placementId === placement.placementId)
-    return selected
-      ? {
-          ...placement,
-          pricePlanId: selected.pricePlanId,
-          pricePlanName: selected.pricePlanName,
-          priceCents: selected.priceCents,
-        }
-      : placement
-  }
-
   function updateRecurringDates(
     placement: PaidPeriodPlacement,
     dates: Date[] | undefined,
   ) {
     const selectedDates = new Set((dates || []).map(dateKey))
+    for (const session of sessionsForPlacement(placement.placementId)) {
+      if (!session.replacement && session.sessionOrigin !== "pre_agreed_exception" && !selectedDates.has(session.date)) {
+        clearPriceInput(session)
+      }
+    }
 
     setSessions((current) => {
       const otherSessions = current.filter(
@@ -200,11 +202,10 @@ export function PaidPeriodBuilder({
         currentRecurring.map((session) => [session.date, session]),
       )
 
-      const pricedPlacement = placementWithSelectedPrice(placement, current)
       const nextRecurring = [...selectedDates].map(
         (date) =>
           currentByDate.get(date) ||
-          sessionFromPlacement(pricedPlacement, date, false),
+          sessionFromPlacement(placement, date, false),
       )
 
       return sortPaidPeriodSessions([...otherSessions, ...nextRecurring])
@@ -234,7 +235,7 @@ export function PaidPeriodBuilder({
       sortPaidPeriodSessions([
         ...current,
         sessionFromPlacement(
-          placementWithSelectedPrice(placement, current),
+          placement,
           date,
           purpose === "plan" ? false : true,
           purpose === "plan" ? "pre_agreed_exception" : "replacement",
@@ -256,6 +257,7 @@ export function PaidPeriodBuilder({
   }
 
   function removeSession(target: PaidPeriodSession) {
+    clearPriceInput(target)
     setSessions((current) =>
       current.filter(
         (session) =>
@@ -269,15 +271,14 @@ export function PaidPeriodBuilder({
   }
 
   function resetPlacement(placement: PaidPeriodPlacement) {
+    for (const session of sessionsForPlacement(placement.placementId)) clearPriceInput(session)
     setSessions((current) => {
-      const pricedPlacement = placementWithSelectedPrice(placement, current)
-
       const expected = expectedDatesForPlacement(
-        pricedPlacement,
+        placement,
         suggestionStart,
         suggestionEnd,
         closures,
-      ).map((date) => sessionFromPlacement(pricedPlacement, date, false))
+      ).map((date) => sessionFromPlacement(placement, date, false))
 
       return sortPaidPeriodSessions([
         ...current.filter(
@@ -288,22 +289,31 @@ export function PaidPeriodBuilder({
     })
   }
 
-  function changePlan(placement: PaidPeriodPlacement, pricePlanId: string) {
-    const plan = pricePlans.find((item) => item.id === pricePlanId)
-    if (!plan) return
+  function clearPriceInput(session: PaidPeriodSession) {
+    const key = sessionKey(session)
+    setPriceInputs((current) => {
+      const next = { ...current }
+      delete next[key]
+      return next
+    })
+    setPendingPlans((current) => ({ ...current, [key]: "" }))
+  }
 
-    setSessions((current) =>
-      current.map((session) =>
-        session.placementId === placement.placementId
-          ? {
-              ...session,
-              pricePlanId: plan.id,
-              pricePlanName: plan.name,
-              priceCents: plan.price_cents,
-            }
-          : session,
-      ),
-    )
+  function editPrice(session: PaidPeriodSession, value: string) {
+    const key = sessionKey(session)
+    setPriceInputs((current) => ({ ...current, [key]: value }))
+    setSessions((current) => current.map((item) => sessionKey(item) === key
+      ? { ...item, priceCents: parseSessionPrice(value) ?? Number.NaN }
+      : item))
+  }
+
+  function applyPlan(session: PaidPeriodSession, plan: PricePlan, keepPrice: boolean) {
+    const key = sessionKey(session)
+    setPendingPlans((current) => ({ ...current, [key]: "" }))
+    if (!keepPrice) editPrice(session, (plan.price_cents / 100).toFixed(2))
+    setSessions((current) => current.map((item) => sessionKey(item) === key
+      ? { ...item, pricePlanId: plan.id, pricePlanName: plan.name }
+      : item))
   }
 
   if (!placements.length) {
@@ -320,9 +330,10 @@ export function PaidPeriodBuilder({
       <input
         name={inputName}
         type="hidden"
-        value={JSON.stringify(sortPaidPeriodSessions(sessions))}
+        value={hasPendingPlan ? "[]" : JSON.stringify(sortPaidPeriodSessions(sessions))}
       />
 
+      {hasPendingPlan ? <p role="status" className="text-sm">Choose which price to use before saving.</p> : null}
       <div className="rounded-lg border bg-muted/20 p-4">
         <div className="flex items-start gap-3">
           <CalendarDays className="mt-0.5 size-5 text-primary" />
@@ -401,8 +412,6 @@ export function PaidPeriodBuilder({
               new Date(`${closure.date}T12:00:00Z`).getUTCDay() ===
               activePlacement.weekday,
           )
-          const activePlanId =
-            activeSessions[0]?.pricePlanId || activePlacement.pricePlanId
 
           return (
             <section
@@ -485,35 +494,9 @@ export function PaidPeriodBuilder({
                   </div>
                 </div>
 
-                {allowPricePlanChange && pricePlans.length ? (
-                  <label className="mt-4 grid max-w-md gap-1 text-sm font-medium">
-                    Price plan for {days[activePlacement.weekday]}
-                    <select
-                      className="h-10 rounded-md border bg-background px-3 font-normal"
-                      onChange={(event) =>
-                        changePlan(activePlacement, event.target.value)
-                      }
-                      value={activePlanId}
-                    >
-                      {pricePlans.map((plan) => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.name} · {money(plan.price_cents)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : (
-                  <p className="mt-3 text-sm">
-                    {activeSessions[0]?.pricePlanName ||
-                      activePlacement.pricePlanName}{" "}
-                    ·{" "}
-                    {money(
-                      activeSessions[0]?.priceCents ??
-                        activePlacement.priceCents,
-                    )}{" "}
-                    / session
-                  </p>
-                )}
+                <p className="mt-3 text-sm">
+                  Standing rate: {activePlacement.pricePlanName} · {money(activePlacement.priceCents)} / session
+                </p>
 
                 {activeClosureWarnings.length ? (
                   <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
@@ -686,6 +669,14 @@ export function PaidPeriodBuilder({
                           )
                           const historicalPlace = purpose === "renewal" && (!placement ||
                             (placement.effectiveTo && session.date > placement.effectiveTo))
+                          const key = sessionKey(session)
+                          const plan = pricePlans.find((item) => item.id === session.pricePlanId)
+                          const pendingPlan = pricePlans.find((item) => item.id === pendingPlans[key])
+                          const custom = !plan || plan.price_cents !== session.priceCents
+                          const enteredPrice = priceInputs[key]
+                          const priceValue = enteredPrice !== undefined &&
+                            (Number.isNaN(session.priceCents) || parseSessionPrice(enteredPrice) === session.priceCents)
+                            ? enteredPrice : (session.priceCents / 100).toFixed(2)
                           return (
                             <tr
                               className="border-t"
@@ -728,11 +719,51 @@ export function PaidPeriodBuilder({
                                     Replacement
                                   </span>
                                 ) : (
-                                  "Recurring"
+                                  session.sessionOrigin === "pre_agreed_exception" ? "Agreed extra date" : "Recurring"
                                 )}
                               </td>
-                              <td className="px-3 py-2 text-right">
-                                {money(session.priceCents)}
+                              <td className="min-w-48 space-y-2 px-3 py-2">
+                                {purpose !== "payment" && !historicalPlace && pricePlans.length ? (
+                                  <>
+                                    <select
+                                      aria-label={`Service for ${dateLabel(session.date)}`}
+                                      className="w-full rounded border bg-background px-2 py-1 text-xs"
+                                      value={pendingPlan?.id || session.pricePlanId}
+                                      onChange={(event) => {
+                                        const next = pricePlans.find((item) => item.id === event.target.value)
+                                        if (!next || next.id === session.pricePlanId) {
+                                          setPendingPlans((current) => ({ ...current, [key]: "" }))
+                                        } else if (custom && Number.isInteger(session.priceCents)) {
+                                          setPendingPlans((current) => ({ ...current, [key]: next.id }))
+                                        } else {
+                                          applyPlan(session, next, false)
+                                        }
+                                      }}
+                                    >
+                                      {!plan ? <option value={session.pricePlanId}>{session.pricePlanName} (saved)</option> : null}
+                                      {pricePlans.map((item) => <option key={item.id} value={item.id}>{item.name} · {money(item.price_cents)}</option>)}
+                                    </select>
+                                    {pendingPlan ? (
+                                      <div className="flex flex-wrap gap-1">
+                                        <Button type="button" size="sm" variant="outline" onClick={() => applyPlan(session, pendingPlan, true)}>Keep {money(session.priceCents)}</Button>
+                                        <Button type="button" size="sm" variant="outline" onClick={() => applyPlan(session, pendingPlan, false)}>Use {money(pendingPlan.price_cents)}</Button>
+                                      </div>
+                                    ) : null}
+                                    <input
+                                      aria-label={`Price in euros for ${dateLabel(session.date)}`}
+                                      aria-invalid={!Number.isInteger(session.priceCents) || Boolean(pendingPlan)}
+                                      className="w-24 rounded border bg-background px-2 py-1 text-xs"
+                                      inputMode="decimal"
+                                      required
+                                      pattern={pendingPlan ? "(?!)" : "[0-9]{1,5}([.,][0-9]{1,2})?"}
+                                      value={priceValue}
+                                      onChange={(event) => editPrice(session, event.target.value)}
+                                    />
+                                    {custom && Number.isInteger(session.priceCents) ? (
+                                      <p className="text-xs">Agreed price {plan ? <button type="button" className="underline" onClick={() => editPrice(session, (plan.price_cents / 100).toFixed(2))}>Reset to {money(plan.price_cents)}</button> : null}</p>
+                                    ) : null}
+                                  </>
+                                ) : <>{session.pricePlanName} · {money(session.priceCents)}</>}
                               </td>
                               <td className="px-2 py-2 text-right">
                                 {!historicalPlace ? (
@@ -773,7 +804,7 @@ export function PaidPeriodBuilder({
               : ""}
           </p>
         </div>
-        <p className="text-xl font-bold">{money(summary.amountCents)}</p>
+        <p className="text-xl font-bold">{hasInvalidPrice ? "Enter a valid price for each date" : money(summary.amountCents)}</p>
       </div>
 
       <p className="text-sm font-medium text-muted-foreground">

@@ -19,6 +19,7 @@ type Draft = {
   body: string
   regenerationNotice: boolean
   persisted: boolean
+  version: string
 }
 
 export function PlannedPlaceEmailReview({
@@ -50,6 +51,7 @@ export function PlannedPlaceEmailReview({
             childLeadId,
             subject,
             body,
+            version: draft.version,
           })
           dirtyRef.current = false
           setRegenerationNotice(false)
@@ -136,6 +138,7 @@ export function PlannedPlaceEmailReview({
           >
             <input name="parentLeadId" type="hidden" value={parentLeadId} />
             <input name="childLeadId" type="hidden" value={childLeadId} />
+            <input name="version" type="hidden" value={draft.version} />
 
             <div className="space-y-2">
               <Label htmlFor={"planned-email-subject-" + childLeadId}>

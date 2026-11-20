@@ -202,7 +202,7 @@ export function ManualEnrolmentForm({
                         }).format(new Date(session.date + "T12:00:00Z"))}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        Table {session.tableNumber} · {session.startsAt}
+                        Table {session.tableNumber} · {session.timeTbc ? "Time TBC" : session.actualStartsAt || session.startsAt} · {session.pricePlanName}
                         {session.replacement ? " · replacement" : ""}
                       </td>
                       <td className="px-3 py-2 text-right">

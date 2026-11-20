@@ -111,7 +111,7 @@ export default async function AdminLeadsPage() {
     supabaseAdmin
       .from("accepted_bookings")
       .select(
-        "id,child_lead_id,weekly_table_template_id,session_price_plan_id,weekday,table_number,academy_table_id,seat_number,starts_at,duration_minutes,status,planned_sessions,planned_amount_cents,planned_period_start,planned_period_end,child_leads(first_name)",
+        "id,child_lead_id,weekly_table_template_id,session_price_plan_id,weekday,table_number,academy_table_id,seat_number,starts_at,duration_minutes,status,planned_sessions,planned_amount_cents,planned_period_start,planned_period_end,updated_at,child_leads(first_name)",
       )
       .in("status", [
         "session_planned",
@@ -234,6 +234,7 @@ export default async function AdminLeadsPage() {
     starts_at: booking.starts_at,
     duration_minutes: booking.duration_minutes,
     status: booking.status,
+    updated_at: booking.updated_at,
     planned_sessions: Array.isArray(booking.planned_sessions)
       ? booking.planned_sessions
       : [],

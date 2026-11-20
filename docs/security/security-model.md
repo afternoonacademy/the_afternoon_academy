@@ -203,3 +203,8 @@ The Admin server action calls an invoker-rights database function executable by 
 ## Marketing partner choices — 19 November 2026 preview candidate
 
 The partner table stores public organisation names and an active flag. RLS and table grants keep it service-only. The setup capability is checked on every management action. The public pages pass only active IDs and names to the shared form. The public enquiry action rechecks the selected partner and saves the displayed name as attribution on the existing restricted family record. No partner contact or family information is sent to analytics.
+
+
+## Dated session pricing and shared family writes
+
+Admin checks remain on offer, payment, and family adjustment entry points. Initial offer changes check the displayed booking revision, and initial email review and send check that the exact offer has not changed. The family lease serializes competing booking and credit/debt actions. The family payment revision rejects a stale sibling write so the server can merge against the latest row. The database trigger uses invoker rights and no browser execution grant. Operations serializes the service name only. Existing RLS and staff capabilities are unchanged.

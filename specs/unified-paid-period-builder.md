@@ -223,7 +223,7 @@ The reusable initial and renewal email bodies are stored in `academy_email_templ
 - In Family Pipeline → Renewals, **Edit renewal plan** reopens the saved exact dates and price plans after an offer has been emailed. Admin can add/remove recurring or one-off dates, retain dated teaching-time options, and save a recalculated quote. Replacement dates can extend beyond the previously selected dates. Added dates use the price plan selected for that place.
 - Saving changed offer terms keeps **Contacted — awaiting payment** and the standing capacity hold. The current quote is marked for review and explicit **Email revised offer**. Existing email history stays attached to the same renewal case.
 - The saved revision is checked on edit and send. Each sent revision has its own delivery record and provider idempotency key. A provider-confirmed send is reconciled from its log if recording the sent revision failed. Ambiguous retries must use the same recipient and content within the provider idempotency window.
-- Closures, capacity, one price plan per placement, Admin-only access and explicit cleared payment remain enforced. Payment or release competes with edit/send for the same case. An interrupted payment must be retried against the same saved terms before further changes. Closed and paid offers cannot be edited.
+- Closures, capacity, Admin-only access and explicit cleared payment remain enforced. Payment or release competes with edit/send for the same case. An interrupted payment must be retried against the same saved terms before further changes. Closed and paid offers cannot be edited.
 - Acceptance check with synthetic data: send an original offer, add/remove dates and change price, save, check standing capacity and original email history, review/send the revision, check duplicate/stale requests, then confirm payment against the final terms. Verify mobile and desktop. Apply the additive migration before activating the application. Application rollback retains the schema and email history.
 
 ## Move one weekly slot during an unpaid renewal
@@ -235,3 +235,10 @@ Move each affected saved occurrence forward to the next matching weekday. Skip d
 The Admin action rejects stale or closed offers, overlapping sessions, a paid period covering the cutoff, recorded attendance or delivery at affected slots, and insufficient capacity. The service-only database function changes the standing place, recurring booking and quote in one transaction. A trigger protects the end-dated seat through its last applicable dates when other bookings or legacy offers are saved.
 
 Verify with synthetic bookings that Thursday moves to Friday while Tuesday and history remain intact, and that a full destination leaves the offer and both holds as they were. Apply the additive migration before activating the application. A rollback of the application can retain the migration and all committed booking history.
+
+
+## Dated services and agreed pricing
+
+Each date has its own catalogue service and copied integer-cent rate. Newly added dates use the standing place rate. Admin can edit a date, switch service, keep an agreed rate or use the selected service default. A blank, negative or invalid rate is rejected. An explicit zero represents a free session.
+
+Planning, email review and cleared payment use the saved exact terms. Catalogue changes do not reprice saved dates or change historical email. Operations projects only the service name onto the learner's seat. A dated exception never changes the standing rate or recurs in the next offer. The future paid-session editor uses the existing balance audit and keeps the original received amount.

@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { writeFamilyPaidSessions } from "@/lib/admin/write-family-paid-sessions"
 import { withRenewalOfferLock } from "@/lib/admin/renewal-offer-lock"
 import { renewalOfferChanged } from "@/lib/admin/renewal-offer-revisions.mjs"
+import { datedSessionPrice, MAX_SESSION_PRICE_CENTS } from "@/lib/dated-session-pricing.mjs"
+import { withFamilyBookingLock } from "@/lib/admin/family-booking-lock"
 import { requireAdmin } from "@/lib/auth/require-admin"
 import { paymentEligibleBookingStatuses } from "@/lib/admin/lead-planning-lifecycle.mjs"
 import { renderRenewalEmail } from "@/lib/email/renewal-email"
@@ -33,7 +36,7 @@ const selectedSessionSchema = z.object({
   focus: z.string().trim().max(500).nullable(),
   pricePlanId: z.string().uuid(),
   pricePlanName: z.string().trim().min(1).max(160),
-  priceCents: z.coerce.number().int().min(0),
+  priceCents: z.number().int().min(0).max(MAX_SESSION_PRICE_CENTS),
   replacement: z.boolean(),
   sessionOrigin: z
     .enum(["recurring", "pre_agreed_exception", "replacement"])
@@ -73,7 +76,7 @@ function parseSessions(raw: string): PaidPeriodSession[] {
   } catch {
     throw new Error("The selected service dates could not be read")
   }
-  const parsed = z.array(selectedSessionSchema).min(1).safeParse(value)
+  const parsed = z.array(selectedSessionSchema).min(1).max(366).safeParse(value)
   if (!parsed.success) throw new Error("Choose at least one valid paid service date")
   const unique = new Set<string>()
   const learnerAllocations = new Set<string>()
@@ -224,374 +227,347 @@ export async function recordExactManualEnrolment(
     const submitted = parseSessions(value.selectedSessions)
     const supabase = supabaseService()
 
-    const [{ data: child, error: childError }, { data: plannedBookings, error: bookingError }] =
-      await Promise.all([
+    return await withFamilyBookingLock(supabase, value.parentLeadId, async () => {
+      const [{ data: child, error: childError }, { data: plannedBookings, error: bookingError }] =
+        await Promise.all([
+          supabase
+            .from("child_leads")
+            .select("parent_lead_id,first_name,school_year")
+            .eq("id", value.childLeadId)
+            .single(),
+          supabase
+            .from("accepted_bookings")
+            .select("id,status,weekly_table_template_id,session_price_plan_id,seat_number,planned_sessions")
+            .eq("parent_lead_id", value.parentLeadId)
+            .eq("child_lead_id", value.childLeadId)
+            .in("status", paymentEligibleBookingStatuses)
+            .order("weekday"),
+        ])
+
+      if (childError || !child || child.parent_lead_id !== value.parentLeadId) {
+        return { error: "That child does not belong to this family." }
+      }
+      if (!child.first_name) {
+        return { error: "Add the child’s first name before recording their place." }
+      }
+      if (bookingError || !(plannedBookings || []).length) {
+        return {
+          error: "Plan the child’s recurring places before confirming payment.",
+        }
+      }
+
+      const templateIds = (plannedBookings || [])
+        .map((booking) => booking.weekly_table_template_id)
+        .filter((id): id is string => Boolean(id))
+      const [
+        { data: templates, error: templateError },
+        { data: tables, error: tableError },
+      ] = await Promise.all([
         supabase
-          .from("child_leads")
-          .select("parent_lead_id,first_name,school_year")
-          .eq("id", value.childLeadId)
-          .single(),
+          .from("weekly_table_templates")
+          .select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,status")
+          .in("id", templateIds)
+          .eq("status", "active"),
         supabase
-          .from("accepted_bookings")
-          .select("id,status,weekly_table_template_id,session_price_plan_id,seat_number")
-          .eq("parent_lead_id", value.parentLeadId)
-          .eq("child_lead_id", value.childLeadId)
-          .in("status", paymentEligibleBookingStatuses)
-          .order("weekday"),
+          .from("academy_tables")
+          .select("id,status")
+          .eq("status", "active"),
       ])
 
-    if (childError || !child || child.parent_lead_id !== value.parentLeadId) {
-      return { error: "That child does not belong to this family." }
-    }
-    if (!child.first_name) {
-      return { error: "Add the child’s first name before recording their place." }
-    }
-    if (bookingError || !(plannedBookings || []).length) {
-      return {
-        error: "Plan the child’s recurring places before confirming payment.",
+      if (templateError || tableError) {
+        return { error: "One or more planned recurring places could not be verified." }
       }
-    }
 
-    const templateIds = (plannedBookings || [])
-      .map((booking) => booking.weekly_table_template_id)
-      .filter((id): id is string => Boolean(id))
-    const planIds = (plannedBookings || [])
-      .map((booking) => booking.session_price_plan_id)
-      .filter((id): id is string => Boolean(id))
-
-    const [
-      { data: templates, error: templateError },
-      { data: pricePlans, error: pricePlanError },
-      { data: tables, error: tableError },
-    ] = await Promise.all([
-      supabase
-        .from("weekly_table_templates")
-        .select("id,weekday,table_number,academy_table_id,starts_at,duration_minutes,teacher_name,focus,status")
-        .in("id", templateIds)
-        .eq("status", "active"),
-      supabase
-        .from("session_price_plans")
-        .select("id,name,price_cents,status")
-        .in("id", [...new Set(planIds)])
-        .eq("status", "active"),
-      supabase
-        .from("academy_tables")
-        .select("id,status")
-        .eq("status", "active"),
-    ])
-
-    if (templateError || pricePlanError || tableError) {
-      return { error: "One or more planned recurring places could not be verified." }
-    }
-
-    const templateById = new Map((templates || []).map((item) => [item.id, item]))
-    const planById = new Map((pricePlans || []).map((item) => [item.id, item]))
-    const tableIds = new Set((tables || []).map((item) => item.id))
-    const bookingByTemplate = new Map(
-      (plannedBookings || [])
-        .filter((booking) => Boolean(booking.weekly_table_template_id))
-        .map((booking) => [booking.weekly_table_template_id as string, booking]),
-    )
-
-    if (
-      templateById.size !== templateIds.length ||
-      (plannedBookings || []).some(
-        (booking) =>
-          !booking.weekly_table_template_id ||
-          !booking.session_price_plan_id ||
-          !templateById.has(booking.weekly_table_template_id) ||
-          !planById.has(booking.session_price_plan_id),
+      const templateById = new Map((templates || []).map((item) => [item.id, item]))
+      const tableIds = new Set((tables || []).map((item) => item.id))
+      const bookingByTemplate = new Map(
+        (plannedBookings || [])
+          .filter((booking) => Boolean(booking.weekly_table_template_id))
+          .map((booking) => [booking.weekly_table_template_id as string, booking]),
       )
-    ) {
-      return { error: "A planned recurring place or price plan is no longer active." }
-    }
-
-    const submittedPlacementIds = new Set(submitted.map((item) => item.placementId))
-    for (const templateId of templateIds) {
-      if (!submittedPlacementIds.has(templateId)) {
-        return { error: "Every planned recurring place needs at least one paid date." }
-      }
-    }
-
-    const serverSessions: PaidPeriodSession[] = submitted.map((item) => {
-      const booking = bookingByTemplate.get(item.placementId)
-      const template = booking?.weekly_table_template_id
-        ? templateById.get(booking.weekly_table_template_id)
-        : null
-      const pricePlan = booking?.session_price_plan_id
-        ? planById.get(booking.session_price_plan_id)
-        : null
 
       if (
-        !booking ||
-        !template ||
-        !pricePlan ||
-        !tableIds.has(template.academy_table_id) ||
-        item.academyTableId !== template.academy_table_id ||
-        item.tableNumber !== template.table_number ||
-        item.startsAt !== template.starts_at.slice(0, 5) ||
-        item.pricePlanId !== pricePlan.id
+        templateById.size !== templateIds.length ||
+        (plannedBookings || []).some(
+          (booking) =>
+            !booking.weekly_table_template_id ||
+            !booking.session_price_plan_id ||
+            !templateById.has(booking.weekly_table_template_id),
+        )
       ) {
-        throw new Error("The selected paid dates no longer match the saved recurring places")
+        return { error: "A planned recurring place or price plan is no longer active." }
       }
 
-      return {
-        learnerId: null,
-        learnerName: child.first_name,
+      const submittedPlacementIds = new Set(submitted.map((item) => item.placementId))
+      for (const templateId of templateIds) {
+        if (!submittedPlacementIds.has(templateId)) {
+          return { error: "Every planned recurring place needs at least one paid date." }
+        }
+      }
+
+      const serverSessions = parseSessions(JSON.stringify((plannedBookings || []).flatMap(
+        (booking) => Array.isArray(booking.planned_sessions) ? booking.planned_sessions : [],
+      )))
+      if (renewalOfferChanged(serverSessions, submitted)) {
+        return { error: "The planned offer changed. Refresh before recording payment." }
+      }
+      for (const session of serverSessions) {
+        const booking = bookingByTemplate.get(session.placementId)
+        const template = templateById.get(session.placementId)
+        if (!booking || !template ||
+            !tableIds.has(template.academy_table_id) ||
+            session.academyTableId !== template.academy_table_id ||
+            session.tableNumber !== template.table_number ||
+            session.startsAt !== template.starts_at.slice(0, 5)) {
+          return { error: "The selected paid dates no longer match the saved recurring places." }
+        }
+      }
+
+      const { data: existingLearner, error: learnerLookupError } = await supabase
+        .from("learners")
+        .select("id")
+        .eq("child_lead_id", value.childLeadId)
+        .maybeSingle()
+
+      if (learnerLookupError) return { error: "The existing learner could not be checked." }
+      let learner = existingLearner
+      await assertDatesOpen(serverSessions, supabase)
+      await assertPaidPeriodCapacity(serverSessions.map((session) => ({
+        ...session, learnerId: learner?.id ?? null,
+      })), supabase)
+
+      const summary = paidPeriodSummary(serverSessions)
+      if (!summary.periodStart || !summary.periodEnd) {
+        return { error: "Choose at least one paid service date." }
+      }
+
+      const sessionsPerWeek = new Set(templateIds).size
+      const payment = await writeFamilyPaidSessions({
+        supabase,
+        parentLeadId: value.parentLeadId,
+        periodStart: summary.periodStart,
+        periodEnd: summary.periodEnd,
         childLeadId: value.childLeadId,
-        placementId: template.id,
-        date: item.date,
-        academyTableId: template.academy_table_id,
-        tableNumber: template.table_number,
-        seatNumber: booking.seat_number,
-        startsAt: template.starts_at.slice(0, 5),
-        durationMinutes: template.duration_minutes,
-        teacherName: template.teacher_name,
-        focus: template.focus,
-        pricePlanId: pricePlan.id,
-        pricePlanName: pricePlan.name,
-        priceCents: pricePlan.price_cents,
-        replacement: false,
-        sessionOrigin:
-          new Date(`${item.date}T12:00:00Z`).getUTCDay() !== template.weekday
-            ? "pre_agreed_exception"
-            : "recurring",
+        learnerId: learner?.id,
+        sessions: serverSessions,
+        receivedOn: value.receivedOn,
+        userId: user.id,
+      })
+
+      if (!learner) {
+        const { data: created, error } = await supabase
+          .from("learners")
+          .insert({
+            parent_lead_id: value.parentLeadId,
+            child_lead_id: value.childLeadId,
+            first_name: child.first_name,
+            year_group: child.school_year || null,
+            status: "active",
+            parent_information_confirmed: true,
+          })
+          .select("id")
+          .single()
+        if (error || !created) {
+          return { error: "Payment was recorded, but the learner could not be created. Check the record before retrying." }
+        }
+        learner = created
+      } else {
+        const { error } = await supabase.from("learners").update({ status: "active" }).eq("id", learner.id)
+        if (error) {
+          return { error: "Payment was recorded, but the learner could not be activated. Check the record before retrying." }
+        }
+      }
+
+      const datedSessions = serverSessions.map((session) => ({
+        ...session,
+        learnerId: learner.id,
+      }))
+
+      const { error: childPaymentError } = await supabase
+        .from("child_payment_entitlements")
+        .upsert(
+          {
+            payment_entitlement_id: payment.id,
+            learner_id: learner.id,
+            period_start: summary.periodStart,
+            period_end: summary.periodEnd,
+            sessions_per_week: sessionsPerWeek,
+            status: "paid",
+            recorded_by: user.id,
+            selected_sessions: datedSessions,
+            selected_session_count: datedSessions.length,
+          },
+          { onConflict: "learner_id,period_start,period_end" },
+        )
+
+      if (childPaymentError) {
+        return { error: "Payment was recorded, but the child payment entitlement could not be activated. Check the record before retrying." }
+      }
+
+      const standingPlacementByTemplate = new Map<string, string>()
+      for (const booking of plannedBookings || []) {
+        const templateId = booking.weekly_table_template_id!
+        const planId = booking.session_price_plan_id!
+        const template = templateById.get(templateId)!
+
+        const { data: activated, error: activatedLookupError } = await supabase
+          .from("standing_placements")
+          .select("id")
+          .eq("learner_id", learner.id)
+          .eq("academy_table_id", template.academy_table_id)
+          .eq("weekday", template.weekday)
+          .eq("starts_at", template.starts_at)
+          .eq("session_price_plan_id", planId)
+          .eq("effective_from", summary.periodStart)
+          .eq("status", "active")
+          .maybeSingle()
+        if (activatedLookupError) {
+          return { error: "The learner's standing place could not be checked. Retry against the saved offer." }
+        }
+        if (activated) {
+          standingPlacementByTemplate.set(templateId, activated.id)
+          continue
+        }
+
+        const { error: endError } = await supabase
+          .from("standing_placements")
+          .update({
+            status: "ended",
+            effective_to: summary.periodStart,
+            updated_by: user.id,
+          })
+          .eq("learner_id", learner.id)
+          .eq("weekday", template.weekday)
+          .eq("academy_table_id", template.academy_table_id)
+          .eq("starts_at", template.starts_at)
+          .eq("status", "active")
+
+        if (endError) {
+          return { error: "Payment was recorded, but a previous standing place could not be updated. Check the record before retrying." }
+        }
+
+        const { data: placement, error: placementError } = await supabase
+          .from("standing_placements")
+          .insert({
+            learner_id: learner.id,
+            weekday: template.weekday,
+            table_number: template.table_number,
+            academy_table_id: template.academy_table_id,
+            seat_number: booking.seat_number,
+            starts_at: template.starts_at,
+            duration_minutes: template.duration_minutes,
+            teacher_name: template.teacher_name,
+            focus: template.focus,
+            session_price_plan_id: planId,
+            effective_from: summary.periodStart,
+            created_by: user.id,
+            updated_by: user.id,
+          })
+          .select("id")
+          .single()
+
+        if (placementError || !placement) {
+          return { error: "Payment was recorded, but one of the standing places could not be activated. Check the record before retrying." }
+        }
+        standingPlacementByTemplate.set(templateId, placement.id)
+      }
+
+      const exactSessions = datedSessions.map((session) => ({
+        ...session,
+        placementId:
+          standingPlacementByTemplate.get(session.placementId) ||
+          session.placementId,
+      }))
+
+      const allocatedSessions = await createDatedOperationsSeats(
+        exactSessions,
+        learner.id,
+        user.id,
+        supabase,
+      )
+
+      await writeFamilyPaidSessions({
+        supabase,
+        parentLeadId: value.parentLeadId,
+        periodStart: summary.periodStart,
+        periodEnd: summary.periodEnd,
+        childLeadId: value.childLeadId,
+        learnerId: learner.id,
+        sessions: allocatedSessions,
+        recordPayment: false,
+      })
+      await Promise.all([
+        supabase
+          .from("child_payment_entitlements")
+          .update({
+            selected_sessions: allocatedSessions,
+            selected_session_count: allocatedSessions.length,
+          })
+          .eq("payment_entitlement_id", payment.id)
+          .eq("learner_id", learner.id),
+        supabase
+          .from("accepted_bookings")
+          .update({
+            learner_id: learner.id,
+            payment_entitlement_id: payment.id,
+            status: "paid_active",
+            paid_at: new Date().toISOString(),
+            paid_by: user.id,
+          })
+          .in(
+            "id",
+            (plannedBookings || []).map((booking) => booking.id),
+          ),
+        supabase
+          .from("child_leads")
+          .update({ pipeline_status: "paid" })
+          .eq("id", value.childLeadId),
+      ])
+
+      const { data: familyChildLeads } = await supabase
+        .from("child_leads")
+        .select("id,pipeline_status")
+        .eq("parent_lead_id", value.parentLeadId)
+
+      const allChildrenActivated =
+        Boolean(familyChildLeads?.length) &&
+        (familyChildLeads || []).every((item) => item.pipeline_status === "paid")
+
+      const parentUpdate = allChildrenActivated
+        ? {
+            status: "converted",
+            enrolled_at: new Date().toISOString(),
+            enrolled_by: user.id,
+            payment_confirmed_at: new Date().toISOString(),
+            payment_confirmed_by: user.id,
+          }
+        : {
+            payment_confirmed_at: new Date().toISOString(),
+            payment_confirmed_by: user.id,
+          }
+
+      const { error: parentUpdateError } = await supabase
+        .from("parent_leads")
+        .update(parentUpdate)
+        .eq("id", value.parentLeadId)
+
+      if (parentUpdateError) {
+        console.error("Child payment saved but family status update failed", {
+          parentUpdateError,
+          parentLeadId: value.parentLeadId,
+        })
+      }
+
+      revalidatePath("/admin")
+      revalidatePath("/admin/leads")
+      revalidatePath("/admin/learners")
+      revalidatePath("/admin/sessions")
+      revalidatePath("/admin/payments")
+
+      return {
+        success: `Payment recorded for ${child.first_name}. ${allocatedSessions.length} dated Operations place${allocatedSessions.length === 1 ? "" : "s"} activated across ${sessionsPerWeek} recurring day${sessionsPerWeek === 1 ? "" : "s"}.`,
       }
     })
-
-    await assertDatesOpen(serverSessions, supabase)
-    await assertPaidPeriodCapacity(serverSessions, supabase)
-
-    const summary = paidPeriodSummary(serverSessions)
-    if (!summary.periodStart || !summary.periodEnd) {
-      return { error: "Choose at least one paid service date." }
-    }
-
-    const sessionsPerWeek = new Set(templateIds).size
-    const { data: payment, error: paymentError } = await supabase
-      .from("payment_entitlements")
-      .upsert(
-        {
-          parent_lead_id: value.parentLeadId,
-          period_start: summary.periodStart,
-          period_end: summary.periodEnd,
-          sessions_per_week: sessionsPerWeek,
-          status: "paid",
-          amount_cents: summary.amountCents,
-          received_at: `${value.receivedOn}T12:00:00Z`,
-          recorded_by: user.id,
-          selected_sessions: serverSessions,
-          selected_session_count: serverSessions.length,
-        },
-        { onConflict: "parent_lead_id,period_start,period_end" },
-      )
-      .select("id")
-      .single()
-
-    if (paymentError || !payment) {
-      console.error("Manual paid-period record failed", { paymentError })
-      return {
-        error: "The payment record could not be created. The planned recurring places are still held; check the payment details and retry.",
-      }
-    }
-
-    let { data: learner } = await supabase
-      .from("learners")
-      .select("id")
-      .eq("child_lead_id", value.childLeadId)
-      .maybeSingle()
-
-    if (!learner) {
-      const { data: created, error } = await supabase
-        .from("learners")
-        .insert({
-          parent_lead_id: value.parentLeadId,
-          child_lead_id: value.childLeadId,
-          first_name: child.first_name,
-          year_group: child.school_year || null,
-          status: "active",
-          parent_information_confirmed: true,
-        })
-        .select("id")
-        .single()
-      if (error || !created) {
-        return { error: "Payment was recorded, but the learner could not be created. Check the record before retrying." }
-      }
-      learner = created
-    } else {
-      const { error } = await supabase.from("learners").update({ status: "active" }).eq("id", learner.id)
-      if (error) {
-        return { error: "Payment was recorded, but the learner could not be activated. Check the record before retrying." }
-      }
-    }
-
-    const datedSessions = serverSessions.map((session) => ({
-      ...session,
-      learnerId: learner.id,
-    }))
-
-    const { error: childPaymentError } = await supabase
-      .from("child_payment_entitlements")
-      .upsert(
-        {
-          payment_entitlement_id: payment.id,
-          learner_id: learner.id,
-          period_start: summary.periodStart,
-          period_end: summary.periodEnd,
-          sessions_per_week: sessionsPerWeek,
-          status: "paid",
-          recorded_by: user.id,
-          selected_sessions: datedSessions,
-          selected_session_count: datedSessions.length,
-        },
-        { onConflict: "learner_id,period_start,period_end" },
-      )
-
-    if (childPaymentError) {
-      return { error: "Payment was recorded, but the child payment entitlement could not be activated. Check the record before retrying." }
-    }
-
-    const standingPlacementByTemplate = new Map<string, string>()
-    for (const booking of plannedBookings || []) {
-      const templateId = booking.weekly_table_template_id!
-      const planId = booking.session_price_plan_id!
-      const template = templateById.get(templateId)!
-
-      const { error: endError } = await supabase
-        .from("standing_placements")
-        .update({
-          status: "ended",
-          effective_to: summary.periodStart,
-          updated_by: user.id,
-        })
-        .eq("learner_id", learner.id)
-        .eq("weekday", template.weekday)
-        .eq("academy_table_id", template.academy_table_id)
-        .eq("starts_at", template.starts_at)
-        .eq("status", "active")
-
-      if (endError) {
-        return { error: "Payment was recorded, but a previous standing place could not be updated. Check the record before retrying." }
-      }
-
-      const { data: placement, error: placementError } = await supabase
-        .from("standing_placements")
-        .insert({
-          learner_id: learner.id,
-          weekday: template.weekday,
-          table_number: template.table_number,
-          academy_table_id: template.academy_table_id,
-          seat_number: booking.seat_number,
-          starts_at: template.starts_at,
-          duration_minutes: template.duration_minutes,
-          teacher_name: template.teacher_name,
-          focus: template.focus,
-          session_price_plan_id: planId,
-          effective_from: summary.periodStart,
-          created_by: user.id,
-          updated_by: user.id,
-        })
-        .select("id")
-        .single()
-
-      if (placementError || !placement) {
-        return { error: "Payment was recorded, but one of the standing places could not be activated. Check the record before retrying." }
-      }
-      standingPlacementByTemplate.set(templateId, placement.id)
-    }
-
-    const exactSessions = datedSessions.map((session) => ({
-      ...session,
-      placementId:
-        standingPlacementByTemplate.get(session.placementId) ||
-        session.placementId,
-    }))
-
-    const allocatedSessions = await createDatedOperationsSeats(
-      exactSessions,
-      learner.id,
-      user.id,
-      supabase,
-    )
-
-    await Promise.all([
-      supabase
-        .from("payment_entitlements")
-        .update({
-          selected_sessions: allocatedSessions,
-          selected_session_count: allocatedSessions.length,
-        })
-        .eq("id", payment.id),
-      supabase
-        .from("child_payment_entitlements")
-        .update({
-          selected_sessions: allocatedSessions,
-          selected_session_count: allocatedSessions.length,
-        })
-        .eq("payment_entitlement_id", payment.id)
-        .eq("learner_id", learner.id),
-      supabase
-        .from("accepted_bookings")
-        .update({
-          learner_id: learner.id,
-          payment_entitlement_id: payment.id,
-          status: "paid_active",
-          paid_at: new Date().toISOString(),
-          paid_by: user.id,
-        })
-        .in(
-          "id",
-          (plannedBookings || []).map((booking) => booking.id),
-        ),
-      supabase
-        .from("child_leads")
-        .update({ pipeline_status: "paid" })
-        .eq("id", value.childLeadId),
-    ])
-
-    const { data: familyChildLeads } = await supabase
-      .from("child_leads")
-      .select("id,pipeline_status")
-      .eq("parent_lead_id", value.parentLeadId)
-
-    const allChildrenActivated =
-      Boolean(familyChildLeads?.length) &&
-      (familyChildLeads || []).every((item) => item.pipeline_status === "paid")
-
-    const parentUpdate = allChildrenActivated
-      ? {
-          status: "converted",
-          enrolled_at: new Date().toISOString(),
-          enrolled_by: user.id,
-          payment_confirmed_at: new Date().toISOString(),
-          payment_confirmed_by: user.id,
-        }
-      : {
-          payment_confirmed_at: new Date().toISOString(),
-          payment_confirmed_by: user.id,
-        }
-
-    const { error: parentUpdateError } = await supabase
-      .from("parent_leads")
-      .update(parentUpdate)
-      .eq("id", value.parentLeadId)
-
-    if (parentUpdateError) {
-      console.error("Child payment saved but family status update failed", {
-        parentUpdateError,
-        parentLeadId: value.parentLeadId,
-      })
-    }
-
-    revalidatePath("/admin")
-    revalidatePath("/admin/leads")
-    revalidatePath("/admin/learners")
-    revalidatePath("/admin/sessions")
-    revalidatePath("/admin/payments")
-
-    return {
-      success: `Payment recorded for ${child.first_name}. ${allocatedSessions.length} dated Operations place${allocatedSessions.length === 1 ? "" : "s"} activated across ${sessionsPerWeek} recurring day${sessionsPerWeek === 1 ? "" : "s"}.`,
-    }
   } catch (error) {
     console.error("Exact manual enrolment failed:", error)
     return {
@@ -699,8 +675,6 @@ export async function prepareExactRenewalDraft(formData: FormData) {
     const learner = Array.isArray(placement.learners)
       ? placement.learners[0]
       : placement.learners
-    const plan = planById.get(item.pricePlanId)
-    if (!plan) throw new Error("A selected price plan is no longer active")
     if (
       item.learnerId !== placement.learner_id ||
       item.academyTableId !== placement.academy_table_id ||
@@ -724,26 +698,17 @@ export async function prepareExactRenewalDraft(formData: FormData) {
       durationMinutes: placement.duration_minutes,
       teacherName: placement.teacher_name,
       focus: placement.focus,
-      pricePlanId: plan.id,
-      pricePlanName: plan.name,
-      priceCents: plan.price_cents,
-      replacement:
-        new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday,
-      sessionOrigin:
-        new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday
-          ? "replacement"
-          : "recurring",
+      ...datedSessionPrice(
+        item,
+        savedByDateAndPlace.get(`${item.placementId}:${item.date}`),
+        planById.get(item.pricePlanId),
+      ),
+      replacement: item.replacement || new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday,
+      sessionOrigin: item.replacement || new Date(`${item.date}T12:00:00Z`).getUTCDay() !== placement.weekday
+        ? "replacement"
+        : "recurring",
     }
   })
-
-  const plansByPlacement = new Map<string, string>()
-  for (const session of serverSessions) {
-    const existing = plansByPlacement.get(session.placementId)
-    if (existing && existing !== session.pricePlanId) {
-      throw new Error("Choose one price plan for each recurring place")
-    }
-    plansByPlacement.set(session.placementId, session.pricePlanId)
-  }
 
   await assertDatesOpen(serverSessions, supabase)
   await assertPaidPeriodCapacity(serverSessions, supabase)
@@ -821,7 +786,7 @@ export async function recordExactRenewalPayment(formData: FormData) {
     throw new Error("This historical family renewal must be completed from the legacy renewal screen")
 
   const saved = parseSessions(JSON.stringify(renewal.selected_sessions || []))
-  if (JSON.stringify(saved) !== JSON.stringify(submitted))
+  if (renewalOfferChanged(saved, submitted))
     throw new Error("The renewal selection changed. Save the exact sessions again before recording payment.")
 
   await assertDatesOpen(saved, supabase)
@@ -834,14 +799,6 @@ export async function recordExactRenewalPayment(formData: FormData) {
   if (learnerIds.length !== 1 || learnerIds[0] !== renewal.learner_id) {
     throw new Error("This renewal must contain only the selected learner’s sessions")
   }
-  const plansByPlacement = new Map<string, string>()
-  for (const session of saved) {
-    const previous = plansByPlacement.get(session.placementId)
-    if (previous && previous !== session.pricePlanId)
-      throw new Error("A learner place has more than one price plan in the same paid period")
-    plansByPlacement.set(session.placementId, session.pricePlanId)
-  }
-
   await withRenewalOfferLock(supabase, renewal, async () => {
     const ledgerNote = [
       parsed.data.bankReference ? `Bank reference: ${parsed.data.bankReference}` : null,
@@ -849,28 +806,6 @@ export async function recordExactRenewalPayment(formData: FormData) {
     ]
       .filter(Boolean)
       .join(" · ")
-
-    const { data: existingPayment } = await supabase
-      .from("payment_entitlements")
-      .select("id,selected_sessions")
-      .eq("parent_lead_id", parsed.data.parentLeadId)
-      .eq("period_start", summary.periodStart)
-      .eq("period_end", summary.periodEnd)
-      .maybeSingle()
-
-    const existingFamilySessions = Array.isArray(existingPayment?.selected_sessions)
-      ? parseSessions(JSON.stringify(existingPayment.selected_sessions))
-      : []
-    const otherLearnerSessions = existingFamilySessions.filter(
-      (session) => session.learnerId !== renewal.learner_id,
-    )
-    const familySessionsBeforeAllocation = sortPaidPeriodSessions([
-      ...otherLearnerSessions,
-      ...saved,
-    ])
-    const familySummaryBeforeAllocation = paidPeriodSummary(
-      familySessionsBeforeAllocation,
-    )
 
     // Keep the terms fixed if an interrupted payment has already created
     // ledger entries or delivery seats. Retrying payment uses these same dates.
@@ -880,35 +815,17 @@ export async function recordExactRenewalPayment(formData: FormData) {
       .is("offer_payment_started_at", null)
     if (paymentStartError) throw new Error("Could not prepare the renewal for payment")
 
-    const { data: payment, error: paymentError } = await supabase
-      .from("payment_entitlements")
-      .upsert(
-        {
-          parent_lead_id: parsed.data.parentLeadId,
-          period_start: summary.periodStart,
-          period_end: summary.periodEnd,
-          sessions_per_week: Math.max(
-            1,
-            new Set(
-              familySessionsBeforeAllocation.map(
-                (session) => session.placementId,
-              ),
-            ).size,
-          ),
-          status: "paid",
-          amount_cents: familySummaryBeforeAllocation.amountCents,
-          received_at: `${parsed.data.receivedOn}T12:00:00Z`,
-          recorded_by: user.id,
-          note: ledgerNote || null,
-          selected_sessions: familySessionsBeforeAllocation,
-          selected_session_count: familySessionsBeforeAllocation.length,
-        },
-        { onConflict: "parent_lead_id,period_start,period_end" },
-      )
-      .select("id")
-      .single()
-    if (paymentError || !payment)
-      throw new Error("Could not record the received payment")
+    const payment = await writeFamilyPaidSessions({
+      supabase,
+      parentLeadId: parsed.data.parentLeadId,
+      periodStart: summary.periodStart!,
+      periodEnd: summary.periodEnd!,
+      learnerId: renewal.learner_id!,
+      sessions: saved,
+      receivedOn: parsed.data.receivedOn,
+      userId: user.id,
+      note: ledgerNote || null,
+    })
 
     const allocatedSessions: PaidPeriodSession[] = []
 
@@ -950,37 +867,15 @@ export async function recordExactRenewalPayment(formData: FormData) {
     }
 
     const finalSessions = sortPaidPeriodSessions(allocatedSessions)
-    const familyFinalSessions = sortPaidPeriodSessions([
-      ...otherLearnerSessions,
-      ...finalSessions,
-    ])
-    const familyFinalSummary = paidPeriodSummary(familyFinalSessions)
-    const { error: paymentSessionError } = await supabase
-      .from("payment_entitlements")
-      .update({
-        amount_cents: familyFinalSummary.amountCents,
-        selected_sessions: familyFinalSessions,
-        selected_session_count: familyFinalSessions.length,
-      })
-      .eq("id", payment.id)
-
-    if (paymentSessionError) {
-      throw new Error(
-        "Payment and Operations places were recorded, but the payment session audit could not be updated",
-      )
-    }
-
-    for (const [placementId, pricePlanId] of plansByPlacement) {
-      const { error } = await supabase
-        .from("standing_placements")
-        .update({ session_price_plan_id: pricePlanId, updated_by: user.id })
-        .eq("id", placementId)
-        .eq("status", "active")
-      if (error)
-        throw new Error(
-          "Payment was recorded, but a selected price plan could not be applied to the learner’s standing place",
-        )
-    }
+    await writeFamilyPaidSessions({
+      supabase,
+      parentLeadId: parsed.data.parentLeadId,
+      periodStart: summary.periodStart!,
+      periodEnd: summary.periodEnd!,
+      learnerId: renewal.learner_id!,
+      sessions: finalSessions,
+      recordPayment: false,
+    })
 
     await supabase
       .from("accepted_bookings")

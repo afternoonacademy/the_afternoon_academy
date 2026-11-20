@@ -1,5 +1,10 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Dated session pricing release candidate
+
+Exact sessions in the existing JSON store the chosen catalogue ID, service label and agreed cents. The dated Operations view reads labels server-side from the matching planned booking or paid child entitlement. The additive family payment revision and booking lease migration must be applied before deploying the code. Existing RLS and service-only access remain in place. Roll back application code first and retain the additive columns and audit history.
+
+
 ## Public footer social links — 20 November 2026 preview candidate
 
 The shared PublicFooter in components/shared/public-shell.tsx contains the founder-supplied Facebook profile and Instagram account links on both locales. These are plain external links with inline decorative SVG icons, 44px targets, keyboard focus styles and localised accessible new-tab labels. No provider scripts or embeds load. Update destinations in the shared footer; no environment or database configuration is required. Preview acceptance precedes production merge.

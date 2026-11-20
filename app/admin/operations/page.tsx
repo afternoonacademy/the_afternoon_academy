@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loadRenewalExpectedSeatsForDate } from "@/lib/admin/operations-renewal-expectations";
 import { loadPlannedExpectedSeatsForDate } from "@/lib/admin/operations-planned-expectations";
+import { seatServiceKey, seatServiceNames } from "@/lib/dated-session-pricing.mjs";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Operations view includes renewal-due recurring capacity.
@@ -87,11 +88,11 @@ export default async function AdminPage({
       .select("delivery_seat_id,actual_starts_at,time_tbc"),
   ]);
 
-  const sessionIds = new Set((sessions || []).map((session) => session.id));
+  const sessionsById = new Map((sessions || []).map((session) => [session.id, session]));
   const visibleSeats = (seats || []).filter((seat) =>
-    sessionIds.has(seat.delivery_session_id),
+    sessionsById.has(seat.delivery_session_id),
   );
-  const [expectedRenewalSeats, expectedPlannedSeats] = await Promise.all([
+  const [expectedRenewalSeats, expectedPlannedSeats, paidTerms] = await Promise.all([
     loadRenewalExpectedSeatsForDate({
       date,
       sessions: sessions || [],
@@ -103,7 +104,22 @@ export default async function AdminPage({
       date,
       academyClosed: Boolean((closures || []).length),
     }),
+    visibleSeats.length ? supabaseAdmin.from("child_payment_entitlements")
+      .select("learner_id,selected_sessions")
+      .eq("status", "paid")
+      .in("learner_id", [...new Set(visibleSeats.map((seat) => seat.learner_id))])
+      .lte("period_start", date)
+      .gte("period_end", date)
+      .order("period_start", { ascending: false }) : null,
   ]);
+  const serviceNames = seatServiceNames(date, paidTerms?.data || []);
+  const operationsSeats = visibleSeats.map((seat) => {
+    const session = sessionsById.get(seat.delivery_session_id)!;
+    return {
+      ...seat,
+      serviceName: serviceNames.get(seatServiceKey(seat.learner_id, session.academy_table_id, session.starts_at)),
+    };
+  });
   const link = (next: Record<string, string>) =>
     `/admin/operations?${new URLSearchParams({ date, ...next })}`;
 
@@ -149,7 +165,7 @@ export default async function AdminPage({
         learners={learners || []}
         expectedRenewalSeats={expectedRenewalSeats}
         expectedPlannedSeats={expectedPlannedSeats}
-        seats={visibleSeats}
+        seats={operationsSeats}
         standingPlaces={standingPlaces || []}
         timeOverrides={timeOverrides || []}
         sessions={sessions || []}

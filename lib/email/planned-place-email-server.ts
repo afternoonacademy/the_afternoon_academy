@@ -191,16 +191,7 @@ export async function loadPlannedPlaceEmailDraft({
     })
     .join("\n")
 
-  const planNames = [
-    ...new Set(
-      (bookings || []).map((booking) => {
-        const relation = Array.isArray(booking.session_price_plans)
-          ? booking.session_price_plans[0]
-          : booking.session_price_plans
-        return relation?.name || "Academy session"
-      }),
-    ),
-  ]
+  const planNames = [...new Set(sessions.map((session) => session.pricePlanName))]
 
   const sessionPrices = [
     ...new Set(sessions.map((session) => money(session.priceCents))),

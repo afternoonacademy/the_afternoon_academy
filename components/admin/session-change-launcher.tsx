@@ -6,6 +6,8 @@ import { SessionChangeForm } from "@/components/admin/session-change-form"
 import { Button } from "@/components/ui/button"
 
 type PaidSession = {
+  placementId: string
+  datedException: boolean
   date: string
   startsAt: string
   priceCents: number

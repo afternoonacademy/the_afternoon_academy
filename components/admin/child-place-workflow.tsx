@@ -9,6 +9,7 @@ import {
 } from "@/actions/child-place-planning"
 import { InfoTip } from "@/components/admin/info-tip"
 import { ManualEnrolmentForm } from "@/components/admin/manual-enrolment-form"
+import { plannedBookingRevision } from "@/lib/dated-session-pricing.mjs"
 import { PaidPeriodBuilder } from "@/components/admin/paid-period-builder"
 import { PlannedPlaceEmailReview } from "@/components/admin/planned-place-email-review"
 import { SaveActionForm } from "@/components/admin/save-action-form"
@@ -56,6 +57,7 @@ export type PlannedBooking = {
   starts_at: string
   duration_minutes: number
   status: string
+  updated_at: string
   planned_sessions: PaidPeriodSession[]
   planned_amount_cents: number | null
   planned_period_start: string | null
@@ -294,6 +296,7 @@ export function ChildPlaceWorkflow({
         >
           <input name="parentLeadId" type="hidden" value={parentLeadId} />
           <input name="childLeadId" type="hidden" value={child.id} />
+          <input type="hidden" name="planRevision" value={plannedBookingRevision(plannedBookings)} />
           <input
             name="plannedPlaces"
             type="hidden"
@@ -521,6 +524,7 @@ export function ChildPlaceWorkflow({
             closures={closures}
             initialSessions={initialSessions}
             placements={builderPlacements}
+            pricePlans={pricePlans}
             purpose="plan"
             suggestionEnd={
               plannedBookings

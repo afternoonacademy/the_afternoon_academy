@@ -42,7 +42,7 @@ test("unresolved template tokens are left visible for admin review", () => {
 })
 
 
-test("planned-place dates are grouped under the session name without repeating table or price", async () => {
+test("planned-place dates are grouped under the session name with the agreed price on each date", async () => {
   const { formatPlannedSessionGroups } = await import("../lib/email/planned-place-email.mjs")
 
   const output = formatPlannedSessionGroups([
@@ -79,11 +79,10 @@ test("planned-place dates are grouped under the session name without repeating t
     output,
     [
       "General Homework Support",
-      "Thursday 1 October · 17:00",
-      "Monday 5 October · 17:00 · replacement",
-      "Thursday 8 October · 17:00",
+      "Thursday 1 October · 17:00 · €25.00",
+      "Monday 5 October · 17:00 · replacement · €25.00",
+      "Thursday 8 October · 17:00 · €25.00",
     ].join("\n"),
   )
   assert.doesNotMatch(output, /Table 1/)
-  assert.doesNotMatch(output, /€25/)
 })

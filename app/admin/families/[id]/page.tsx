@@ -251,18 +251,21 @@ export default async function FamilyAccountPage({ params }: PageProps) {
                     const value = session as Record<string, unknown>
                     if (
                       typeof value.date !== "string" ||
+                      typeof value.placementId !== "string" ||
                       typeof value.startsAt !== "string" ||
                       typeof value.priceCents !== "number" ||
                       typeof value.pricePlanName !== "string"
                     ) return null
                     return {
                       date: value.date,
+                      placementId: value.placementId,
+                      datedException: value.replacement === true || value.sessionOrigin === "pre_agreed_exception",
                       startsAt: value.startsAt,
                       priceCents: value.priceCents,
                       pricePlanName: value.pricePlanName,
                     }
                   })
-                  .filter((session): session is { date: string; startsAt: string; priceCents: number; pricePlanName: string } => Boolean(session))
+                  .filter((session): session is { date: string; placementId: string; datedException: boolean; startsAt: string; priceCents: number; pricePlanName: string } => Boolean(session))
                   .sort((a, b) => a.date.localeCompare(b.date))
               : []
 

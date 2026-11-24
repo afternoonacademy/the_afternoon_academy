@@ -9,10 +9,10 @@ import {
 } from "@/lib/discovery/homework-parent-guide"
 
 const articlePath = "/resources/homework-without-conflict"
-const heroImage = "/images/homework-guide/taa-small-group-learning.jpg"
+const heroImage = "/images/homework-guide/taa-drawing-activity-enhanced.jpg"
 const heroAlt = {
-  en: "An adult and two children looking at a worksheet together around a table at The Afternoon Academy.",
-  es: "Una persona adulta y dos niños revisan juntos una ficha alrededor de una mesa en The Afternoon Academy.",
+  en: "Children drawing with coloured pencils at a table at The Afternoon Academy, photographed from behind.",
+  es: "Niños dibujando con lápices de colores en una mesa de The Afternoon Academy, fotografiados desde atrás.",
 }
 
 export function homeworkSupportMetadata(lang: Language): Metadata {
@@ -35,7 +35,7 @@ export function homeworkSupportMetadata(lang: Language): Metadata {
       alternateLocale: lang === "en" ? "es_ES" : "en_GB",
       siteName: "The Afternoon Academy",
       modifiedTime: "2026-11-24",
-      images: [{ url: heroImage, width: 1600, height: 1200, alt: heroAlt[lang] }],
+      images: [{ url: heroImage, width: 1448, height: 1086, alt: heroAlt[lang] }],
     },
     twitter: {
       card: "summary_large_image",
@@ -98,8 +98,8 @@ export function HomeworkSupportArticle({ lang }: { lang: Language }) {
             <Image
               src={heroImage}
               alt={heroAlt[lang]}
-              width={1600}
-              height={1200}
+              width={1448}
+              height={1086}
               sizes="(min-width: 1280px) 520px, (min-width: 768px) 45vw, 100vw"
               loading="eager"
               className="aspect-[4/3] w-full rounded-3xl object-cover"
@@ -131,10 +131,10 @@ export function HomeworkSupportArticle({ lang }: { lang: Language }) {
 
         <section className="mt-14 grid gap-8 rounded-3xl border bg-white/80 p-6 md:grid-cols-[1fr_1.4fr] md:p-9">
           <Image
-            src="/images/homework-guide/taa-teacher-support.jpg"
+            src="/images/homework-guide/taa-teacher-support-enhanced.jpg"
             alt={lang === "en" ? "An adult and a child looking at worksheets together at a desk at The Afternoon Academy." : "Una persona adulta y un niño revisan juntos unas fichas en un escritorio de The Afternoon Academy."}
-            width={1600}
-            height={1200}
+            width={1448}
+            height={1086}
             sizes="(min-width: 1280px) 430px, (min-width: 768px) 40vw, 100vw"
             className="h-auto w-full self-start rounded-2xl"
           />

@@ -68,6 +68,10 @@ Without explicit approval, do not send to an AI provider:
 
 AI must not diagnose, label, rank children, predict outcomes, make safeguarding decisions, or make other high-stakes educational decisions. Future administrative AI outputs require human review.
 
+### Supplied marketing photographs — specific authorisation, 24 November 2026
+
+The founder explicitly authorised use of the supplied academy marketing photos and then requested AI image improvement and website republication. This narrowly authorises the built-in image-generation tool to retouch those supplied photos and prepare their campaign visuals. Inputs are limited to these approved images and the TAA logo, with neutral visual instructions; no operational learner records, names, profiles, observations or inferred learning difficulties are included. Review outputs against the source photographs and retain the originals. This records the specific instruction, not general approval for AI processing of identifiable learner data or a claim that broader provider/data-protection assessments have been completed. See the [image enhancement change record](../product/project-change-log.md#24-november-2026--homework-guide-ai-photo-enhancement-and-social-copy).
+
 ## Logging and observability
 
 Logs should help diagnose systems without becoming a shadow learner database. Do not log secrets, authentication tokens, full sensitive payloads, or safeguarding content. Production error monitoring should use the minimum information necessary to identify and fix failures.

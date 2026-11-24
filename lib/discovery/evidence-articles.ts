@@ -1,3 +1,5 @@
+import { homeworkParentGuide, homeworkParentGuideSources } from "./homework-parent-guide"
+
 export type EvidenceArticle={section:"supports"|"resources";slug:string;en:{title:string;intro:string;sections:{title:string;body:string}[]};es:{title:string;intro:string;sections:{title:string;body:string}[]};sources:{title:string;url:string}[];related:{section:"supports"|"resources";slug:string}};
 export const evidenceArticles:EvidenceArticle[] = [
   {
@@ -517,98 +519,20 @@ export const evidenceArticles:EvidenceArticle[] = [
     }
   },
   {
-    "section": "resources",
-    "slug": "homework-without-conflict",
-    "en": {
-      "title": "Homework without arguments: a practical guide for parents",
-      "intro": "If homework ends in tears or arguments, start by changing the routine and understanding the task—not by increasing pressure. Persistent difficulty is a reason to involve the teacher.",
-      "sections": [
-        {
-          "title": "'We have tried rewards, timers and taking away screens. Nothing works.'",
-          "body": "This question appears repeatedly in parent discussions, often accompanied by guilt and exhaustion. A six-year-old may refuse a worksheet they can do easily; an older child may sit for an hour without starting. Those are not necessarily the same problem. Before introducing another reward chart, ask what happens in the ten minutes immediately before the argument: a rushed journey home, hunger, unclear instructions, too many activities, fear of mistakes or the feeling of being watched."
-        },
-        {
-          "title": "Try a different script tonight",
-          "body": "Instead of 'Sit down and finish everything before dinner', try: 'Let's look at what has been set. Which part feels easiest to start? I'll help you understand the instructions, then you can try one.' If your child becomes upset, do not turn a learning task into a contest over who wins. Pause, reconnect and decide whether a smaller step is realistic. This is a practical suggestion, not a clinical treatment."
-        },
-        {
-          "title": "Before the first pencil mark",
-          "body": "Offer a short break after school, food or water if needed, and a predictable start. Ask your child to show you what is due and choose one manageable first step. Avoid turning every afternoon into an extended tutoring session."
-        },
-        {
-          "title": "During a difficult moment",
-          "body": "Say what you can see without blaming: 'This question is frustrating.' Ask which instruction is unclear. Offer a short reset, then return to a smaller step. If your child cannot attempt the work without adult answers, record that for the teacher."
-        },
-        {
-          "title": "Afterwards: one useful question",
-          "body": "Ask 'What helped you get started today?' instead of 'Why did this take so long?' EEF evidence on metacognition supports reflection and explicit strategies, while its homework review emphasises purposeful tasks and feedback."
-        },
-        {
-          "title": "When the pattern continues",
-          "body": "Speak to the class teacher about expected time, accessibility and whether the task matches what was taught. For persistent anxiety, distress or suspected additional learning needs, seek appropriate professional guidance rather than assuming more homework will solve it."
-        },
-        {
-          "title": "The child who does fine at school but struggles with a parent",
-          "body": "Some parents report that a child accepts direction from a teacher but becomes distressed when a parent tries to explain. It may help to change the adult's role: offer a calm space, check the instructions and agree when to ask for help, while leaving the actual teaching to the school or an appropriate support professional. A neutral adult can sometimes change the interaction, but it is not a guaranteed fix."
-        },
-        {
-          "title": "When to stop and contact the school",
-          "body": "If an age-appropriate task repeatedly takes far longer than expected, if your child cannot explain what is being asked, or if evenings are dominated by distress, tell the teacher what happened and how much help was needed. Ask what homework is intended to practise and what to do when a child cannot complete it independently."
-        }
-      ]
+    section: "resources",
+    slug: "homework-without-conflict",
+    en: {
+      title: homeworkParentGuide.en.title,
+      intro: homeworkParentGuide.en.intro,
+      sections: homeworkParentGuide.en.sections.map(({ title, paragraphs }) => ({ title, body: paragraphs.join("\n\n") })),
     },
-    "es": {
-      "title": "Deberes sin discusiones: guía práctica para familias",
-      "intro": "Si los deberes acaban en lágrimas o discusiones, empezad por revisar la rutina y comprender la tarea, no por aumentar la presión. Las dificultades persistentes merecen hablarse con el profesor.",
-      "sections": [
-        {
-          "title": "«Hemos probado premios, cronómetros y quitar pantallas. Nada funciona»",
-          "body": "La pregunta aparece una y otra vez entre familias agotadas. Un niño de seis años puede negarse a una ficha sencilla; otro mayor puede estar una hora sin empezar. No necesariamente tienen el mismo problema. Antes de añadir otra tabla de recompensas, mirad qué ocurre en los diez minutos previos a la discusión: viaje apresurado, hambre, instrucciones confusas, demasiadas actividades, miedo a equivocarse o sentirse observado."
-        },
-        {
-          "title": "Probad otra conversación esta tarde",
-          "body": "En vez de «Siéntate y termina todo antes de cenar», intentad: «Veamos qué han mandado. ¿Por qué parte te resulta más fácil empezar? Te ayudo a entender las instrucciones y luego pruebas una». Si se altera, no convirtáis el aprendizaje en una competición. Haced una pausa y valorad un paso más pequeño. Es una propuesta práctica, no un tratamiento clínico."
-        },
-        {
-          "title": "Antes de empezar",
-          "body": "Dejad un descanso breve al salir del colegio y fijad un momento previsible. Pedidle que enseñe las tareas y elija un primer paso manejable. No convirtáis cada tarde en una sesión interminable."
-        },
-        {
-          "title": "En un momento difícil",
-          "body": "Describid lo que ocurre sin culpar: «Esta pregunta te está frustrando». Averiguad qué instrucción no se entiende. Haced una pausa breve y volved a un paso más pequeño. Si solo puede avanzar con respuestas del adulto, comentadlo con el docente."
-        },
-        {
-          "title": "Después: una pregunta útil",
-          "body": "Preguntad «¿qué te ayudó a empezar hoy?» en vez de «¿por qué has tardado tanto?». La EEF destaca la reflexión y las estrategias explícitas, y su revisión de deberes resalta las tareas con propósito y el feedback."
-        },
-        {
-          "title": "Si se repite",
-          "body": "Hablad con el profesor sobre el tiempo esperado, la accesibilidad y si el trabajo coincide con lo enseñado. Ante ansiedad persistente o posibles necesidades adicionales, buscad orientación profesional adecuada."
-        },
-        {
-          "title": "Cuando en clase va bien, pero con sus padres no",
-          "body": "Algunas familias cuentan que el niño acepta las indicaciones del profesor pero se angustia cuando un progenitor intenta explicarle. Puede ayudar cambiar el papel del adulto: ofrecer un lugar tranquilo, revisar las instrucciones y acordar cuándo pedir ayuda, dejando la enseñanza al colegio o a un profesional adecuado. Un adulto externo a veces cambia la dinámica, pero no es una solución garantizada."
-        },
-        {
-          "title": "Cuándo parar y hablar con el colegio",
-          "body": "Si una tarea apropiada para su edad tarda repetidamente mucho más de lo esperado, si no entiende qué debe hacer o si las tardes están dominadas por el malestar, explicad al docente qué ocurrió y cuánta ayuda necesitó. Preguntad qué se pretende practicar y qué hacer si no puede terminar solo."
-        }
-      ]
+    es: {
+      title: homeworkParentGuide.es.title,
+      intro: homeworkParentGuide.es.intro,
+      sections: homeworkParentGuide.es.sections.map(({ title, paragraphs }) => ({ title, body: paragraphs.join("\n\n") })),
     },
-    "sources": [
-      {
-        "title": "EEF: Homework",
-        "url": "https://educationendowmentfoundation.org.uk/education-evidence/teaching-learning-toolkit/homework"
-      },
-      {
-        "title": "EEF: Parental engagement",
-        "url": "https://educationendowmentfoundation.org.uk/education-evidence/teaching-learning-toolkit/parental-engagement"
-      }
-    ],
-    "related": {
-      "section": "supports",
-      "slug": "homework"
-    }
+    sources: homeworkParentGuideSources,
+    related: { section: "supports", slug: "homework" },
   },
   {
     "section": "resources",

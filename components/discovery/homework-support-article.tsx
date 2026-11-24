@@ -9,9 +9,10 @@ import {
 } from "@/lib/discovery/homework-parent-guide"
 
 const articlePath = "/resources/homework-without-conflict"
-const classroomAlt = {
-  en: "Tables, books and learning materials in a classroom at The Afternoon Academy.",
-  es: "Mesas, libros y materiales de aprendizaje en un aula de The Afternoon Academy.",
+const heroImage = "/images/homework-guide/taa-small-group-learning.jpg"
+const heroAlt = {
+  en: "An adult and two children looking at a worksheet together around a table at The Afternoon Academy.",
+  es: "Una persona adulta y dos niños revisan juntos una ficha alrededor de una mesa en The Afternoon Academy.",
 }
 
 export function homeworkSupportMetadata(lang: Language): Metadata {
@@ -34,13 +35,13 @@ export function homeworkSupportMetadata(lang: Language): Metadata {
       alternateLocale: lang === "en" ? "es_ES" : "en_GB",
       siteName: "The Afternoon Academy",
       modifiedTime: "2026-11-24",
-      images: [{ url: "/classroom-1.jpg", width: 1086, height: 1448, alt: classroomAlt[lang] }],
+      images: [{ url: heroImage, width: 1600, height: 1200, alt: heroAlt[lang] }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: content.intro,
-      images: ["/classroom-1.jpg"],
+      images: [heroImage],
     },
   }
 }
@@ -95,16 +96,16 @@ export function HomeworkSupportArticle({ lang }: { lang: Language }) {
           </div>
           <figure>
             <Image
-              src="/classroom-1.jpg"
-              alt={classroomAlt[lang]}
-              width={1086}
-              height={1448}
+              src={heroImage}
+              alt={heroAlt[lang]}
+              width={1600}
+              height={1200}
               sizes="(min-width: 1280px) 520px, (min-width: 768px) 45vw, 100vw"
               loading="eager"
-              className="aspect-[4/3] w-full rounded-3xl object-cover object-[center_65%]"
+              className="aspect-[4/3] w-full rounded-3xl object-cover"
             />
             <figcaption className="mt-3 text-sm brand-muted">
-              {lang === "en" ? "Our classroom in Arturo Soria, Madrid." : "Nuestra aula en Arturo Soria, Madrid."}
+              {lang === "en" ? "Learning together at The Afternoon Academy, Arturo Soria." : "Aprendiendo juntos en The Afternoon Academy, Arturo Soria."}
             </figcaption>
           </figure>
         </header>
@@ -130,12 +131,12 @@ export function HomeworkSupportArticle({ lang }: { lang: Language }) {
 
         <section className="mt-14 grid gap-8 rounded-3xl border bg-white/80 p-6 md:grid-cols-[1fr_1.4fr] md:p-9">
           <Image
-            src="/classroom-2.jpg"
-            alt={lang === "en" ? "Small-group tables and whiteboards in a classroom at The Afternoon Academy." : "Mesas para grupos reducidos y pizarras en un aula de The Afternoon Academy."}
-            width={1086}
-            height={1448}
+            src="/images/homework-guide/taa-teacher-support.jpg"
+            alt={lang === "en" ? "An adult and a child looking at worksheets together at a desk at The Afternoon Academy." : "Una persona adulta y un niño revisan juntos unas fichas en un escritorio de The Afternoon Academy."}
+            width={1600}
+            height={1200}
             sizes="(min-width: 1280px) 430px, (min-width: 768px) 40vw, 100vw"
-            className="aspect-[4/3] w-full rounded-2xl object-cover object-[center_65%] md:aspect-[3/4]"
+            className="h-auto w-full self-start rounded-2xl"
           />
           <div className="space-y-4">
             <h2 className="text-2xl font-bold leading-9 sm:text-3xl">{academySection.title}</h2>

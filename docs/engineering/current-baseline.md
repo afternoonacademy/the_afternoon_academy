@@ -1,8 +1,8 @@
 # The Afternoon Academy — Current Engineering Baseline
 
-## Public homework guide — 24 November 2026 candidate
+## Public homework guide — 24 November 2026
 
-The existing English `/guide/resources/homework-without-conflict` and Spanish `/es/guia/resources/homework-without-conflict` routes use `lib/discovery/homework-parent-guide.ts` as their canonical copy/source data. `components/discovery/homework-support-article.tsx` renders the article, source references, existing classroom assets, localised free-first-group-session link and article-specific social metadata. Discovery listings and the legacy evidence-article index derive their target content from the same data. Other discovery articles retain their existing renderer. No backend, schema, dependency, authentication or analytics changes are part of this slice. The publication PR records preview and production verification.
+The existing English `/guide/resources/homework-without-conflict` and Spanish `/es/guia/resources/homework-without-conflict` routes use `lib/discovery/homework-parent-guide.ts` as their canonical copy/source data. `components/discovery/homework-support-article.tsx` renders the article, source references, founder-authorised teaching photos in `public/images/homework-guide/`, localised free-first-group-session link and article-specific social metadata. Both images retain their 1600 × 1200 dimensions and full 4:3 composition; the small-group image is also the social sharing image. The founder explicitly confirmed permission for these supplied marketing photos on 24 November 2026. Discovery listings and the legacy evidence-article index derive their target content from the same data. Other discovery articles retain their existing renderer. No backend, schema, dependency, authentication or analytics changes are part of this slice. The publication and photo-correction PRs record preview and production verification.
 
 ## Dated session pricing release candidate
 

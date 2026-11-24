@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 24 November 2026 — Homework guide supplied-photo correction
+
+- Founder explicitly confirmed permission to use the supplied academy teaching photos and instructed their publication, superseding the earlier image exclusion for this article. This approval is specific to the supplied marketing images; it does not authorise processing other learner records.
+- Replace both empty-classroom images in the English and Spanish homework guide with the supplied small-group and desk-support photos. Use the small-group photo in Open Graph/Twitter metadata, accurate 1600 × 1200 dimensions, descriptive EN/ES alternative text and each image's full 4:3 composition. Original JPEGs are copied unchanged to article-specific public assets. No learner names or learning-difficulty labels are added.
+- Base: verified TAA `main` at `db9f373602c71f21aba38a8c0b8870411489f881`, the [published article PR #42](https://github.com/afternoonacademy/the_afternoon_academy/pull/42). GitHub and the existing TAA Vercel project/team/domains were reverified. No database, authentication, permissions, dependencies, article-copy or form changes are needed.
+- Local checks passed: both JPEGs match the approved originals byte-for-byte; changed-file ESLint, TypeScript, all 174 existing automated tests and the synthetic-settings production build pass. Generated EN/ES HTML contains the two new photos, accurate dimensions/alternative text and updated Open Graph/Twitter image. Independent review found no blockers. Use one coherent Vercel preview; the associated photo-correction PR records preview checks, merge commit, production deployment and live image verification separately. Founder has explicitly authorised publication of this correction.
+- Recovery: revert this photo correction through a PR and redeploy, or restore the prior verified production deployment `dpl_AdmvaQ9F7MmpWakGgRurCcyTjMmN`. No database recovery is required. A code rollback removes image references but should not be represented as erasing already distributed public copies.
+
 ## 24 November 2026 — Parent homework guide (release candidate)
 
 - Intent: give parents useful, sourced guidance on recurring homework difficulties and a proportionate route to TAA's free first group session. The founder accepted the article and explicitly requested website publication on 24 November 2026. This is a public editorial change, with no schema, permissions, authentication, enquiry-processing or production-data changes.

@@ -214,7 +214,7 @@ The five patterns and parent prompts are TAA's practical synthesis, not a valida
 
 ### Publication and verification boundary
 
-- Reuse the two existing public classroom images; do not publish the newly supplied learner photos without the required permissions and safeguards. Do not associate a photographed child with a claimed learning difficulty.
+- On 24 November 2026 the founder explicitly confirmed permission to use the supplied teaching photos and instructed publication. Use the approved small-group photo as the hero/social image and the desk-support photo beside the TAA invitation, with full 4:3 composition and neutral EN/ES alternative text. This supersedes the earlier empty-classroom substitution for this article. Do not associate a photographed child with a claimed learning difficulty.
 - Keep six numbered source references beside the supported claims, the source list, the review date and the evidence limitations. Both languages must link to the matching free-session page.
 - The article has dedicated title, description and classroom-image social metadata. Validate the rendered page, images, language switch, canonicals and CTA in the coherent Vercel preview and again after release. The associated publication PR records actual results and deployment identifiers.
 - Search themes remain editorial hypotheses. No traffic, conversion or ranking improvement is claimed; review observed results after indexing.

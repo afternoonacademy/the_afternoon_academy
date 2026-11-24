@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Public homework guide — 24 November 2026 candidate
+
+The existing English `/guide/resources/homework-without-conflict` and Spanish `/es/guia/resources/homework-without-conflict` routes use `lib/discovery/homework-parent-guide.ts` as their canonical copy/source data. `components/discovery/homework-support-article.tsx` renders the article, source references, existing classroom assets, localised free-first-group-session link and article-specific social metadata. Discovery listings and the legacy evidence-article index derive their target content from the same data. Other discovery articles retain their existing renderer. No backend, schema, dependency, authentication or analytics changes are part of this slice. The publication PR records preview and production verification.
+
 ## Dated session pricing release candidate
 
 Exact sessions in the existing JSON store the chosen catalogue ID, service label and agreed cents. The dated Operations view reads labels server-side from the matching planned booking or paid child entitlement. The additive family payment revision and booking lease migration must be applied before deploying the code. Existing RLS and service-only access remain in place. Roll back application code first and retain the additive columns and audit history.

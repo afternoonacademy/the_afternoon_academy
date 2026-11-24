@@ -1,3 +1,5 @@
+import { homeworkParentGuide } from "./homework-parent-guide"
+
 export type Language = "en" | "es"
 export type DiscoveryItem = { slug: string; en: string; es: string; enDescription: string; esDescription: string }
 export const neighbourhoods: DiscoveryItem[] = [
@@ -19,7 +21,7 @@ export const supports: DiscoveryItem[] = [
 export const resources: DiscoveryItem[] = [
 {slug:"choosing-after-school-support",en:"Choosing after-school support",es:"Cómo elegir apoyo extraescolar",enDescription:"Questions to ask about group size, curriculum, communication and the child's needs.",esDescription:"Qué preguntar sobre grupos, currículo, comunicación y necesidades del niño."},
 {slug:"international-school-routines",en:"International-school family routines",es:"Rutinas para familias internacionales",enDescription:"Practical ways to make school afternoons calmer.",esDescription:"Ideas prácticas para organizar tardes más tranquilas."},
-{slug:"homework-without-conflict",en:"Homework without conflict",es:"Deberes sin conflictos",enDescription:"Create a predictable time, a realistic goal and a supportive atmosphere.",esDescription:"Crea un horario previsible, un objetivo realista y un ambiente de apoyo."},
+{slug:"homework-without-conflict",en:homeworkParentGuide.en.title,es:homeworkParentGuide.es.title,enDescription:homeworkParentGuide.en.intro,esDescription:homeworkParentGuide.es.intro},
 {slug:"moving-schools-in-madrid",en:"Moving schools in Madrid",es:"Cambiar de colegio en Madrid",enDescription:"A checklist of practical questions when changing school communities.",esDescription:"Lista de preguntas prácticas al cambiar de comunidad escolar."},
 {slug:"questions-for-a-school-visit",en:"Questions for a school visit",es:"Preguntas para visitar un colegio",enDescription:"Useful questions about curriculum, daily routines and pastoral support.",esDescription:"Preguntas sobre currículo, rutinas diarias y acompañamiento."}
 ]

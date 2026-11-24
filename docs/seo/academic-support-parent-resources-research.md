@@ -20,7 +20,7 @@ Reviewed: 2026-10-19. Language: English and Spanish. Market: Arturo Soria / nort
 | supports/igcse-chemistry | clases química IGCSE Madrid; refuerzo química Year 10 | IGCSE Chemistry tutoring Madrid; IGCSE Chemistry support | commercial | What does the child's actual specification require? | Specific exam-board syllabus (verify before publishing) |
 | resources/choosing-after-school-support | cómo elegir apoyo escolar; clases particulares o grupos reducidos | how to choose a tutor; small group vs one to one tutoring | informational | What should I ask before paying? | EEF One-to-one and Small-group Tuition |
 | resources/international-school-routines | deberes colegio internacional Madrid; rutina tarde niños | international school homework routine; bilingual family homework | informational | How do we manage languages, activities and travel? | EEF Homework; Parental Engagement |
-| resources/homework-without-conflict | niño no quiere hacer deberes; discusiones por deberes | homework battles with children; child refuses homework | informational | What should I change first? | EEF Homework and Metacognition |
+| resources/homework-without-conflict | dificultades con los deberes; cómo ayudar con los deberes | child struggles with homework; how to help with homework | informational | What patterns should I notice, what can I try and when should I speak to school? | DfE; Education Scotland; East Sussex; EEF |
 | resources/moving-schools-in-madrid | cambiar de colegio Madrid; traslado colegio internacional | changing schools in Madrid; switching British to Spanish school | informational | Which records, curriculum and admissions questions matter? | Comunidad de Madrid admissions portal (verify year-specific procedures) |
 | resources/questions-for-a-school-visit | preguntas para visitar un colegio; qué preguntar en jornada puertas abiertas | questions to ask on a school tour; choosing an international school Madrid | informational | What should we ask beyond facilities and marketing? | School's own published curriculum, admissions and safeguarding information |
 
@@ -195,3 +195,26 @@ These sources describe guidance and eligibility, not guaranteed inclusion in Goo
 - **DISC-03:** Google Search Console exists (founder confirmed), data not yet mature. Do not invent performance baseline.
 - **DISC-04 onward:** retain current backlog status until evidence is collected.
 - **Current project mode:** SEO work paused at founder request; next workstream is feature fix. Keep future changes scoped and logged.
+
+
+## 24 November 2026 — Recognising homework difficulties
+
+Founder accepted the researched English manuscript and requested publication. The existing resource URLs are retained in both languages. English title: “When your child struggles with homework”. Spanish title: “Cuando a tu hijo le cuestan los deberes”. Canonical copy and source order live in `lib/discovery/homework-parent-guide.ts`; the evidence index and guide listings derive from it.
+
+The five patterns and parent prompts are TAA's practical synthesis, not a validated screening tool or diagnosis. England secondary-pupil survey figures are explicitly limited to that population. UK guidance is adapted with the child's school; it is not presented as Spanish regulation. EEF is an independent charity and none of the sources evaluates or endorses TAA. The CTA is for new families to request a free first **group** session, subject to a suitable place.
+
+### Sources checked for this article
+
+1. [Department for Education — Parent pupil and learner voice October 2025](https://www.gov.uk/government/publications/parent-pupil-and-learner-voice-omnibus-surveys-for-2025-to-2026/parent-pupil-and-learner-voice-october-2025) — Official primary research for England. Figure 18. Survey ran 4 October–10 November 2025; page updated 10 November 2026. Bases: 1,980 KS3 and 1,551 KS4 pupils. Self-reported barriers; no inference about Madrid prevalence or TAA outcomes.
+2. [Education Endowment Foundation — Homework](https://educationendowmentfoundation.org.uk/education-evidence/teaching-learning-toolkit/homework) — Independent charity evidence synthesis. Evidence last updated August 2021. EEF rates security low, based on 43 studies. Supports attention to task quality and feedback; no promised months of progress or service endorsement.
+3. [Education Scotland — Home learning environment](https://education.gov.scot/parentzone/learning-at-home/home-learning-environment/) — Official parent guidance for Scotland. Published 3 April 2018; updated 6 June 2023. Practical guidance on time, space, interest and school support; not a trial of tutoring.
+4. [East Sussex County Council — Homework](https://thestoppingplace.eastsussex.gov.uk/parents/homework) — Official local authority guidance. No publication date displayed. Practical workload and school-conversation advice. English school arrangements are not Spanish legal entitlements.
+5. [Education Endowment Foundation — Parental engagement](https://educationendowmentfoundation.org.uk/education-evidence/teaching-learning-toolkit/parental-engagement) — Independent charity evidence synthesis. Evidence review updated May 2025. Much of the evidence concerns younger children and home reading. Supporting planning does not require parents to become subject teachers.
+6. [Education Endowment Foundation — Metacognition and Self Regulated Learning](https://educationendowmentfoundation.org.uk/education-evidence/guidance-reports/metacognition) — Independent charity guidance for teachers. Second edition published 13 November 2025. Plan, monitor and evaluate strategies are adapted here into original parent conversation prompts, not a diagnostic checklist.
+
+### Publication and verification boundary
+
+- Reuse the two existing public classroom images; do not publish the newly supplied learner photos without the required permissions and safeguards. Do not associate a photographed child with a claimed learning difficulty.
+- Keep six numbered source references beside the supported claims, the source list, the review date and the evidence limitations. Both languages must link to the matching free-session page.
+- The article has dedicated title, description and classroom-image social metadata. Validate the rendered page, images, language switch, canonicals and CTA in the coherent Vercel preview and again after release. The associated publication PR records actual results and deployment identifiers.
+- Search themes remain editorial hypotheses. No traffic, conversion or ranking improvement is claimed; review observed results after indexing.

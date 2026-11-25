@@ -17,7 +17,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
       <input name={name} defaultValue={String(current?.[name as keyof typeof current]||"")} className={cls} required={required}/>}
     </label>)
   return <div className="mx-auto max-w-5xl space-y-6 pb-12">
-    <header className="brand-hero p-6"><p className="brand-kicker">Editorial workspace</p><h1 className="mt-2 text-3xl font-bold">Content Manager</h1><p className="mt-3 text-sm">Write, review and publish parent resources in English and Spanish. Publication is always a separate action.</p></header>
+    <header className="brand-hero p-6"><p className="brand-kicker">Editorial workspace</p><h1 className="mt-2 text-3xl font-bold">Content Manager</h1><p className="mt-3 text-sm">Write, review and publish parent resources in English and Spanish. Publication is always a separate action. This preview uses the existing Academy database, so do not publish experimental content.</p></header>
     {unavailable?<div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-5"><b>Editorial database not yet configured.</b><p className="mt-2 text-sm">The additive migration is awaiting an isolated test environment and release approval. Existing Guides remain available.</p></div>:<>
     {params.saved&&<p role="status" className="rounded-xl border bg-green-50 p-3">Content saved successfully.</p>}
     <section className="brand-card p-5"><div className="flex justify-between gap-3"><h2 className="text-xl font-bold">Articles</h2><Link href="/admin/content" className="text-sm underline">New article</Link></div>
@@ -34,7 +34,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
       </div>
       {item("image_path","Approved image path (optional)","input",false)}
       {item("source_url","Research/source HTTPS URL (optional)","input",false)}
-      <p className="text-xs text-muted-foreground">Use plain text and paragraph breaks. HTML is never interpreted. Image path must refer to an existing approved /images/ asset. Save, then use publication controls below.</p>
+      <p className="text-xs text-muted-foreground">Use plain text and paragraph breaks. HTML is never interpreted. Image path must refer to an existing approved /images/ asset. Saving a published article returns it to draft and removes it from the public pages until you explicitly publish again. Existing article slugs cannot be changed. Save, then use publication controls below.</p>
       <button className="rounded-xl bg-[#26345f] px-5 py-3 font-semibold text-white">Save article</button>
     </form>
     {current&&<section className="brand-card space-y-4 p-5"><h2 className="text-xl font-bold">Review & publish</h2>

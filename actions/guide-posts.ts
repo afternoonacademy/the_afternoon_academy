@@ -18,12 +18,20 @@ export async function saveGuidePost(data:FormData){
   if(values.source_url){let url:URL;try{url=new URL(values.source_url)}catch{throw new Error("Invalid source URL")}if(url.protocol!=="https:")throw new Error("Source must use HTTPS")}
   const id=String(data.get("id")||"")
   if(id&&!/^[a-f0-9-]{36}$/i.test(id))throw new Error("Invalid post id")
-  const payload={...values,image_path:values.image_path||null,source_url:values.source_url||null}
   const client=supabaseService()
+  if(id){
+    const {data:existing,error:existingError}=await client.from("academy_guide_posts").select("slug,status").eq("id",id).maybeSingle()
+    if(existingError||!existing)throw new Error("Article not found")
+    if(existing.slug!==values.slug)throw new Error("Existing article URLs cannot be changed in the editor.")
+  }
+  const payload={...values,image_path:values.image_path||null,source_url:values.source_url||null,status:"draft"}
   const result=id?await client.from("academy_guide_posts").update(payload).eq("id",id).select("id").single():
     await client.from("academy_guide_posts").insert({...payload,status:"draft"}).select("id").single()
   if(result.error)throw new Error("Could not save editorial content. Database migration may be pending.")
   revalidatePath("/admin/content");revalidatePath("/guide");revalidatePath("/es/guia")
+  revalidatePath("/guide/posts/"+values.slug)
+  revalidatePath("/es/guia/posts/"+values.slug)
+  revalidatePath("/sitemap.xml")
   redirect("/admin/content?edit="+result.data.id+"&saved=1")
 }
 export async function publishGuidePost(data:FormData){

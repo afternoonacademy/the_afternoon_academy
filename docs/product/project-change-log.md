@@ -1,12 +1,20 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Founder-approved editorial table on existing Supabase
+
+- Founder explicitly directed application to the **current TAA database**, not a new database. Applied additive migration `academy_guide_posts` via Supabase to verified project `krslaehcjanqffrzycci`.
+- Verification: `public.academy_guide_posts` exists with 0 initial rows, RLS on; `anon` and `authenticated` have no direct SELECT; `service_role` can SELECT/INSERT/UPDATE. No other existing table changed or family/learner information read.
+- Edited published articles now revert to draft on save; URLs are immutable once created. Public guide, article pages and sitemap are revalidated on save, publish and unpublish. This prevents saving edits from bypassing explicit publication, but temporarily removes an article from public view until republished. Richer versioned editing should be considered separately rather than silently replacing live content.
+- Current Vercel editor preview connects to the existing database. Use only legitimate, reviewed editorial material; synthetic publication tests must be rolled back in a transaction or otherwise avoid persistent production data.
+- Publication and release remain separate: the database migration was applied with approval, but the application PR remains unmerged. No live website deployment is authorized.
+
 ## 25 November 2026 — Admin Content Manager development candidate
 
 - The founder accepted the Guides redesign preview and directed continued development, not a production release.
 - Added an admin-only editor under `/admin/content`, gated by existing `manage_setup` both server-side and in navigation. English and Spanish texts are required, save defaults to draft and publication requires a separate authenticated action.
 - New posts use dedicated bilingual `/posts/[slug]` routes and appear under their selected existing category. Existing repository-authored article URLs and material remain unchanged.
 - Article text renders escaped plain text with paragraph breaks; cited source URLs require HTTPS; image URLs are restricted to pre-approved local `/images/` assets. No HTML, direct file upload or AI access to learner data.
-- The additive Supabase migration is **not applied**. There is no Supabase development branch, so editorial database writes and publication cannot be integration-tested against a synthetic environment. The preview must not be treated as release-ready until that is addressed. The production learner database must not serve as a test environment.
+- This earlier status was superseded by the founder-approved additive migration above. Production application code remains untouched; integration tests must not leave fake editorial records in production.
 - Verification required: automated tests, TypeScript/build, independent review, admin permission tests, mobile/desktop UI, database RLS checks and end-to-end draft/publish/unpublish with synthetic posts.
 - Recovery: revert feature PR; preserve existing article routes and production data. If the migration is subsequently approved and applied, retain its records unless separately authorised to remove them.
 

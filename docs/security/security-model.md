@@ -1,5 +1,10 @@
 # TAA Security, Privacy and Data Boundary Model
 
+## Editorial Cloudinary uploads (25 November 2026 feature branch)
+
+Browser clients request a short-lived, per-file signed upload from `/api/admin/content/upload`, which authenticates with `assertCapability('manage_setup')` and validates the request origin. Image binaries are uploaded by the browser **directly to Cloudinary**, not through a Vercel function. The browser validates MIME and an 8 MB size limit; the Cloudinary image upload endpoint restricts image types and allowed formats. A narrow `taa/content/` public ID and the approved Cloudinary cloud are enforced again when saving the article. The server signs using non-public Vercel secrets; it returns only signed parameters and a public API key, never the secret. The draft save action accepts only this project's `taa/content/` Cloudinary assets or specifically allowlisted legacy local assets. Do not use client-side unsigned uploads. Human marketing-consent/safeguarding review remains mandatory before uploading photos depicting identifiable children. URL and secrets must never be logged or exposed as NEXT_PUBLIC environment values.
+
+
 _Status: baseline engineering policy — established 17 September 2026. This is an engineering control document, not legal advice._
 
 ## Security objective

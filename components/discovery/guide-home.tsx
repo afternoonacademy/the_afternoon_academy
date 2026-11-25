@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
 import { guidePosts } from "@/lib/content/guide-posts"
 import Link from "next/link"
@@ -70,7 +71,7 @@ export async function GuideHome({ lang }: { lang: Language }) {
         <p className="brand-muted mt-2 mb-6 max-w-3xl">{t.parentLead}</p>
         {featured && (
           <Link href={prefix + "/resources/" + featured.slug} className="brand-card group mb-5 grid overflow-hidden md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-            <Image src="/images/homework-guide/taa-drawing-activity-enhanced.jpg" width={1448} height={1086} sizes="(min-width: 768px) 40vw, 100vw" alt={lang === "en" ? "Children drawing at an Academy table, viewed from behind" : "Niños dibujando en una mesa de la academia, vistos desde atrás"} className="h-full w-full object-cover" priority />
+            <Image src={siteImage("/images/homework-guide/taa-drawing-activity-enhanced.jpg")} width={1448} height={1086} sizes="(min-width: 768px) 40vw, 100vw" alt={lang === "en" ? "Children drawing at an Academy table, viewed from behind" : "Niños dibujando en una mesa de la academia, vistos desde atrás"} className="h-full w-full object-cover" priority />
             <div className="flex flex-col justify-center p-6 md:p-8">
               <p className="brand-kicker">{t.featured}</p>
               <h3 className="mt-3 text-2xl font-bold group-hover:underline">{translated(featured, lang).title}</h3>

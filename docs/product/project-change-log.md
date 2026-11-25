@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Cloudinary site-image migration and admin uploads (development PR)
+
+- Founder explicitly requested that TAA use newly connected Cloudinary for existing website images and direct Content Manager image uploads.
+- Verified Cloudinary account cloud name `s6cu3nwk`; its contents were a newly created example library. Uploaded approved TAA homework photographs, frontage/classroom, logo, OG image and browser-icon backups, grouped under `taa/site/`. No withdrawn face-visible source photo was migrated. Public images on Guides, location pages and OG metadata reference the verified Cloudinary secure assets; original repository images remain as rollback fallbacks and browser icons remain local.
+- Editorial image selection is now a file chooser rather than a URL input. Protected Next.js signing endpoint checks Admin capability and same-origin request; creates a short-lived, per-upload signature constrained to TAA Cloudinary folder and JPEG/PNG/WebP formats, allowing the browser to upload the selected file **directly to Cloudinary** (avoids Vercel function-body size limits). File size and MIME are checked in the browser; the Cloudinary image endpoint checks image type. The signature is computed with **server-only** `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`. No unsigned upload preset or client-side secret. Only the verified cloud `s6cu3nwk` and `taa/content/` public IDs can be stored in article records; existing approved local images remain readable.
+- Vercel project currently has **no Cloudinary environment variables**. Direct uploads cannot work until `CLOUDINARY_CLOUD_NAME=s6cu3nwk`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` are securely configured in Preview and Production where appropriate and a new preview is deployed. Do not place secrets in GitHub or user-visible chat.
+- Full post-upload verification outstanding: authenticated browser upload, Cloudinary response, article save/reload, bilingual page and recovery. No production code merge authorised.
+
 ## 25 November 2026 — Founder-approved editorial table on existing Supabase
 
 - Founder explicitly directed application to the **current TAA database**, not a new database. Applied additive migration `academy_guide_posts` via Supabase to verified project `krslaehcjanqffrzycci`.

@@ -1,3 +1,4 @@
+import { GuideImageUploader } from "@/components/admin/guide-image-uploader"
 import Link from "next/link"
 import { requireCapability } from "@/lib/auth/require-capability"
 import { guidePosts } from "@/lib/content/guide-posts"
@@ -32,9 +33,9 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
         <div className="space-y-4"><h3 className="font-bold">English</h3>{item("title_en","Title")}{item("summary_en","Summary","textarea")}{item("body_en","Article text","textarea")}</div>
         <div className="space-y-4"><h3 className="font-bold">Español</h3>{item("title_es","Título")}{item("summary_es","Resumen","textarea")}{item("body_es","Texto del artículo","textarea")}</div>
       </div>
-      {item("image_path","Approved image path (optional)","input",false)}
+      <GuideImageUploader key={current?.id||"new"} initialUrl={current?.image_path||""}/>
       {item("source_url","Research/source HTTPS URL (optional)","input",false)}
-      <p className="text-xs text-muted-foreground">Use plain text and paragraph breaks. HTML is never interpreted. Image path must refer to an existing approved /images/ asset. Saving a published article returns it to draft and removes it from the public pages until you explicitly publish again. Existing article slugs cannot be changed. Save, then use publication controls below.</p>
+      <p className="text-xs text-muted-foreground">Use plain text and paragraph breaks. HTML is never interpreted. Upload a JPEG, PNG or WebP image (up to 8 MB) above; uploads go directly to the Academy Cloudinary library through a protected server endpoint. Saving a published article returns it to draft and removes it from the public pages until you explicitly publish again. Existing article slugs cannot be changed. Save, then use publication controls below.</p>
       <button className="rounded-xl bg-[#26345f] px-5 py-3 font-semibold text-white">Save article</button>
     </form>
     {current&&<section className="brand-card space-y-4 p-5"><h2 className="text-xl font-bold">Review & publish</h2>

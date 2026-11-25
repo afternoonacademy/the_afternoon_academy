@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
@@ -9,7 +10,7 @@ import {
 } from "@/lib/discovery/homework-parent-guide"
 
 const articlePath = "/resources/homework-without-conflict"
-const heroImage = "/images/homework-guide/taa-drawing-activity-enhanced.jpg"
+const heroImage = siteImage("/images/homework-guide/taa-drawing-activity-enhanced.jpg")
 const heroAlt = {
   en: "Children drawing with coloured pencils at a table at The Afternoon Academy, photographed from behind.",
   es: "Niños dibujando con lápices de colores en una mesa de The Afternoon Academy, fotografiados desde atrás.",
@@ -131,7 +132,7 @@ export function HomeworkSupportArticle({ lang }: { lang: Language }) {
 
         <section className="mt-14 grid gap-8 rounded-3xl border bg-white/80 p-6 md:grid-cols-[1fr_1.4fr] md:p-9">
           <Image
-            src="/images/homework-guide/taa-teacher-support-enhanced.jpg"
+            src={siteImage("/images/homework-guide/taa-teacher-support-enhanced.jpg")}
             alt={lang === "en" ? "An adult and a child looking at worksheets together at a desk at The Afternoon Academy." : "Una persona adulta y un niño revisan juntos unas fichas en un escritorio de The Afternoon Academy."}
             width={1448}
             height={1086}

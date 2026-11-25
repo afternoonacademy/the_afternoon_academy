@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { SiteAnalytics } from "@/components/site-analytics"
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "The Afternoon Academy",
     images: [
       {
-        url: "/og-image.png",
+        url: siteImage("/og-image.png"),
         width: 1200,
         height: 630,
         alt: "The Afternoon Academy - after-school academic support in Madrid",
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
     title: "The Afternoon Academy",
     description:
       "Small-group British curriculum after-school support for children aged 4–12 in Arturo Soria, Madrid.",
-    images: ["/og-image.png"],
+    images: [siteImage("/og-image.png")],
   },
 }
 

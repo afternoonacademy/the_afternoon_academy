@@ -1,5 +1,10 @@
 # School Discovery SEO — Implementation plan (19 October 2026)
 
+## Cloudinary image management amendment — 25 November 2026
+
+The parent-first Guides layout and independent school articles retain existing URLs. Approved public imagery is served from verified TAA Cloudinary assets; the admin editorial workflow accepts a direct file upload only (not an arbitrary external URL). Admin authorisation and server-only signed uploads are required. Media migration must preserve SEO/social previews, image descriptions, bilingual editorial standards and consent for any recognisable people. Existing image files remain available for safe rollback.
+
+
 Status: founder-approved direction; implementation and release pending verification.
 
 ## Goal

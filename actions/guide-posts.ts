@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { assertCapability } from "@/lib/auth/require-capability"
 import { supabaseService } from "@/lib/supabase/service"
 import { sections } from "@/lib/discovery/content"
+import { isApprovedArticleImage } from "@/lib/media/taa-cloudinary.mjs"
 const fields=["slug","category","title_en","title_es","summary_en","summary_es","body_en","body_es","image_path","source_url"] as const
 export async function saveGuidePost(data:FormData){
   await assertCapability("manage_setup")
@@ -14,7 +15,7 @@ export async function saveGuidePost(data:FormData){
   for(const key of ["title_en","title_es"] as const)if(values[key].length<4||values[key].length>180)throw new Error("Both titles required (4-180 characters)")
   for(const key of ["summary_en","summary_es"] as const)if(values[key].length<20||values[key].length>500)throw new Error("Both summaries required (20-500 characters)")
   for(const key of ["body_en","body_es"] as const)if(values[key].length<60||values[key].length>30000)throw new Error("Both article bodies required (60-30000 characters)")
-  if(values.image_path&&!/^\/images\/[\w/-]+\.(jpg|jpeg|png|webp)$/.test(values.image_path))throw new Error("Use a previously approved image under /images/")
+  if(!isApprovedArticleImage(values.image_path))throw new Error("Select an uploaded Cloudinary image.")
   if(values.source_url){let url:URL;try{url=new URL(values.source_url)}catch{throw new Error("Invalid source URL")}if(url.protocol!=="https:")throw new Error("Source must use HTTPS")}
   const id=String(data.get("id")||"")
   if(id&&!/^[a-f0-9-]{36}$/i.test(id))throw new Error("Invalid post id")

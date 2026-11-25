@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, MapPin, School, Sparkles, Users } from "lucide-react"
@@ -51,17 +52,17 @@ const features = [
 
 const gallery = [
   {
-    src: "/main_frontage.png",
+    src: siteImage("/main_frontage.png"),
     title: "Location frontage",
     description: "The outside of the building so families can recognise the academy.",
   },
   {
-    src: "/classroom-1.jpg",
+    src: siteImage("/classroom-1.jpg"),
     title: "Our classroom",
     description: "A real view of the bright classroom where small groups will work after school.",
   },
   {
-    src: "/classroom-2.jpg",
+    src: siteImage("/classroom-2.jpg"),
     title: "Small-group workspace",
     description: "Tables and whiteboard space for calm, focused academic support.",
   },
@@ -124,7 +125,7 @@ export default function LocationPage() {
           <Card className="brand-card overflow-hidden">
             <div className="relative aspect-4/3 w-full">
               <Image
-                src="/main_frontage.png"
+                src=siteImage("/main_frontage.png")
                 alt="Location frontage for The Afternoon Academy"
                 fill
                 priority

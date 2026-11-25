@@ -1,4 +1,78 @@
+## 25 November 2026 — Independent English/Spanish editorial URLs
+
+## 25 November 2026 — Cloudinary orphan cleanup and Content Manager release candidate
+- Founder authorised introduction of image cleanup and requested PR #45 merge/release with all source-of-truth documents updated.
+- Cleanup design: Admin-only `/admin/content/media` lists only `taa/content/{uuid}` Cloudinary images older than seven days with no references in **any** saved editorial article, whether draft, test or published. Requires explicit confirmation for each permanent deletion; deletion repeats full inventory and reference checks. Supports inventory pagination (up to 1000); inventory/database errors disable cleanup. No automatic media deletion or changes to `taa/site/` image library.
+- Production Vercel public `CLOUDINARY_CLOUD_NAME=s6cu3nwk` added; sensitive production Cloudinary API key and secret were already configured. The article image on the first Test post stays protected. Prior unused upload is too new to qualify; no assets were deleted during development.
+- Files changed: `lib/media/content-orphan-policy.mjs`, `lib/media/content-cleanup.ts`, `actions/content-media-cleanup.ts`, `components/admin/content-orphan-delete-form.tsx`, `app/admin/content/media/page.tsx`, admin editor entry point, regression tests and engineering/product/security/SEO docs.
+- Release gates: 7-day safeguard, orphan-reference tests, full test/build, security and independent review, preview accessibility, then GitHub merge, Vercel production deployment and smoke check. Revert PR for app rollback; removed Cloudinary assets cannot be restored by Git revert, hence manual-only deletion. Document exact deployed SHA and checks after release.
+
+- Founder approved translated URL slugs and required a safe approach for existing articles. Verified TAA main `6a560393`, PR #45 feature branch `438d32d`, Vercel project `prj_8HixkYBIbkGXnMTWQZmeCmwDVK2I`, and Supabase `krslaehcjanqffrzycci`.
+- Database check returned zero rows in `academy_guide_posts`, hence no current editor articles needed URL rewriting. The older repository-authored Guides have independent existing URLs and remain unchanged; do not rename them without a separately reviewed redirect map.
+- Applied additive `slug_en`/`slug_es` migration with per-language unique indexes and legacy `slug` kept for compatibility. New articles generate English slug from English title and Spanish slug from Spanish title. Each stable after saving; Spanish slug may be filled in later on a draft.
+- Public cards, locale-switch links, canonical/hreflang, and sitemap now use the correct language-specific slug. Legacy shared-slug published paths redirect permanently to the localized canonical page. Test category stays permanently non-public.
+- No learner/family data touched. Verify preview, TypeScript, regression tests, authenticated editor/browser QA and redirects before founder acceptance. No production app release; revert branch to recover code while keeping additive database fields if necessary.
+
+## 25 November 2026 — Fix Content Manager save crash and bilingual draft workflow
+- User reported server error after saving on preview deployment `dpl_CHV7rh2Ec79pGfSFWatXQ5GKRp2W`. Vercel runtime log at 11:34:19 UTC showed `Both article bodies required (60-30000 characters)`; Supabase editorial post count was zero, confirming save did not persist.
+- Previously the form allowed short content but the server treated a minimum-length validation failure as an unhandled action exception. Fixed with inline accessible errors and separate draft/publish validation.
+- Save draft now requires a valid English title (used for shared slug) and respects maximum field lengths, but allows unfinished Spanish and short/blank body text. Publish separately requires both language titles, summaries and full bodies, and continues to block Test category at application and DB layers. URL slug generated from English title once, held stable across English/Spanish routes and future edits; Spanish display title is manual editorial translation, not a URL.
+- No database schema/learner data changes. Branch-only code; run tests, build, review, preview before founder acceptance and production release.
+- Recovery: revert PR feature changes; previously saved content remains unchanged.
+
 # The Afternoon Academy — Project Change Log
+
+## 25 November 2026 — Extensible Guide categories and protected Test area
+- Founder requested Test articles that cannot be published and an Admin interface to create additional bilingual editorial categories.
+- Applied approved additive change to existing TAA Supabase `krslaehcjanqffrzycci`: RLS-enabled `academy_guide_categories` seeded with resources, supports, neighbourhoods, test; posts now reference the catalogue, with database check `test => draft`. No learner or family records changed. Category names remain editable only through authorised server-side operations; the first UI allows creating, but not deleting, categories.
+- The Admin Content Manager now lists categories from the database and has an English/Spanish category creation form. Test articles show in protected `/guide/test` and `/es/guia/test` front-end indexes and administrator-only article preview pages. No test articles in public Guides, public post detail routes or sitemap.
+- New public categories appear on the Guides home only after a published article exists. The Test category is never publishable through the admin action or database constraint.
+- Verification pending preview build, independent review and authenticated flows. The migration is already applied to the current database; website PR remains in preview, not production. Recovery: revert PR, retain additive data and schema unless a separately approved removal is required.
+
+
+## 25 November 2026 — Content Manager editor usability refinements (preview)
+
+- Founder requested a visually prominent upload icon/choose-file surface, an accessible remove-cross for replacing a chosen image, new-tab full-page preview links for both languages, and automatically generated Google-friendly URLs.
+- Added an accessible upload tile with icon and a clear replace button. The selected image is shown with a visible cross to remove it from the article (saved changes required). Cloudinary storage deletion is deliberately out of scope; removal detaches the image from the article only.
+- New article URL slug is transliterated, lowercased and hyphenated from the English title in the client and computed again server-side; after the first save the original slug stays immutable when titles change, to preserve search and shared links.
+- Added authenticated English/Spanish draft preview pages under `/guide/preview/[id]` and `/es/guia/preview/[id]`, with `manage_setup` gate, noindex/no-follow metadata and visible private-preview labels. Preview uses **last saved content** and is not public publishing. No database schema change.
+- Verification required: tests and build, protected-route access/403 or redirect without Admin capability, new-tab behavior, Cloudinary upload after credentials installed and visual review. No production release.
+
+## 25 November 2026 — Cloudinary site-image migration and admin uploads (development PR)
+
+- Founder explicitly requested that TAA use newly connected Cloudinary for existing website images and direct Content Manager image uploads.
+- Verified Cloudinary account cloud name `s6cu3nwk`; its contents were a newly created example library. Uploaded approved TAA homework photographs, frontage/classroom, logo, OG image and browser-icon backups, grouped under `taa/site/`. No withdrawn face-visible source photo was migrated. Public images on Guides, location pages and OG metadata reference the verified Cloudinary secure assets; original repository images remain as rollback fallbacks and browser icons remain local.
+- Editorial image selection is now a file chooser rather than a URL input. Protected Next.js signing endpoint checks Admin capability and same-origin request; creates a short-lived, per-upload signature constrained to TAA Cloudinary folder and JPEG/PNG/WebP formats, allowing the browser to upload the selected file **directly to Cloudinary** (avoids Vercel function-body size limits). File size and MIME are checked in the browser; the Cloudinary image endpoint checks image type. The signature is computed with **server-only** `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`. No unsigned upload preset or client-side secret. Only the verified cloud `s6cu3nwk` and `taa/content/` public IDs can be stored in article records; existing approved local images remain readable.
+- Vercel project currently has **no Cloudinary environment variables**. Direct uploads cannot work until `CLOUDINARY_CLOUD_NAME=s6cu3nwk`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` are securely configured in Preview and Production where appropriate and a new preview is deployed. Do not place secrets in GitHub or user-visible chat.
+- Full post-upload verification outstanding: authenticated browser upload, Cloudinary response, article save/reload, bilingual page and recovery. No production code merge authorised.
+
+## 25 November 2026 — Founder-approved editorial table on existing Supabase
+
+- Founder explicitly directed application to the **current TAA database**, not a new database. Applied additive migration `academy_guide_posts` via Supabase to verified project `krslaehcjanqffrzycci`.
+- Verification: `public.academy_guide_posts` exists with 0 initial rows, RLS on; `anon` and `authenticated` have no direct SELECT; `service_role` can SELECT/INSERT/UPDATE. No other existing table changed or family/learner information read.
+- Edited published articles now revert to draft on save; URLs are immutable once created. Public guide, article pages and sitemap are revalidated on save, publish and unpublish. This prevents saving edits from bypassing explicit publication, but temporarily removes an article from public view until republished. Richer versioned editing should be considered separately rather than silently replacing live content.
+- Current Vercel editor preview connects to the existing database. Use only legitimate, reviewed editorial material; synthetic publication tests must be rolled back in a transaction or otherwise avoid persistent production data.
+- Publication and release remain separate: the database migration was applied with approval, but the application PR remains unmerged. No live website deployment is authorized.
+
+## 25 November 2026 — Admin Content Manager development candidate
+
+- The founder accepted the Guides redesign preview and directed continued development, not a production release.
+- Added an admin-only editor under `/admin/content`, gated by existing `manage_setup` both server-side and in navigation. English and Spanish texts are required, save defaults to draft and publication requires a separate authenticated action.
+- New posts use dedicated bilingual `/posts/[slug]` routes and appear under their selected existing category. Existing repository-authored article URLs and material remain unchanged.
+- Article text renders escaped plain text with paragraph breaks; cited source URLs require HTTPS; image URLs are restricted to pre-approved local `/images/` assets. No HTML, direct file upload or AI access to learner data.
+- This earlier status was superseded by the founder-approved additive migration above. Production application code remains untouched; integration tests must not leave fake editorial records in production.
+- Verification required: automated tests, TypeScript/build, independent review, admin permission tests, mobile/desktop UI, database RLS checks and end-to-end draft/publish/unpublish with synthetic posts.
+- Recovery: revert feature PR; preserve existing article routes and production data. If the migration is subsequently approved and applied, retain its records unless separately authorised to remove them.
+
+## 25 November 2026 — Parent-first Guides redesign (preview candidate)
+
+- Founder approval: redesign the English and Spanish Guides home pages so parent resources come first, academic support second, and school/neighbourhood listings third; separately approved a secure admin Content Manager. Production release explicitly withheld until founder preview acceptance.
+- Verified base: canonical `afternoonacademy/the_afternoon_academy` main at `6a560393da8e6363f877b11ca620cd003cf72911`; Vercel TAA project `prj_8HixkYBIbkGXnMTWQZmeCmwDVK2I`; Supabase TAA production project `krslaehcjanqffrzycci`.
+- Public page change: a shared bilingual guide homepage introduces an accessible category navigation, prominent existing homework guide with approved TAA photography, parent resource cards, academic support cards, then local neighbourhood and school directories. Existing article URLs and source records remain unchanged. Updated homepage metadata reflects the resource-first structure.
+- Content Manager separation: no Supabase development branch exists. The connected TAA database is production and contains operational family/learner records. Do not apply an editorial table migration or exercise a writable admin preview against that production database. The Content Manager remains a separately gated, unimplemented part of the approved scope pending isolated preview data and security acceptance.
+- Verification required: full test suite, lint, typecheck, production-style build, independent review and bilingual desktop/mobile preview. A Vercel READY build alone will not prove visual or functional correctness.
+- Recovery: revert this preview branch/PR; no database migration and no child data export were performed in this slice.
+
 
 ## 24 November 2026 — Homework guide AI photo enhancement and social copy
 

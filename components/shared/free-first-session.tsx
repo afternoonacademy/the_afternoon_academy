@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import type { Metadata } from "next"
 import Image from "next/image"
 
@@ -62,7 +63,7 @@ export async function FreeFirstSessionPage({ locale }: { locale: Locale }) {
             <a className="brand-button" href="#apply">{t.button}</a>
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-            <Image src="/classroom-1.jpg" alt={t.image} fill sizes="(min-width: 1024px) 45vw, 90vw" className="object-cover" />
+            <Image src={siteImage("/classroom-1.jpg")} alt={t.image} fill sizes="(min-width: 1024px) 45vw, 90vw" className="object-cover" />
           </div>
         </section>
         <section id="apply" className="scroll-mt-10">

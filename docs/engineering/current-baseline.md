@@ -1,4 +1,27 @@
+## Distinct localized Guide slugs — 25 November 2026
+
+## Content Manager Cloudinary orphan cleanup — November 2026
+Admin-only `/admin/content/media` offers manual, confirmed deletion of unreferenced uploaded Cloudinary content, with a seven-day grace period and fresh Supabase reference check before each delete. Only resources under `taa/content/` with UUID public IDs are eligible. Media from `taa/site/`, live articles and draft/test articles remains protected. The Cloudinary Admin API is server-only, using `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` in Vercel. No cron or bulk delete is active. The production cloud name is `s6cu3nwk`.
+
+The editorial table now has `slug_en` and `slug_es` in addition to the retained compatibility `slug`. English and Spanish article titles generate their own SEO-readable slugs; once set, each slug is stable. Drafts may have no Spanish slug until the Spanish title is entered. Publication requires both. Public links, canonical, hreflang and sitemap use the localized slug, and legacy Spanish shared URLs are permanently redirected. Existing repository-managed Guides remain untouched.
+
+## Editorial save validation and bilingual URL workflow — 25 November 2026
+The Content Manager uses a stable, shared title-derived slug for both `/guide/posts/[slug]` and `/es/guia/posts/[slug]`; the Spanish title is editorial translation, not a separate URL field. Saving drafts accepts partial content and reports validation problems in the page. Publishing validates completed English and Spanish content and forbids the Test category. No schema migration in this iteration.
+
 # The Afternoon Academy — Current Engineering Baseline
+
+## Extensible Guides categories — 25 November 2026
+Content Manager category choices now load from RLS-protected `academy_guide_categories`, with bilingual names and fixed slugs. `test` is special, always draft-only. It is visible only through admin-authenticated frontend listings and draft previews; public article routes and sitemaps explicitly exclude it. Other new public categories appear on Guides only if they contain published articles. The linked database migration has been applied to existing TAA Supabase. No production application release has occurred.
+
+
+## Content Manager editorial draft preview and URL stability — 25 November 2026
+
+Saved draft article previews have protected URLs `/guide/preview/[id]` and `/es/guia/preview/[id]`. They enforce the server-side Admin `manage_setup` capability and are excluded from search indexing. New slugs are generated from English article titles, with server-side normalization; once saved, URLs are immutable. The admin upload tile shows a prominent upload icon and allows a selected image to be detached with a cross without deleting the Cloudinary asset. The previous release and production conditions still apply.
+
+## Cloudinary editorial imagery — development candidate (25 November 2026)
+
+TAA's connected Cloudinary account uses cloud `s6cu3nwk`; verified imported marketing images use `taa/site/`, while admin-only Content Manager uploads must use `taa/content/`. Public pages use an explicit verified asset manifest (`lib/media/taa-cloudinary.mjs`) and restrict Next Image remote loading to this cloud. Browser icons remain local; repository image files remain as safe rollback. Admin browser-to-Cloudinary signed image upload requires three Vercel environment keys (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`), of which the latter two must be server-only secrets. No upload is functional until these keys are configured and the workflow tested. No identifiable learner imagery may be uploaded without approvals.
+
 
 ## Public homework guide — 24 November 2026
 

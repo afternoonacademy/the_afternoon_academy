@@ -40,6 +40,7 @@ test("teacher navigation contains operations, learner records and teaching hub",
       "/admin/teaching",
       "/admin/family-updates",
       "/admin/tutor-room",
+      "/admin/content",
       "/admin/setup",
     ],
   )

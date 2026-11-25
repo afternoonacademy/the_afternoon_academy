@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, MapPin, School, Sparkles, Users } from "lucide-react"
@@ -51,18 +52,18 @@ const features = [
 
 const gallery = [
   {
-    src: "/main_frontage.png",
+    src: siteImage("/main_frontage.png"),
     title: "Fachada de la ubicación",
     description:
       "El exterior del edificio para que las familias puedan reconocer dónde estará The Afternoon Academy.",
   },
   {
-    src: "/classroom-1.jpg",
+    src: siteImage("/classroom-1.jpg"),
     title: "Nuestra aula",
     description: "Una vista real del aula luminosa donde los grupos reducidos trabajarán después del colegio.",
   },
   {
-    src: "/classroom-2.jpg",
+    src: siteImage("/classroom-2.jpg"),
     title: "Espacio para grupos reducidos",
     description: "Mesas y pizarra para un apoyo académico tranquilo y centrado.",
   },
@@ -125,7 +126,7 @@ export default function SpanishLocationPage() {
           <Card className="brand-card overflow-hidden">
             <div className="relative h-90 w-full md:h-105 lg:h-115">
               <Image
-                src="/main_frontage.png"
+                src={siteImage("/main_frontage.png")}
                 alt="Fachada de la ubicación de The Afternoon Academy"
                 fill
                 priority

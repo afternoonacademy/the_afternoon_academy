@@ -1,4 +1,27 @@
+## Distinct article URLs per locale — 25 November 2026
+
+## Editorial asset lifecycle — November 2026
+Uploads in Cloudinary folder `taa/content/` may be detached from an article without immediate deletion. To prevent broken public images, admin cleanup is manual and requires the image to be older than seven days and unreferenced by any saved article, checked again immediately before deletion. Permanent website images under `taa/site/` are never candidates. Public SEO URLs, approved photo usage, image metadata and bilingual presentation are unchanged.
+
+Use `/guide/posts/{slug_en}` and `/es/guia/posts/{slug_es}` for Content Manager articles. The two slugs are generated from their respective language titles and locked once saved. Cross-link versions with reciprocal hreflang and separate self-canonicals. A legacy shared-slug request must 308 redirect to the canonical URL; never rename existing static Guide URLs without independent redirect verification. Bilingual publication validation requires both slugs and both complete language versions.
+
+## Draft-friendly bilingual URL clarification — 25 November 2026
+One English-title-derived stable slug powers both localized route prefixes and canonical/hreflang alternates. The Spanish page has its own human-translated title, summary and article content but does not require a manually entered URL. Editing titles after the first save does not move either URL. Draft saves permit incomplete copy; publish must validate complete, bilingual editorial content and Test must remain unpublishable.
+
 # School Discovery SEO — Implementation plan (19 October 2026)
+
+## Test-only and expandable categories — 25 November 2026
+A bilingual, admin-managed editorial category table allows future public categories without new code changes. A permanently non-public `test` category supports checking full article UI via protected authenticated frontend indexes and previews. Publication is blocked server-side and by database constraint; test posts are omitted from public listing/detail/sitemap. Existing guided school routes and established categories remain unaffected.
+
+
+## Admin SEO and draft preview amendment — 25 November 2026
+
+New Content Manager posts derive a readable slug from the English title; editing a title never changes an existing URL. The English and Spanish drafts share the slug and use their established language prefixes. Admin-only draft preview pages open separately and have `noindex, nofollow`; they never make a draft publicly reachable. The image editor uses a prominent upload icon plus remove-cross, and detach does not delete the stored Cloudinary asset.
+
+## Cloudinary image management amendment — 25 November 2026
+
+The parent-first Guides layout and independent school articles retain existing URLs. Approved public imagery is served from verified TAA Cloudinary assets; the admin editorial workflow accepts a direct file upload only (not an arbitrary external URL). Admin authorisation and server-only signed uploads are required. Media migration must preserve SEO/social previews, image descriptions, bilingual editorial standards and consent for any recognisable people. Existing image files remain available for safe rollback.
+
 
 Status: founder-approved direction; implementation and release pending verification.
 

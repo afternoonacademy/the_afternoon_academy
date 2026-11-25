@@ -17,6 +17,7 @@ test("mobile admin navigation exposes every primary admin destination", () => {
       "/admin/teaching",
       "/admin/family-updates",
       "/admin/tutor-room",
+      "/admin/content",
       "/admin/setup",
     ],
   )

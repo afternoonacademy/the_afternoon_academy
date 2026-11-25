@@ -1,5 +1,15 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Parent-first Guides redesign (preview candidate)
+
+- Founder approval: redesign the English and Spanish Guides home pages so parent resources come first, academic support second, and school/neighbourhood listings third; separately approved a secure admin Content Manager. Production release explicitly withheld until founder preview acceptance.
+- Verified base: canonical `afternoonacademy/the_afternoon_academy` main at `6a560393da8e6363f877b11ca620cd003cf72911`; Vercel TAA project `prj_8HixkYBIbkGXnMTWQZmeCmwDVK2I`; Supabase TAA production project `krslaehcjanqffrzycci`.
+- Public page change: a shared bilingual guide homepage introduces an accessible category navigation, prominent existing homework guide with approved TAA photography, parent resource cards, academic support cards, then local neighbourhood and school directories. Existing article URLs and source records remain unchanged. Updated homepage metadata reflects the resource-first structure.
+- Content Manager separation: no Supabase development branch exists. The connected TAA database is production and contains operational family/learner records. Do not apply an editorial table migration or exercise a writable admin preview against that production database. The Content Manager remains a separately gated, unimplemented part of the approved scope pending isolated preview data and security acceptance.
+- Verification required: full test suite, lint, typecheck, production-style build, independent review and bilingual desktop/mobile preview. A Vercel READY build alone will not prove visual or functional correctness.
+- Recovery: revert this preview branch/PR; no database migration and no child data export were performed in this slice.
+
+
 ## 24 November 2026 — Homework guide AI photo enhancement and social copy
 
 - Intent and approval: the founder explicitly requested AI improvement of the supplied teaching photos, website republication, then Facebook/Instagram posts. This covers the selected marketing photos and campaign artwork, without broadening the AI boundary for operational learner records. The specific authorisation is recorded in the security model.

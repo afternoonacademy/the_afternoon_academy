@@ -1,6 +1,6 @@
 import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
-import { guidePosts } from "@/lib/content/guide-posts"
+import { guidePosts,guideCategories } from "@/lib/content/guide-posts"
 import Link from "next/link"
 import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
 import { root, resources, supports, neighbourhoods, schools, translated, type Language } from "@/lib/discovery/content"
@@ -48,7 +48,7 @@ function GuideCard({ href, title, description }: { href: string; title: string; 
 }
 
 export async function GuideHome({ lang }: { lang: Language }) {
-  const newPosts=await guidePosts(true)
+  const [newPosts,categories]=await Promise.all([guidePosts(true),guideCategories()])
   const t = words[lang]
   const prefix = root(lang)
   const featured = resources.find(item => item.slug === "homework-without-conflict")
@@ -113,6 +113,16 @@ export async function GuideHome({ lang }: { lang: Language }) {
           )}
         </div>
       </section>
+      {categories.filter(c=>c.kind==="public"&&!["resources","supports","neighbourhoods"].includes(c.slug)&&newPosts.some(p=>p.category===c.slug))
+        .map(c=><section key={c.slug} className="mb-14">
+          <h2 className="mb-5 text-3xl font-bold">{lang==="en"?c.title_en:c.title_es}</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {newPosts.filter(p=>p.category===c.slug).map(p=><GuideCard key={p.id}
+              href={prefix+"/posts/"+p.slug}
+              title={lang==="en"?p.title_en:p.title_es}
+              description={lang==="en"?p.summary_en:p.summary_es}/>)}
+          </div>
+        </section>)}
       <AcademyCTA lang={lang} />
     </DiscoveryLayout>
   )

@@ -1,5 +1,9 @@
 # School Discovery SEO — Implementation plan (19 October 2026)
 
+## Test-only and expandable categories — 25 November 2026
+A bilingual, admin-managed editorial category table allows future public categories without new code changes. A permanently non-public `test` category supports checking full article UI via protected authenticated frontend indexes and previews. Publication is blocked server-side and by database constraint; test posts are omitted from public listing/detail/sitemap. Existing guided school routes and established categories remain unaffected.
+
+
 ## Admin SEO and draft preview amendment — 25 November 2026
 
 New Content Manager posts derive a readable slug from the English title; editing a title never changes an existing URL. The English and Spanish drafts share the slug and use their established language prefixes. Admin-only draft preview pages open separately and have `noindex, nofollow`; they never make a draft publicly reachable. The image editor uses a prominent upload icon plus remove-cross, and detach does not delete the stored Cloudinary asset.

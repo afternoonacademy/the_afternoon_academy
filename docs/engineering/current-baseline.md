@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Extensible Guides categories — 25 November 2026
+Content Manager category choices now load from RLS-protected `academy_guide_categories`, with bilingual names and fixed slugs. `test` is special, always draft-only. It is visible only through admin-authenticated frontend listings and draft previews; public article routes and sitemaps explicitly exclude it. Other new public categories appear on Guides only if they contain published articles. The linked database migration has been applied to existing TAA Supabase. No production application release has occurred.
+
+
 ## Content Manager editorial draft preview and URL stability — 25 November 2026
 
 Saved draft article previews have protected URLs `/guide/preview/[id]` and `/es/guia/preview/[id]`. They enforce the server-side Admin `manage_setup` capability and are excluded from search indexing. New slugs are generated from English article titles, with server-side normalization; once saved, URLs are immutable. The admin upload tile shows a prominent upload icon and allows a selected image to be detached with a cross without deleting the Cloudinary asset. The previous release and production conditions still apply.

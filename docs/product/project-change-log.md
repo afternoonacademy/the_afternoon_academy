@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Extensible Guide categories and protected Test area
+- Founder requested Test articles that cannot be published and an Admin interface to create additional bilingual editorial categories.
+- Applied approved additive change to existing TAA Supabase `krslaehcjanqffrzycci`: RLS-enabled `academy_guide_categories` seeded with resources, supports, neighbourhoods, test; posts now reference the catalogue, with database check `test => draft`. No learner or family records changed. Category names remain editable only through authorised server-side operations; the first UI allows creating, but not deleting, categories.
+- The Admin Content Manager now lists categories from the database and has an English/Spanish category creation form. Test articles show in protected `/guide/test` and `/es/guia/test` front-end indexes and administrator-only article preview pages. No test articles in public Guides, public post detail routes or sitemap.
+- New public categories appear on the Guides home only after a published article exists. The Test category is never publishable through the admin action or database constraint.
+- Verification pending preview build, independent review and authenticated flows. The migration is already applied to the current database; website PR remains in preview, not production. Recovery: revert PR, retain additive data and schema unless a separately approved removal is required.
+
+
 ## 25 November 2026 — Content Manager editor usability refinements (preview)
 
 - Founder requested a visually prominent upload icon/choose-file surface, an accessible remove-cross for replacing a chosen image, new-tab full-page preview links for both languages, and automatically generated Google-friendly URLs.

@@ -125,7 +125,7 @@ export default function LocationPage() {
           <Card className="brand-card overflow-hidden">
             <div className="relative aspect-4/3 w-full">
               <Image
-                src=siteImage("/main_frontage.png")
+                src={siteImage("/main_frontage.png")}
                 alt="Location frontage for The Afternoon Academy"
                 fill
                 priority

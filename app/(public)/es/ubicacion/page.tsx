@@ -126,7 +126,7 @@ export default function SpanishLocationPage() {
           <Card className="brand-card overflow-hidden">
             <div className="relative h-90 w-full md:h-105 lg:h-115">
               <Image
-                src=siteImage("/main_frontage.png")
+                src={siteImage("/main_frontage.png")}
                 alt="Fachada de la ubicación de The Afternoon Academy"
                 fill
                 priority

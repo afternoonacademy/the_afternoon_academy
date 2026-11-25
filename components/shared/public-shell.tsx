@@ -1,3 +1,4 @@
+import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -63,7 +64,7 @@ export function PublicHeader({
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 py-4 md:flex-row md:justify-between">
         <Link href={t.homeHref} className="flex items-center justify-center">
           <Image
-            src="/logo.png"
+            src={siteImage("/logo.png")}
             alt="The Afternoon Academy"
             width={600}
             height={200}
@@ -127,7 +128,7 @@ export function PublicFooter({
         <div className="space-y-2">
           <Link href={t.homeHref} className="inline-flex items-center">
             <Image
-              src="/logo.png"
+              src={siteImage("/logo.png")}
               alt="The Afternoon Academy"
               width={150}
               height={50}

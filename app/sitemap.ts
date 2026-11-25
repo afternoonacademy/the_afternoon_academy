@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next"
 import { sections } from "@/lib/discovery/content"
+import { guidePosts } from "@/lib/content/guide-posts"
 import { freeTrialPaths } from "@/lib/leads/free-trial.mjs"
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const posts = await guidePosts(true)
   const base = "https://www.theafternoonacademy.com"
   const routes = [
     "/",
@@ -10,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/guide",
     "/es/guia",
     ...Object.values(freeTrialPaths),
+    ...posts.flatMap(p=>["/guide/posts/"+p.slug,"/es/guia/posts/"+p.slug]),
     ...Object.entries(sections).flatMap(([section, items]) =>
       items.map(item => ["/guide/" + section + "/" + item.slug, "/es/guia/" + section + "/" + item.slug]).flat()
     ),

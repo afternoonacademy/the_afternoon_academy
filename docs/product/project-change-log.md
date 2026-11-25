@@ -1,5 +1,15 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Admin Content Manager development candidate
+
+- The founder accepted the Guides redesign preview and directed continued development, not a production release.
+- Added an admin-only editor under `/admin/content`, gated by existing `manage_setup` both server-side and in navigation. English and Spanish texts are required, save defaults to draft and publication requires a separate authenticated action.
+- New posts use dedicated bilingual `/posts/[slug]` routes and appear under their selected existing category. Existing repository-authored article URLs and material remain unchanged.
+- Article text renders escaped plain text with paragraph breaks; cited source URLs require HTTPS; image URLs are restricted to pre-approved local `/images/` assets. No HTML, direct file upload or AI access to learner data.
+- The additive Supabase migration is **not applied**. There is no Supabase development branch, so editorial database writes and publication cannot be integration-tested against a synthetic environment. The preview must not be treated as release-ready until that is addressed. The production learner database must not serve as a test environment.
+- Verification required: automated tests, TypeScript/build, independent review, admin permission tests, mobile/desktop UI, database RLS checks and end-to-end draft/publish/unpublish with synthetic posts.
+- Recovery: revert feature PR; preserve existing article routes and production data. If the migration is subsequently approved and applied, retain its records unless separately authorised to remove them.
+
 ## 25 November 2026 — Parent-first Guides redesign (preview candidate)
 
 - Founder approval: redesign the English and Spanish Guides home pages so parent resources come first, academic support second, and school/neighbourhood listings third; separately approved a secure admin Content Manager. Production release explicitly withheld until founder preview acceptance.

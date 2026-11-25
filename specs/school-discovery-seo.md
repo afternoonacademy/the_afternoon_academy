@@ -1,4 +1,8 @@
 ## Distinct article URLs per locale — 25 November 2026
+
+## Editorial asset lifecycle — November 2026
+Uploads in Cloudinary folder `taa/content/` may be detached from an article without immediate deletion. To prevent broken public images, admin cleanup is manual and requires the image to be older than seven days and unreferenced by any saved article, checked again immediately before deletion. Permanent website images under `taa/site/` are never candidates. Public SEO URLs, approved photo usage, image metadata and bilingual presentation are unchanged.
+
 Use `/guide/posts/{slug_en}` and `/es/guia/posts/{slug_es}` for Content Manager articles. The two slugs are generated from their respective language titles and locked once saved. Cross-link versions with reciprocal hreflang and separate self-canonicals. A legacy shared-slug request must 308 redirect to the canonical URL; never rename existing static Guide URLs without independent redirect verification. Bilingual publication validation requires both slugs and both complete language versions.
 
 ## Draft-friendly bilingual URL clarification — 25 November 2026

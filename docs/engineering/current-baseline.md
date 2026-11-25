@@ -1,4 +1,8 @@
 ## Distinct localized Guide slugs — 25 November 2026
+
+## Content Manager Cloudinary orphan cleanup — November 2026
+Admin-only `/admin/content/media` offers manual, confirmed deletion of unreferenced uploaded Cloudinary content, with a seven-day grace period and fresh Supabase reference check before each delete. Only resources under `taa/content/` with UUID public IDs are eligible. Media from `taa/site/`, live articles and draft/test articles remains protected. The Cloudinary Admin API is server-only, using `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` in Vercel. No cron or bulk delete is active. The production cloud name is `s6cu3nwk`.
+
 The editorial table now has `slug_en` and `slug_es` in addition to the retained compatibility `slug`. English and Spanish article titles generate their own SEO-readable slugs; once set, each slug is stable. Drafts may have no Spanish slug until the Spanish title is entered. Publication requires both. Public links, canonical, hreflang and sitemap use the localized slug, and legacy Spanish shared URLs are permanently redirected. Existing repository-managed Guides remain untouched.
 
 ## Editorial save validation and bilingual URL workflow — 25 November 2026

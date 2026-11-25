@@ -1,4 +1,12 @@
 ## 25 November 2026 — Independent English/Spanish editorial URLs
+
+## 25 November 2026 — Cloudinary orphan cleanup and Content Manager release candidate
+- Founder authorised introduction of image cleanup and requested PR #45 merge/release with all source-of-truth documents updated.
+- Cleanup design: Admin-only `/admin/content/media` lists only `taa/content/{uuid}` Cloudinary images older than seven days with no references in **any** saved editorial article, whether draft, test or published. Requires explicit confirmation for each permanent deletion; deletion repeats full inventory and reference checks. Supports inventory pagination (up to 1000); inventory/database errors disable cleanup. No automatic media deletion or changes to `taa/site/` image library.
+- Production Vercel public `CLOUDINARY_CLOUD_NAME=s6cu3nwk` added; sensitive production Cloudinary API key and secret were already configured. The article image on the first Test post stays protected. Prior unused upload is too new to qualify; no assets were deleted during development.
+- Files changed: `lib/media/content-orphan-policy.mjs`, `lib/media/content-cleanup.ts`, `actions/content-media-cleanup.ts`, `components/admin/content-orphan-delete-form.tsx`, `app/admin/content/media/page.tsx`, admin editor entry point, regression tests and engineering/product/security/SEO docs.
+- Release gates: 7-day safeguard, orphan-reference tests, full test/build, security and independent review, preview accessibility, then GitHub merge, Vercel production deployment and smoke check. Revert PR for app rollback; removed Cloudinary assets cannot be restored by Git revert, hence manual-only deletion. Document exact deployed SHA and checks after release.
+
 - Founder approved translated URL slugs and required a safe approach for existing articles. Verified TAA main `6a560393`, PR #45 feature branch `438d32d`, Vercel project `prj_8HixkYBIbkGXnMTWQZmeCmwDVK2I`, and Supabase `krslaehcjanqffrzycci`.
 - Database check returned zero rows in `academy_guide_posts`, hence no current editor articles needed URL rewriting. The older repository-authored Guides have independent existing URLs and remain unchanged; do not rename them without a separately reviewed redirect map.
 - Applied additive `slug_en`/`slug_es` migration with per-language unique indexes and legacy `slug` kept for compatibility. New articles generate English slug from English title and Spanish slug from Spanish title. Each stable after saving; Spanish slug may be filled in later on a draft.

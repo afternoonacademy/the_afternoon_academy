@@ -78,6 +78,11 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
         </form>
       </section>
       <section className="brand-card space-y-3 p-5">
+        <h2 className="text-xl font-bold">Cloudinary media</h2>
+        <p className="text-sm text-muted-foreground">Review old uploads not used by any article. Nothing is deleted automatically.</p>
+        <Link href="/admin/content/media" className="inline-block rounded-xl border px-4 py-2 text-sm font-semibold">Review unused images →</Link>
+      </section>
+      <section className="brand-card space-y-3 p-5">
         <h2 className="text-xl font-bold">Private frontend testing</h2>
         <p className="text-sm text-muted-foreground">Preview test articles in the real website layout, accessible only to authorised Academy admins.</p>
         <div className="flex flex-wrap gap-3">

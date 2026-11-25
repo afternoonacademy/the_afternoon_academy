@@ -1,4 +1,8 @@
 ## Bilingual slugs and preservation — 25 November 2026
+
+## Protected Cloudinary orphan cleanup — November 2026
+The media cleanup list and delete server action require `manage_setup` capability. Browser clients never receive Cloudinary Admin API credentials. Candidate assets are limited to `taa/content/{uuid}`, unreferenced by any saved editorial post and older than seven days. Cloudinary listing and Supabase lookups must complete successfully; otherwise cleanup fails closed. Each deletion requires user confirmation and server-side revalidation at deletion time. Assets used in saved draft, test or published articles, or in the permanent TAA site-image manifest, are excluded. The workflow is intentionally not automated, since an unsaved upload may not yet have a database reference.
+
 Separate `slug_en` and `slug_es` are stored with per-language unique indexes and format constraints. The older `slug` is retained for backward-compatible redirects. Only admin server actions can save or publish, with the existing RLS/grants retained; public reads remain published-only and exclude Test articles. No change to learner data permissions or categories.
 
 # TAA Security, Privacy and Data Boundary Model

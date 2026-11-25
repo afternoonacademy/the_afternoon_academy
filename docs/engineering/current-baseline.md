@@ -1,3 +1,6 @@
+## Editorial save validation and bilingual URL workflow — 25 November 2026
+The Content Manager uses a stable, shared title-derived slug for both `/guide/posts/[slug]` and `/es/guia/posts/[slug]`; the Spanish title is editorial translation, not a separate URL field. Saving drafts accepts partial content and reports validation problems in the page. Publishing validates completed English and Spanish content and forbids the Test category. No schema migration in this iteration.
+
 # The Afternoon Academy — Current Engineering Baseline
 
 ## Extensible Guides categories — 25 November 2026

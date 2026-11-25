@@ -1,3 +1,6 @@
+## Draft-friendly bilingual URL clarification — 25 November 2026
+One English-title-derived stable slug powers both localized route prefixes and canonical/hreflang alternates. The Spanish page has its own human-translated title, summary and article content but does not require a manually entered URL. Editing titles after the first save does not move either URL. Draft saves permit incomplete copy; publish must validate complete, bilingual editorial content and Test must remain unpublishable.
+
 # School Discovery SEO — Implementation plan (19 October 2026)
 
 ## Test-only and expandable categories — 25 November 2026

@@ -1,59 +1,82 @@
 "use server"
-import { redirect } from "next/navigation"
-import { revalidatePath } from "next/cache"
-import { assertCapability } from "@/lib/auth/require-capability"
-import { supabaseService } from "@/lib/supabase/service"
-import { sections } from "@/lib/discovery/content"
-import { isApprovedArticleImage } from "@/lib/media/taa-cloudinary.mjs"
-import { slugFromTitle } from "@/lib/content/seo-slug.mjs"
-const fields=["slug","category","title_en","title_es","summary_en","summary_es","body_en","body_es","image_path","source_url"] as const
-export async function saveGuidePost(data:FormData){
+import {redirect} from "next/navigation"
+import {revalidatePath} from "next/cache"
+import {assertCapability} from "@/lib/auth/require-capability"
+import {supabaseService} from "@/lib/supabase/service"
+import {sections} from "@/lib/discovery/content"
+import {isApprovedArticleImage} from "@/lib/media/taa-cloudinary.mjs"
+import {draftValidation,publicationValidation} from "@/lib/content/guide-validation.mjs"
+
+type Feedback={error:string|null}
+const asText=(data:FormData,key:string)=>String(data.get(key)||"").trim()
+const errorMessage=(error:unknown)=>error instanceof Error?error.message:"Unexpected error. Please try again."
+
+export async function saveGuidePost(_state:Feedback,form:FormData):Promise<Feedback>{
   await assertCapability("manage_setup")
-  const values=Object.fromEntries(fields.map(key=>[key,String(data.get(key)||"").trim()])) as Record<typeof fields[number],string>
-  // Derive new-article URLs from the English title on the server as well as in the UI.
-  // Existing saved slugs are immutable even if titles change.
-  const id=String(data.get("id")||"")
-  if(!id) values.slug=slugFromTitle(values.title_en)
-  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)||values.slug.length>100)throw new Error("Provide an English title with characters usable in a URL")
-  const {data:category,error:categoryError}=await supabaseService().from("academy_guide_categories")
-    .select("slug,kind").eq("slug",values.category).maybeSingle()
-  if(categoryError||!category)throw new Error("Choose an existing editorial category.")
-  if(Object.values(sections).some(items=>items.some(item=>item.slug===values.slug)))throw new Error("Slug already used by existing guide")
-  for(const key of ["title_en","title_es"] as const)if(values[key].length<4||values[key].length>180)throw new Error("Both titles required (4-180 characters)")
-  for(const key of ["summary_en","summary_es"] as const)if(values[key].length<20||values[key].length>500)throw new Error("Both summaries required (20-500 characters)")
-  for(const key of ["body_en","body_es"] as const)if(values[key].length<60||values[key].length>30000)throw new Error("Both article bodies required (60-30000 characters)")
-  if(!isApprovedArticleImage(values.image_path))throw new Error("Select an uploaded Cloudinary image.")
-  if(values.source_url){let url:URL;try{url=new URL(values.source_url)}catch{throw new Error("Invalid source URL")}if(url.protocol!=="https:")throw new Error("Source must use HTTPS")}
-  if(id&&!/^[a-f0-9-]{36}$/i.test(id))throw new Error("Invalid post id")
-  const client=supabaseService()
-  if(id){
-    const {data:existing,error:existingError}=await client.from("academy_guide_posts").select("slug,status").eq("id",id).maybeSingle()
-    if(existingError||!existing)throw new Error("Article not found")
-    if(existing.slug!==values.slug)throw new Error("Existing article URLs cannot be changed in the editor.")
-  }
-  const payload={...values,image_path:values.image_path||null,source_url:values.source_url||null,status:"draft"}
-  const result=id?await client.from("academy_guide_posts").update(payload).eq("id",id).select("id").single():
-    await client.from("academy_guide_posts").insert({...payload,status:"draft"}).select("id").single()
-  if(result.error)throw new Error("Could not save editorial content. Database migration may be pending.")
-  revalidatePath("/admin/content");revalidatePath("/guide");revalidatePath("/es/guia")
-  revalidatePath("/guide/posts/"+values.slug)
-  revalidatePath("/es/guia/posts/"+values.slug)
-  revalidatePath("/sitemap.xml")
-  redirect("/admin/content?edit="+result.data.id+"&saved=1")
+  let savedId:string
+  try{
+    const id=asText(form,"id")
+    if(id&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw new Error("Invalid article identifier.")
+    const db=supabaseService()
+    const {data:existing,error:lookupError}=id
+      ?await db.from("academy_guide_posts").select("slug").eq("id",id).maybeSingle()
+      :{data:null,error:null}
+    if(lookupError||(id&&!existing))throw new Error("The selected article was not found.")
+    const input=Object.fromEntries(["title_en","title_es","summary_en","summary_es","body_en","body_es"].map(k=>[k,asText(form,k)]))
+    const validation=draftValidation(input,existing?.slug||"")
+    if(validation.error||!validation.value)throw new Error(validation.error||"Invalid draft.")
+    const category=asText(form,"category")
+    const {data:categoryInfo,error:categoryError}=await db.from("academy_guide_categories").select("slug").eq("slug",category).maybeSingle()
+    if(categoryError||!categoryInfo)throw new Error("Please select an existing category.")
+    const slug=validation.value.slug
+    if(Object.values(sections).some(items=>items.some(item=>item.slug===slug)))throw new Error("This URL is reserved for an existing guide.")
+    const image=asText(form,"image_path")
+    if(!isApprovedArticleImage(image))throw new Error("Please select a valid Academy Cloudinary image.")
+    const source=asText(form,"source_url")
+    if(source){
+      let url:URL
+      try{url=new URL(source)}catch{throw new Error("Please enter a valid source URL.")}
+      if(url.protocol!=="https:")throw new Error("Source URLs must use HTTPS.")
+    }
+    const payload={...validation.value,category,slug,image_path:image||null,source_url:source||null,status:"draft"}
+    const {data,error}=id
+      ?await db.from("academy_guide_posts").update(payload).eq("id",id).select("id").single()
+      :await db.from("academy_guide_posts").insert(payload).select("id").single()
+    if(error){
+      if(error.code==="23505")throw new Error("An article with that URL already exists. Choose a different English title.")
+      throw new Error("We couldn't save your draft. Please try again.")
+    }
+    savedId=data.id
+    revalidatePath("/admin/content")
+    revalidatePath("/guide")
+    revalidatePath("/es/guia")
+    revalidatePath("/guide/posts/"+slug)
+    revalidatePath("/es/guia/posts/"+slug)
+    revalidatePath("/sitemap.xml")
+  }catch(error){return {error:errorMessage(error)}}
+  redirect("/admin/content?edit="+savedId+"&saved=1")
 }
-export async function publishGuidePost(data:FormData){
+
+export async function publishGuidePost(_state:Feedback,form:FormData):Promise<Feedback>{
   await assertCapability("manage_setup")
-  const id=String(data.get("id")||"");const status=String(data.get("status")||"")
-  if(!/^[a-f0-9-]{36}$/i.test(id)||!["draft","published"].includes(status))throw new Error("Invalid publication request")
-  const {data:post,error:lookup}=await supabaseService().from("academy_guide_posts").select("slug,category").eq("id",id).maybeSingle()
-  if(lookup||!post)throw new Error("Article not found")
-  if(status==="published"){
-    const {data:category,error:categoryError}=await supabaseService().from("academy_guide_categories")
-      .select("kind").eq("slug",post.category).maybeSingle()
-    if(categoryError||!category||category.kind!=="public")throw new Error("Test articles cannot be published.")
-  }
-  const {error}=await supabaseService().from("academy_guide_posts").update({status}).eq("id",id)
-  if(error)throw new Error("Could not update publication status")
-  for(const path of ["/guide","/es/guia","/guide/posts/"+post.slug,"/es/guia/posts/"+post.slug,"/sitemap.xml"])revalidatePath(path)
+  let id:string
+  try{
+    id=asText(form,"id")
+    const status=asText(form,"status")
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)||!["draft","published"].includes(status))
+      throw new Error("Invalid publication request.")
+    const db=supabaseService()
+    const {data:post,error:lookupError}=await db.from("academy_guide_posts").select("slug,category,title_en,title_es,summary_en,summary_es,body_en,body_es").eq("id",id).maybeSingle()
+    if(lookupError||!post)throw new Error("Article not found.")
+    if(status==="published"){
+      const {data:category,error:categoryError}=await db.from("academy_guide_categories").select("kind").eq("slug",post.category).maybeSingle()
+      if(categoryError||!category||category.kind!=="public")throw new Error("Test articles cannot be published.")
+      const validation=publicationValidation(post)
+      if(validation.error)throw new Error(validation.error)
+    }
+    const {error}=await db.from("academy_guide_posts").update({status}).eq("id",id)
+    if(error)throw new Error("Unable to update publication status.")
+    for(const path of ["/admin/content","/guide","/es/guia","/guide/posts/"+post.slug,"/es/guia/posts/"+post.slug,"/sitemap.xml"])revalidatePath(path)
+  }catch(error){return {error:errorMessage(error)}}
   redirect("/admin/content?edit="+id+"&saved=1")
 }

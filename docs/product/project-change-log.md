@@ -1,3 +1,10 @@
+## 25 November 2026 — Fix Content Manager save crash and bilingual draft workflow
+- User reported server error after saving on preview deployment `dpl_CHV7rh2Ec79pGfSFWatXQ5GKRp2W`. Vercel runtime log at 11:34:19 UTC showed `Both article bodies required (60-30000 characters)`; Supabase editorial post count was zero, confirming save did not persist.
+- Previously the form allowed short content but the server treated a minimum-length validation failure as an unhandled action exception. Fixed with inline accessible errors and separate draft/publish validation.
+- Save draft now requires a valid English title (used for shared slug) and respects maximum field lengths, but allows unfinished Spanish and short/blank body text. Publish separately requires both language titles, summaries and full bodies, and continues to block Test category at application and DB layers. URL slug generated from English title once, held stable across English/Spanish routes and future edits; Spanish display title is manual editorial translation, not a URL.
+- No database schema/learner data changes. Branch-only code; run tests, build, review, preview before founder acceptance and production release.
+- Recovery: revert PR feature changes; previously saved content remains unchanged.
+
 # The Afternoon Academy — Project Change Log
 
 ## 25 November 2026 — Extensible Guide categories and protected Test area

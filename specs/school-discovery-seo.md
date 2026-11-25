@@ -1,5 +1,9 @@
 # School Discovery SEO — Implementation plan (19 October 2026)
 
+## Admin SEO and draft preview amendment — 25 November 2026
+
+New Content Manager posts derive a readable slug from the English title; editing a title never changes an existing URL. The English and Spanish drafts share the slug and use their established language prefixes. Admin-only draft preview pages open separately and have `noindex, nofollow`; they never make a draft publicly reachable. The image editor uses a prominent upload icon plus remove-cross, and detach does not delete the stored Cloudinary asset.
+
 ## Cloudinary image management amendment — 25 November 2026
 
 The parent-first Guides layout and independent school articles retain existing URLs. Approved public imagery is served from verified TAA Cloudinary assets; the admin editorial workflow accepts a direct file upload only (not an arbitrary external URL). Admin authorisation and server-only signed uploads are required. Media migration must preserve SEO/social previews, image descriptions, bilingual editorial standards and consent for any recognisable people. Existing image files remain available for safe rollback.

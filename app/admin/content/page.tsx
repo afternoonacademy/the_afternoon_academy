@@ -1,4 +1,5 @@
 import { GuideImageUploader } from "@/components/admin/guide-image-uploader"
+import { GuideTitleFields } from "@/components/admin/guide-title-fields"
 import Link from "next/link"
 import { requireCapability } from "@/lib/auth/require-capability"
 import { guidePosts } from "@/lib/content/guide-posts"
@@ -27,10 +28,10 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
     <form action={saveGuidePost} className="brand-card space-y-4 p-5">
       <h2 className="text-xl font-bold">{current?"Edit article":"New article"}</h2>
       <input name="id" type="hidden" value={current?.id||""}/>
-      {item("slug","URL slug")}
+      <GuideTitleFields key={current?.id||"new"} initialTitle={current?.title_en||""} existingSlug={current?.slug||""}/>
       <label className="block space-y-1 text-sm font-semibold"><span>Category</span><select name="category" defaultValue={current?.category||"resources"} className={cls}><option value="resources">Parent resources</option><option value="supports">Academic support</option><option value="neighbourhoods">Neighbourhood guides</option></select></label>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4"><h3 className="font-bold">English</h3>{item("title_en","Title")}{item("summary_en","Summary","textarea")}{item("body_en","Article text","textarea")}</div>
+        <div className="space-y-4"><h3 className="font-bold">English</h3><p className="text-xs text-muted-foreground">The English title and generated URL are above.</p>{item("summary_en","Summary","textarea")}{item("body_en","Article text","textarea")}</div>
         <div className="space-y-4"><h3 className="font-bold">Español</h3>{item("title_es","Título")}{item("summary_es","Resumen","textarea")}{item("body_es","Texto del artículo","textarea")}</div>
       </div>
       <GuideImageUploader key={current?.id||"new"} initialUrl={current?.image_path||""}/>
@@ -39,8 +40,17 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
       <button className="rounded-xl bg-[#26345f] px-5 py-3 font-semibold text-white">Save article</button>
     </form>
     {current&&<section className="brand-card space-y-4 p-5"><h2 className="text-xl font-bold">Review & publish</h2>
-      <details><summary className="cursor-pointer font-semibold">English preview</summary><article className="mt-4 space-y-4 rounded-xl border p-4"><h3 className="text-2xl font-bold">{current.title_en}</h3><p>{current.summary_en}</p><p className="whitespace-pre-wrap leading-7">{current.body_en}</p></article></details>
-      <details><summary className="cursor-pointer font-semibold">Vista previa en español</summary><article className="mt-4 space-y-4 rounded-xl border p-4"><h3 className="text-2xl font-bold">{current.title_es}</h3><p>{current.summary_es}</p><p className="whitespace-pre-wrap leading-7">{current.body_es}</p></article></details>
+      <div className="flex flex-wrap gap-3">
+        <Link href={"/guide/preview/"+current.id} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-700 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
+          Preview English article <span aria-hidden="true">↗</span>
+        </Link>
+        <Link href={"/es/guia/preview/"+current.id} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-700 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
+          Vista previa en español <span aria-hidden="true">↗</span>
+        </Link>
+      </div>
+      <p className="text-sm text-muted-foreground">Previews open in a new tab and show the last saved draft, including its selected image. Save changes first to see them in the preview.</p>
       <form action={publishGuidePost}><input name="id" type="hidden" value={current.id}/><input name="status" type="hidden" value={current.status==="published"?"draft":"published"}/><button className="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white">{current.status==="published"?"Unpublish article":"Publish both languages"}</button></form>
       {current.status==="published"&&<Link className="text-sm underline" href={"/guide/posts/"+current.slug}>View published article</Link>}
     </section>}

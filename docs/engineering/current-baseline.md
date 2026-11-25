@@ -1,5 +1,9 @@
 # The Afternoon Academy — Current Engineering Baseline
 
+## Content Manager editorial draft preview and URL stability — 25 November 2026
+
+Saved draft article previews have protected URLs `/guide/preview/[id]` and `/es/guia/preview/[id]`. They enforce the server-side Admin `manage_setup` capability and are excluded from search indexing. New slugs are generated from English article titles, with server-side normalization; once saved, URLs are immutable. The admin upload tile shows a prominent upload icon and allows a selected image to be detached with a cross without deleting the Cloudinary asset. The previous release and production conditions still apply.
+
 ## Cloudinary editorial imagery — development candidate (25 November 2026)
 
 TAA's connected Cloudinary account uses cloud `s6cu3nwk`; verified imported marketing images use `taa/site/`, while admin-only Content Manager uploads must use `taa/content/`. Public pages use an explicit verified asset manifest (`lib/media/taa-cloudinary.mjs`) and restrict Next Image remote loading to this cloud. Browser icons remain local; repository image files remain as safe rollback. Admin browser-to-Cloudinary signed image upload requires three Vercel environment keys (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`), of which the latter two must be server-only secrets. No upload is functional until these keys are configured and the workflow tested. No identifiable learner imagery may be uploaded without approvals.

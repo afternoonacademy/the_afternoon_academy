@@ -1,5 +1,13 @@
 # The Afternoon Academy — Project Change Log
 
+## 25 November 2026 — Content Manager editor usability refinements (preview)
+
+- Founder requested a visually prominent upload icon/choose-file surface, an accessible remove-cross for replacing a chosen image, new-tab full-page preview links for both languages, and automatically generated Google-friendly URLs.
+- Added an accessible upload tile with icon and a clear replace button. The selected image is shown with a visible cross to remove it from the article (saved changes required). Cloudinary storage deletion is deliberately out of scope; removal detaches the image from the article only.
+- New article URL slug is transliterated, lowercased and hyphenated from the English title in the client and computed again server-side; after the first save the original slug stays immutable when titles change, to preserve search and shared links.
+- Added authenticated English/Spanish draft preview pages under `/guide/preview/[id]` and `/es/guia/preview/[id]`, with `manage_setup` gate, noindex/no-follow metadata and visible private-preview labels. Preview uses **last saved content** and is not public publishing. No database schema change.
+- Verification required: tests and build, protected-route access/403 or redirect without Admin capability, new-tab behavior, Cloudinary upload after credentials installed and visual review. No production release.
+
 ## 25 November 2026 — Cloudinary site-image migration and admin uploads (development PR)
 
 - Founder explicitly requested that TAA use newly connected Cloudinary for existing website images and direct Content Manager image uploads.

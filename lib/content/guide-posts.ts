@@ -12,3 +12,11 @@ export async function publishedGuidePost(slug:string):Promise<GuidePost|null>{
   const {data,error}=await supabaseService().from("academy_guide_posts").select(select).eq("slug",slug).eq("status","published").maybeSingle()
   return error?null:data as GuidePost|null
 }
+
+/** Read a saved draft for an authenticated admin preview; caller MUST enforce manage_setup. */
+export async function guidePostForPreview(id:string):Promise<GuidePost|null>{
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return null
+  const {data,error}=await supabaseService().from("academy_guide_posts").select(select).eq("id",id).maybeSingle()
+  if(error)throw new Error("Unable to load the saved article preview.")
+  return data as GuidePost|null
+}

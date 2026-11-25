@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 import { sections } from "@/lib/discovery/content"
-import { guidePosts } from "@/lib/content/guide-posts"
+import {guidePosts,localizedGuideSlug} from "@/lib/content/guide-posts"
 import { freeTrialPaths } from "@/lib/leads/free-trial.mjs"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/guide",
     "/es/guia",
     ...Object.values(freeTrialPaths),
-    ...posts.flatMap(p=>["/guide/posts/"+p.slug,"/es/guia/posts/"+p.slug]),
+    ...posts.flatMap(p=>["/guide/posts/"+localizedGuideSlug(p,"en"),"/es/guia/posts/"+localizedGuideSlug(p,"es")]),
     ...Object.entries(sections).flatMap(([section, items]) =>
       items.map(item => ["/guide/" + section + "/" + item.slug, "/es/guia/" + section + "/" + item.slug]).flat()
     ),

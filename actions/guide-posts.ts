@@ -19,16 +19,16 @@ export async function saveGuidePost(_state:Feedback,form:FormData):Promise<Feedb
     if(id&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw new Error("Invalid article identifier.")
     const db=supabaseService()
     const {data:existing,error:lookupError}=id
-      ?await db.from("academy_guide_posts").select("slug").eq("id",id).maybeSingle()
+      ?await db.from("academy_guide_posts").select("slug,slug_en,slug_es").eq("id",id).maybeSingle()
       :{data:null,error:null}
     if(lookupError||(id&&!existing))throw new Error("The selected article was not found.")
     const input=Object.fromEntries(["title_en","title_es","summary_en","summary_es","body_en","body_es"].map(k=>[k,asText(form,k)]))
-    const validation=draftValidation(input,existing?.slug||"")
+    const validation=draftValidation(input,{slug_en:existing?.slug_en||existing?.slug||"",slug_es:existing?.slug_es||""})
     if(validation.error||!validation.value)throw new Error(validation.error||"Invalid draft.")
     const category=asText(form,"category")
     const {data:categoryInfo,error:categoryError}=await db.from("academy_guide_categories").select("slug").eq("slug",category).maybeSingle()
     if(categoryError||!categoryInfo)throw new Error("Please select an existing category.")
-    const slug=validation.value.slug
+    const slug=validation.value.slug_en
     if(Object.values(sections).some(items=>items.some(item=>item.slug===slug)))throw new Error("This URL is reserved for an existing guide.")
     const image=asText(form,"image_path")
     if(!isApprovedArticleImage(image))throw new Error("Please select a valid Academy Cloudinary image.")
@@ -38,12 +38,12 @@ export async function saveGuidePost(_state:Feedback,form:FormData):Promise<Feedb
       try{url=new URL(source)}catch{throw new Error("Please enter a valid source URL.")}
       if(url.protocol!=="https:")throw new Error("Source URLs must use HTTPS.")
     }
-    const payload={...validation.value,category,slug,image_path:image||null,source_url:source||null,status:"draft"}
+    const payload={...validation.value,category,image_path:image||null,source_url:source||null,status:"draft"}
     const {data,error}=id
       ?await db.from("academy_guide_posts").update(payload).eq("id",id).select("id").single()
       :await db.from("academy_guide_posts").insert(payload).select("id").single()
     if(error){
-      if(error.code==="23505")throw new Error("An article with that URL already exists. Choose a different English title.")
+      if(error.code==="23505")throw new Error("An English or Spanish article URL already exists. Please choose a different title before its first save.")
       throw new Error("We couldn't save your draft. Please try again.")
     }
     savedId=data.id
@@ -51,7 +51,7 @@ export async function saveGuidePost(_state:Feedback,form:FormData):Promise<Feedb
     revalidatePath("/guide")
     revalidatePath("/es/guia")
     revalidatePath("/guide/posts/"+slug)
-    revalidatePath("/es/guia/posts/"+slug)
+    if(validation.value.slug_es)revalidatePath("/es/guia/posts/"+validation.value.slug_es)
     revalidatePath("/sitemap.xml")
   }catch(error){return {error:errorMessage(error)}}
   redirect("/admin/content?edit="+savedId+"&saved=1")
@@ -66,7 +66,7 @@ export async function publishGuidePost(_state:Feedback,form:FormData):Promise<Fe
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)||!["draft","published"].includes(status))
       throw new Error("Invalid publication request.")
     const db=supabaseService()
-    const {data:post,error:lookupError}=await db.from("academy_guide_posts").select("slug,category,title_en,title_es,summary_en,summary_es,body_en,body_es").eq("id",id).maybeSingle()
+    const {data:post,error:lookupError}=await db.from("academy_guide_posts").select("slug,slug_en,slug_es,category,title_en,title_es,summary_en,summary_es,body_en,body_es").eq("id",id).maybeSingle()
     if(lookupError||!post)throw new Error("Article not found.")
     if(status==="published"){
       const {data:category,error:categoryError}=await db.from("academy_guide_categories").select("kind").eq("slug",post.category).maybeSingle()

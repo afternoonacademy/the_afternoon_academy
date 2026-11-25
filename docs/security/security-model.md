@@ -1,3 +1,6 @@
+## Bilingual slugs and preservation — 25 November 2026
+Separate `slug_en` and `slug_es` are stored with per-language unique indexes and format constraints. The older `slug` is retained for backward-compatible redirects. Only admin server actions can save or publish, with the existing RLS/grants retained; public reads remain published-only and exclude Test articles. No change to learner data permissions or categories.
+
 # TAA Security, Privacy and Data Boundary Model
 
 ## Test article security boundary — 25 November 2026

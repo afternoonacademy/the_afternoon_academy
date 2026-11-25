@@ -1,3 +1,10 @@
+## 25 November 2026 — Independent English/Spanish editorial URLs
+- Founder approved translated URL slugs and required a safe approach for existing articles. Verified TAA main `6a560393`, PR #45 feature branch `438d32d`, Vercel project `prj_8HixkYBIbkGXnMTWQZmeCmwDVK2I`, and Supabase `krslaehcjanqffrzycci`.
+- Database check returned zero rows in `academy_guide_posts`, hence no current editor articles needed URL rewriting. The older repository-authored Guides have independent existing URLs and remain unchanged; do not rename them without a separately reviewed redirect map.
+- Applied additive `slug_en`/`slug_es` migration with per-language unique indexes and legacy `slug` kept for compatibility. New articles generate English slug from English title and Spanish slug from Spanish title. Each stable after saving; Spanish slug may be filled in later on a draft.
+- Public cards, locale-switch links, canonical/hreflang, and sitemap now use the correct language-specific slug. Legacy shared-slug published paths redirect permanently to the localized canonical page. Test category stays permanently non-public.
+- No learner/family data touched. Verify preview, TypeScript, regression tests, authenticated editor/browser QA and redirects before founder acceptance. No production app release; revert branch to recover code while keeping additive database fields if necessary.
+
 ## 25 November 2026 — Fix Content Manager save crash and bilingual draft workflow
 - User reported server error after saving on preview deployment `dpl_CHV7rh2Ec79pGfSFWatXQ5GKRp2W`. Vercel runtime log at 11:34:19 UTC showed `Both article bodies required (60-30000 characters)`; Supabase editorial post count was zero, confirming save did not persist.
 - Previously the form allowed short content but the server treated a minimum-length validation failure as an unhandled action exception. Fixed with inline accessible errors and separate draft/publish validation.

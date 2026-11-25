@@ -1,3 +1,6 @@
+## Distinct article URLs per locale — 25 November 2026
+Use `/guide/posts/{slug_en}` and `/es/guia/posts/{slug_es}` for Content Manager articles. The two slugs are generated from their respective language titles and locked once saved. Cross-link versions with reciprocal hreflang and separate self-canonicals. A legacy shared-slug request must 308 redirect to the canonical URL; never rename existing static Guide URLs without independent redirect verification. Bilingual publication validation requires both slugs and both complete language versions.
+
 ## Draft-friendly bilingual URL clarification — 25 November 2026
 One English-title-derived stable slug powers both localized route prefixes and canonical/hreflang alternates. The Spanish page has its own human-translated title, summary and article content but does not require a manually entered URL. Editing titles after the first save does not move either URL. Draft saves permit incomplete copy; publish must validate complete, bilingual editorial content and Test must remain unpublishable.
 

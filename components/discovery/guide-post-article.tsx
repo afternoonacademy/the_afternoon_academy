@@ -2,14 +2,14 @@ import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Link from "next/link"
 import Image from "next/image"
 import { DiscoveryLayout,AcademyCTA } from "@/components/discovery/discovery-layout"
-import type { GuidePost } from "@/lib/content/guide-posts"
+import {localizedGuideSlug,type GuidePost} from "@/lib/content/guide-posts"
 export function GuidePostArticle({post,lang}:{post:GuidePost;lang:"en"|"es"}){
   const prefix=lang==="en"?"/guide":"/es/guia"
   const other=lang==="en"?"/es/guia":"/guide"
   const title=lang==="en"?post.title_en:post.title_es
   const summary=lang==="en"?post.summary_en:post.summary_es
   const body=lang==="en"?post.body_en:post.body_es
-  return <DiscoveryLayout lang={lang} switchHref={other+"/posts/"+post.slug}>
+  return <DiscoveryLayout lang={lang} switchHref={other+"/posts/"+localizedGuideSlug(post,lang==="en"?"es":"en")}>
     <Link href={prefix} className="text-sm underline">{lang==="en"?"Back to family guides":"Volver a las guías"}</Link>
     <article className="mx-auto mt-8 max-w-3xl">
       <p className="brand-kicker">{post.category}</p>

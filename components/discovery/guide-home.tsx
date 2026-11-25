@@ -1,6 +1,6 @@
 import { siteImage } from "@/lib/media/taa-cloudinary.mjs"
 import Image from "next/image"
-import { guidePosts,guideCategories } from "@/lib/content/guide-posts"
+import { guidePosts,guideCategories,localizedGuideSlug } from "@/lib/content/guide-posts"
 import Link from "next/link"
 import { AcademyCTA, DiscoveryLayout } from "@/components/discovery/discovery-layout"
 import { root, resources, supports, neighbourhoods, schools, translated, type Language } from "@/lib/discovery/content"
@@ -81,7 +81,7 @@ export async function GuideHome({ lang }: { lang: Language }) {
           </Link>
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {newPosts.filter(p=>p.category==="resources").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+p.slug} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
+          {newPosts.filter(p=>p.category==="resources").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+localizedGuideSlug(p,lang)} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
           {otherResources.map(item => <GuideCard key={item.slug} href={prefix + "/resources/" + item.slug} title={translated(item, lang).title} description={translated(item, lang).description} />)}
         </div>
       </section>
@@ -90,7 +90,7 @@ export async function GuideHome({ lang }: { lang: Language }) {
         <h2 id="academic-support-heading" className="text-3xl font-bold">{t.academic}</h2>
         <p className="brand-muted mt-2 mb-6 max-w-3xl">{t.academicLead}</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {newPosts.filter(p=>p.category==="supports").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+p.slug} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
+          {newPosts.filter(p=>p.category==="supports").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+localizedGuideSlug(p,lang)} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
           {supports.map(item => <GuideCard key={item.slug} href={prefix + "/supports/" + item.slug} title={translated(item, lang).title} description={translated(item, lang).description} />)}
         </div>
       </section>
@@ -100,7 +100,7 @@ export async function GuideHome({ lang }: { lang: Language }) {
         <p className="brand-muted mt-2 mb-7 max-w-3xl">{t.localLead}</p>
         <h3 className="mb-4 text-xl font-bold">{t.neighbourhood}</h3>
         <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {newPosts.filter(p=>p.category==="neighbourhoods").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+p.slug} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
+          {newPosts.filter(p=>p.category==="neighbourhoods").map(p=><GuideCard key={p.id} href={prefix+"/posts/"+localizedGuideSlug(p,lang)} title={lang==="en"?p.title_en:p.title_es} description={lang==="en"?p.summary_en:p.summary_es}/>)}
           {neighbourhoods.map(item => <GuideCard key={item.slug} href={prefix + "/neighbourhoods/" + item.slug} title={translated(item, lang).title} description={translated(item, lang).description} />)}
         </div>
         <h3 className="mb-4 text-xl font-bold">{t.schools}</h3>
@@ -118,7 +118,7 @@ export async function GuideHome({ lang }: { lang: Language }) {
           <h2 className="mb-5 text-3xl font-bold">{lang==="en"?c.title_en:c.title_es}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {newPosts.filter(p=>p.category===c.slug).map(p=><GuideCard key={p.id}
-              href={prefix+"/posts/"+p.slug}
+              href={prefix+"/posts/"+localizedGuideSlug(p,lang)}
               title={lang==="en"?p.title_en:p.title_es}
               description={lang==="en"?p.summary_en:p.summary_es}/>)}
           </div>

@@ -32,7 +32,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
     <GuideArticleSaveForm>
       <h2 className="text-xl font-bold">{current?"Edit article":"New article"}</h2>
       <input name="id" type="hidden" value={current?.id||""}/>
-      <GuideTitleFields key={current?.id||"new"} initialTitle={current?.title_en||""} existingSlug={current?.slug||""}/>
+      <GuideTitleFields key={current?.id||"new"} initialEnglish={current?.title_en||""} initialSpanish={current?.title_es||""} existingEnglishSlug={current?.slug_en||current?.slug||""} existingSpanishSlug={current?.slug_es||""}/>
       <label className="block space-y-1 text-sm font-semibold"><span>Category</span>
         <select name="category" defaultValue={current?.category||"resources"} className={cls}>
           {categories.map(c=><option key={c.slug} value={c.slug}>{c.title_en}{c.kind==="test"?" — private testing":""}</option>)}
@@ -41,11 +41,11 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
       {current?.category==="test"&&<p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold">Test articles are private and cannot be published. Open the protected preview to check the frontend.</p>}
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4"><h3 className="font-bold">English</h3><p className="text-xs text-muted-foreground">The English title and generated URL are above.</p>{item("summary_en","Summary","textarea")}{item("body_en","Article text","textarea")}</div>
-        <div className="space-y-4"><h3 className="font-bold">Español</h3>{item("title_es","Título")}{item("summary_es","Resumen","textarea")}{item("body_es","Texto del artículo","textarea")}</div>
+        <div className="space-y-4"><h3 className="font-bold">Español</h3>{item("summary_es","Resumen","textarea")}{item("body_es","Texto del artículo","textarea")}</div>
       </div>
       <GuideImageUploader key={current?.id||"new"} initialUrl={current?.image_path||""}/>
       {item("source_url","Research/source HTTPS URL (optional)","input",false)}
-      <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-950"><strong>Draft workflow:</strong> Enter an English title to generate the shared article URL, then save whenever you like. The Spanish title, summaries and article bodies can be completed later. Both language versions are required before public publication. The Spanish title is translated editorial copy, not a separate URL field.</p>
+      <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-950"><strong>Draft workflow:</strong> Enter English and Spanish titles to generate separate translated URLs, then save whenever you like. The Spanish title, summaries and article bodies can be completed later. Both language versions are required before public publication. Both URLs are generated from their own language titles and remain stable after saving.</p>
       <p className="text-xs text-muted-foreground">Use plain text and paragraph breaks. HTML is never interpreted. Upload a JPEG, PNG or WebP image (up to 8 MB) above; uploads go directly to the Academy Cloudinary library through a protected server endpoint. Saving a published article returns it to draft and removes it from the public pages until you explicitly publish again. Existing article slugs cannot be changed. Save, then use publication controls below.</p>
     </GuideArticleSaveForm>
     {current&&<section className="brand-card space-y-4 p-5"><h2 className="text-xl font-bold">Review & publish</h2>
@@ -65,7 +65,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{edit?:s
           Test-only article. Publishing is disabled. Use the private preview links above.
         </p>:
         <GuidePublicationForm id={current.id} status={current.status}/>}
-      {current.status==="published"&&<Link className="text-sm underline" href={"/guide/posts/"+current.slug}>View published article</Link>}
+      {current.status==="published"&&<Link className="text-sm underline" href={"/guide/posts/"+(current.slug_en||current.slug)}>View published article</Link>}
     </section>}
       <section className="brand-card space-y-4 p-5">
         <h2 className="text-xl font-bold">Manage categories</h2>

@@ -1,3 +1,6 @@
+## Distinct localized Guide slugs — 25 November 2026
+The editorial table now has `slug_en` and `slug_es` in addition to the retained compatibility `slug`. English and Spanish article titles generate their own SEO-readable slugs; once set, each slug is stable. Drafts may have no Spanish slug until the Spanish title is entered. Publication requires both. Public links, canonical, hreflang and sitemap use the localized slug, and legacy Spanish shared URLs are permanently redirected. Existing repository-managed Guides remain untouched.
+
 ## Editorial save validation and bilingual URL workflow — 25 November 2026
 The Content Manager uses a stable, shared title-derived slug for both `/guide/posts/[slug]` and `/es/guia/posts/[slug]`; the Spanish title is editorial translation, not a separate URL field. Saving drafts accepts partial content and reports validation problems in the page. Publishing validates completed English and Spanish content and forbids the Test category. No schema migration in this iteration.
 
